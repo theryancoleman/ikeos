@@ -1,5 +1,25 @@
 {% extends "base.html" %}
+{% block title %}{{ entry.title }}{% endblock %}
+
 {% block content %}
-<h1>{{ entry.title }}</h1>
-<div>{{ entry.body }}</div>
+<div class="entry-detail">
+  <div class="entry-meta">
+    <a href="{{ url_for('browse.project', name=project) }}">← {{ project }}</a>
+    <span class="badge type-{{ entry.type }}">{{ entry.type }}</span>
+    <span class="badge status-{{ entry.status | replace('-', '') }}">{{ entry.status }}</span>
+    <span class="entry-date">{{ entry.created.strftime('%Y-%m-%d') if entry.created else '' }}</span>
+  </div>
+
+  <h1>{{ entry.title }}</h1>
+
+  {% if entry.type == 'bug' %}
+    <p><strong>Severity:</strong> <span class="badge severity-{{ entry.severity }}">{{ entry.severity }}</span></p>
+  {% elif entry.type == 'idea' %}
+    <p><strong>Priority:</strong> {{ entry.priority }} &nbsp; <strong>Effort:</strong> {{ entry.effort }}</p>
+  {% endif %}
+
+  <div class="entry-body">
+    {{ entry.body | replace('\n', '<br>') | safe }}
+  </div>
+</div>
 {% endblock %}

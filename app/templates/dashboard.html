@@ -1,5 +1,29 @@
 {% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
 {% block content %}
-<h1>Dashboard</h1>
-{% for e in entries %}<p>{{ e.title }}</p>{% endfor %}
+<h1>Recent entries</h1>
+
+{% if entries %}
+  <table class="entry-list">
+    <thead>
+      <tr>
+        <th>Type</th><th>Title</th><th>Project</th><th>Status</th><th>Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for e in entries %}
+      <tr>
+        <td><span class="badge type-{{ e.type }}">{{ e.type }}</span></td>
+        <td><a href="{{ url_for('browse.entry', name=e.project, slug=e.slug) }}">{{ e.title }}</a></td>
+        <td><a href="{{ url_for('browse.project', name=e.project) }}">{{ e.project }}</a></td>
+        <td><span class="badge status-{{ e.status | replace('-', '') }}">{{ e.status }}</span></td>
+        <td>{{ e.created.strftime('%Y-%m-%d') if e.created else '' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p class="empty">No entries yet. <a href="{{ url_for('capture.capture_form') }}">Add one.</a></p>
+{% endif %}
 {% endblock %}
