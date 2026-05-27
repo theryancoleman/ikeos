@@ -18,7 +18,7 @@
         <td><a href="{{ url_for('browse.entry', name=e.project, slug=e.slug) }}">{{ e.title }}</a></td>
         <td><a href="{{ url_for('browse.project', name=e.project) }}">{{ e.project }}</a></td>
         <td><span class="badge status-{{ e.status | replace('-', '') }}">{{ e.status }}</span></td>
-        <td>{{ e.created.strftime('%Y-%m-%d') if e.created else '' }}</td>
+        <td>{{ e.created[:10] if e.created else '' }}</td>
       </tr>
       {% endfor %}
     </tbody>

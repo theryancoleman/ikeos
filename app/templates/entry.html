@@ -7,7 +7,7 @@
     <a href="{{ url_for('browse.project', name=project) }}">← {{ project }}</a>
     <span class="badge type-{{ entry.type }}">{{ entry.type }}</span>
     <span class="badge status-{{ entry.status | replace('-', '') }}">{{ entry.status }}</span>
-    <span class="entry-date">{{ entry.created.strftime('%Y-%m-%d') if entry.created else '' }}</span>
+    <span class="entry-date">{{ entry.created[:10] if entry.created else '' }}</span>
   </div>
 
   <h1>{{ entry.title }}</h1>

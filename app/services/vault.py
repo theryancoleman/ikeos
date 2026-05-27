@@ -82,6 +82,8 @@ def read_entries(project: str = None, status_filter: list = None) -> list[dict]:
                 try:
                     post = frontmatter.load(filepath)
                     entry = dict(post.metadata)
+                    if hasattr(entry.get("created"), "isoformat"):
+                        entry["created"] = entry["created"].isoformat(timespec="seconds")
                     entry["body"] = post.content
                     entry["slug"] = filepath.stem
                     entries.append(entry)
@@ -102,6 +104,8 @@ def read_entry(project: str, slug: str) -> dict | None:
         if filepath.exists():
             post = frontmatter.load(filepath)
             entry = dict(post.metadata)
+            if hasattr(entry.get("created"), "isoformat"):
+                entry["created"] = entry["created"].isoformat(timespec="seconds")
             entry["body"] = post.content
             entry["slug"] = slug
             return entry

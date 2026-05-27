@@ -19,7 +19,7 @@
       <li class="entry-row">
         <span class="badge status-{{ e.status | replace('-', '') }}">{{ e.status }}</span>
         <a href="{{ url_for('browse.entry', name=name, slug=e.slug) }}">{{ e.title }}</a>
-        <span class="entry-date">{{ e.created.strftime('%Y-%m-%d') if e.created else '' }}</span>
+        <span class="entry-date">{{ e.created[:10] if e.created else '' }}</span>
         {% if e.type == 'bug' and e.severity %}
           <span class="badge severity-{{ e.severity }}">{{ e.severity }}</span>
         {% endif %}
