@@ -7,11 +7,17 @@
 <form method="post" action="{{ url_for('capture.capture_submit') }}">
   <div class="field">
     <label for="project">Project</label>
-    <select id="project" name="project" required>
+    <select id="project" name="project" required onchange="updateProject(this.value)">
       {% for p in projects %}
         <option value="{{ p }}">{{ p }}</option>
       {% endfor %}
+      <option value="__future__">— Future project —</option>
     </select>
+  </div>
+
+  <div id="future-project-field" class="field hidden">
+    <label for="future_project_name">Future project name</label>
+    <input id="future_project_name" name="future_project_name" type="text" placeholder="e.g. my-new-app">
   </div>
 
   <div class="field">
@@ -79,6 +85,17 @@ function updateFields(type) {
   document.getElementById('bug-fields').classList.add('hidden');
   if (type === 'idea') document.getElementById('idea-fields').classList.remove('hidden');
   if (type === 'bug') document.getElementById('bug-fields').classList.remove('hidden');
+}
+function updateProject(value) {
+  const field = document.getElementById('future-project-field');
+  const input = document.getElementById('future_project_name');
+  if (value === '__future__') {
+    field.classList.remove('hidden');
+    input.required = true;
+  } else {
+    field.classList.add('hidden');
+    input.required = false;
+  }
 }
 </script>
 {% endblock %}

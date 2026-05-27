@@ -13,9 +13,12 @@ def capture_form():
 @bp.route("/capture", methods=["POST"])
 def capture_submit():
     entry_type = request.form["type"]
+    project = request.form["project"]
+    if project == "__future__":
+        project = request.form.get("future_project_name", "").strip() or "future"
     data = {
         "type": entry_type,
-        "project": request.form["project"],
+        "project": project,
         "title": request.form["title"],
         "body": request.form.get("body", ""),
     }
