@@ -1,10 +1,84 @@
 {% extends "base.html" %}
+{% block title %}New entry{% endblock %}
+
 {% block content %}
+<h1>New entry</h1>
+
 <form method="post" action="{{ url_for('capture.capture_submit') }}">
-  <select name="project">{% for p in projects %}<option value="{{ p }}">{{ p }}</option>{% endfor %}</select>
-  <select name="type"><option value="note">Note</option><option value="idea">Idea</option><option value="bug">Bug</option></select>
-  <input name="title" type="text">
-  <textarea name="body"></textarea>
-  <button type="submit">Save</button>
+  <div class="field">
+    <label for="project">Project</label>
+    <select id="project" name="project" required>
+      {% for p in projects %}
+        <option value="{{ p }}">{{ p }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="field">
+    <label for="type">Type</label>
+    <select id="type" name="type" required onchange="updateFields(this.value)">
+      <option value="note">Note</option>
+      <option value="idea">Idea</option>
+      <option value="bug">Bug</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label for="title">Title</label>
+    <input id="title" name="title" type="text" required>
+  </div>
+
+  <div class="field">
+    <label for="body">Description</label>
+    <textarea id="body" name="body" rows="5"></textarea>
+  </div>
+
+  <!-- Idea fields -->
+  <div id="idea-fields" class="conditional hidden">
+    <div class="field">
+      <label for="priority">Priority</label>
+      <select id="priority" name="priority">
+        <option value="low">Low</option>
+        <option value="medium" selected>Medium</option>
+        <option value="high">High</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="effort">Effort</label>
+      <select id="effort" name="effort">
+        <option value="small">Small</option>
+        <option value="medium" selected>Medium</option>
+        <option value="large">Large</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Bug fields -->
+  <div id="bug-fields" class="conditional hidden">
+    <div class="field">
+      <label for="severity">Severity</label>
+      <select id="severity" name="severity">
+        <option value="low">Low</option>
+        <option value="medium" selected>Medium</option>
+        <option value="high">High</option>
+        <option value="critical">Critical</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="steps">Steps to reproduce</label>
+      <textarea id="steps" name="steps" rows="4"></textarea>
+    </div>
+  </div>
+
+  <button type="submit">Save entry</button>
 </form>
+
+<script>
+function updateFields(type) {
+  document.getElementById('idea-fields').classList.add('hidden');
+  document.getElementById('bug-fields').classList.add('hidden');
+  if (type === 'idea') document.getElementById('idea-fields').classList.remove('hidden');
+  if (type === 'bug') document.getElementById('bug-fields').classList.remove('hidden');
+}
+</script>
 {% endblock %}
