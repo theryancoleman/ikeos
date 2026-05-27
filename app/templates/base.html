@@ -1,0 +1,8 @@
+<!DOCTYPE html>
+<html>
+<head><title>{% block title %}Capture{% endblock %}</title></head>
+<body>
+{% with messages = get_flashed_messages() %}{% if messages %}<div class="flash">{{ messages[0] }}</div>{% endif %}{% endwith %}
+{% block content %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<form method="post" action="{{ url_for('capture.capture_submit') }}">
+  <select name="project">{% for p in projects %}<option value="{{ p }}">{{ p }}</option>{% endfor %}</select>
+  <select name="type"><option value="note">Note</option><option value="idea">Idea</option><option value="bug">Bug</option></select>
+  <input name="title" type="text">
+  <textarea name="body"></textarea>
+  <button type="submit">Save</button>
+</form>
+{% endblock %}

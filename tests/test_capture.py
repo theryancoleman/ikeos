@@ -1,0 +1,49 @@
+import pytest
+import os
+from unittest.mock import patch
+from app import create_app
+
+
+@pytest.fixture
+def client(tmp_path):
+    os.environ["FLASK_SECRET_KEY"] = "test-secret-key"
+    app = create_app()
+    app.config["TESTING"] = True
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        (tmp_path / "projects" / "bcr-waivers").mkdir(parents=True)
+        with app.test_client() as client:
+            yield client
+
+
+def test_capture_get_returns_200(client):
+    response = client.get("/capture")
+    assert response.status_code == 200
+
+
+def test_capture_get_contains_form(client):
+    response = client.get("/capture")
+    assert b"<form" in response.data
+
+
+def test_capture_post_redirects_to_dashboard(client, tmp_path):
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        response = client.post("/capture", data={
+            "type": "note",
+            "project": "bcr-waivers",
+            "title": "Test note",
+            "body": "Some content",
+        })
+    assert response.status_code == 302
+    assert response.location == "/"
+
+
+def test_capture_post_creates_file(client, tmp_path):
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        client.post("/capture", data={
+            "type": "note",
+            "project": "bcr-waivers",
+            "title": "Test note",
+            "body": "Content",
+        })
+        files = list((tmp_path / "projects" / "bcr-waivers" / "notes").glob("*.md"))
+    assert len(files) == 1
