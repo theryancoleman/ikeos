@@ -6,6 +6,8 @@ services:
     env_file: .env
     ports:
       - "5009:5009"
+    volumes:
+      - C:\Server\obsidian-vault:/vault:rw
     networks:
       - traefik_network
     labels:
