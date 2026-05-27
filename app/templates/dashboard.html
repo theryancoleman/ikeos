@@ -1,2 +1,5 @@
 {% extends "base.html" %}
-{% block content %}<h1>Dashboard</h1>{% endblock %}
+{% block content %}
+<h1>Dashboard</h1>
+{% for e in entries %}<p>{{ e.title }}</p>{% endfor %}
+{% endblock %}
