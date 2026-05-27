@@ -1,0 +1,132 @@
+:root {
+  --bg: #1a1a2e;
+  --surface: #16213e;
+  --border: #0f3460;
+  --text: #e0e0e0;
+  --text-muted: #888;
+  --accent: #7c5cbf;
+  --badge-note: #2d6a4f;
+  --badge-idea: #1e4d8c;
+  --badge-bug: #7b2d2d;
+  --badge-new: #5a3e8c;
+  --badge-open: #2d5a8c;
+  --badge-inprogress: #8c6a2d;
+  --badge-done: #2d7a4f;
+  --badge-deferred: #4a4a4a;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+nav {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.nav-brand { font-weight: 700; color: var(--accent); text-decoration: none; font-size: 1.1rem; }
+.nav-link { color: var(--text); text-decoration: none; }
+.nav-link:hover { color: var(--accent); }
+
+main { max-width: 900px; margin: 2rem auto; padding: 0 1.5rem; }
+
+h1 { font-size: 1.5rem; margin-bottom: 1rem; }
+h2 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.85rem; }
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.flash {
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  padding: 0.6rem 1rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Badges */
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.type-note { background: var(--badge-note); }
+.type-idea { background: var(--badge-idea); }
+.type-bug { background: var(--badge-bug); }
+.status-new { background: var(--badge-new); }
+.status-open { background: var(--badge-open); }
+.status-inprogress { background: var(--badge-inprogress); }
+.status-done { background: var(--badge-done); }
+.status-deferred { background: var(--badge-deferred); }
+.severity-low { background: #2d5a4a; }
+.severity-medium { background: #8c6a2d; }
+.severity-high { background: #8c4a2d; }
+.severity-critical { background: #8c2d2d; }
+.priority-low { background: #2d5a4a; }
+.priority-medium { background: #2d5a8c; }
+.priority-high { background: #5a2d8c; }
+
+/* Forms */
+.field { margin-bottom: 1rem; }
+.field label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem; }
+input, select, textarea {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+textarea { resize: vertical; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
+
+button[type="submit"] {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 0.6rem 1.4rem;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  margin-top: 0.5rem;
+}
+button[type="submit"]:hover { opacity: 0.9; }
+
+.hidden { display: none; }
+
+/* Entry list (dashboard) */
+.entry-list { width: 100%; border-collapse: collapse; }
+.entry-list th { text-align: left; font-size: 0.8rem; color: var(--text-muted); padding: 0.4rem 0.75rem; border-bottom: 1px solid var(--border); }
+.entry-list td { padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+
+/* Project view */
+.project-header { display: flex; align-items: baseline; gap: 1rem; margin-bottom: 0.5rem; }
+.project-header a { font-size: 0.85rem; color: var(--text-muted); }
+
+.entry-group { list-style: none; }
+.entry-row { display: flex; align-items: center; gap: 0.6rem; padding: 0.4rem 0; border-bottom: 1px solid var(--border); }
+.entry-date { color: var(--text-muted); font-size: 0.8rem; margin-left: auto; }
+
+/* Entry detail */
+.entry-detail { max-width: 700px; }
+.entry-meta { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; font-size: 0.85rem; color: var(--text-muted); }
+.entry-meta a { color: var(--text-muted); }
+.entry-body { margin-top: 1.5rem; line-height: 1.8; }
+
+.empty { color: var(--text-muted); font-style: italic; }
