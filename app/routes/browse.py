@@ -1,5 +1,5 @@
-from flask import Blueprint, render_template, request, abort
-from app.services.vault import get_projects, read_entries, read_entry
+from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
+from app.services.vault import get_projects, read_entries, read_entry, update_entry_status
 
 bp = Blueprint("browse", __name__)
 
@@ -8,8 +8,30 @@ ACTIVE_STATUSES = ["new", "open", "in-progress"]
 
 @bp.route("/")
 def dashboard():
-    entries = read_entries()[:50]
-    return render_template("dashboard.html", entries=entries)
+    projects = get_projects()
+    all_entries = read_entries()
+
+    project_stats = {}
+    for p in projects:
+        p_entries = [e for e in all_entries if e.get("project") == p]
+        active = [e for e in p_entries if e.get("status") in ACTIVE_STATUSES]
+        project_stats[p] = {
+            "bugs": len([e for e in active if e.get("type") == "bug"]),
+            "ideas": len([e for e in active if e.get("type") == "idea"]),
+            "notes": len([e for e in active if e.get("type") == "note"]),
+            "new": len([e for e in p_entries if e.get("status") == "new"]),
+        }
+
+    in_flight = [e for e in all_entries if e.get("status") == "in-progress"]
+    needs_triage = [e for e in all_entries if e.get("status") == "new"]
+
+    return render_template(
+        "dashboard.html",
+        projects=projects,
+        project_stats=project_stats,
+        in_flight=in_flight,
+        needs_triage=needs_triage,
+    )
 
 
 @bp.route("/projects/<name>")
@@ -39,3 +61,12 @@ def entry(name, slug):
     if e is None:
         abort(404)
     return render_template("entry.html", entry=e, project=name)
+
+
+@bp.route("/projects/<name>/<slug>/status", methods=["POST"])
+def update_status(name, slug):
+    new_status = request.form.get("status", "")
+    update_entry_status(name, slug, new_status)
+    flash("Status updated.")
+    next_url = request.form.get("next") or url_for("browse.project", name=name)
+    return redirect(next_url)

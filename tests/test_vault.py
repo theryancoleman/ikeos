@@ -2,6 +2,7 @@ import pytest
 from pathlib import Path
 from unittest.mock import patch
 import frontmatter as fm
+from app.services.vault import write_entry, read_entry
 
 
 @pytest.fixture
@@ -119,3 +120,25 @@ def test_read_entry_returns_none_for_missing(vault):
     with patch("app.services.vault.VAULT_PATH", vault):
         from app.services.vault import read_entry
         assert read_entry("bcr-waivers", "nonexistent") is None
+
+
+def test_update_entry_status_changes_status_and_tag(vault):
+    with patch("app.services.vault.VAULT_PATH", vault):
+        from app.services.vault import update_entry_status
+        slug = write_entry({
+            "type": "idea", "project": "bcr-waivers", "title": "My idea",
+            "body": "body", "priority": "medium", "effort": "medium",
+        })
+        result = update_entry_status("bcr-waivers", slug, "open")
+        assert result is True
+        entry = read_entry("bcr-waivers", slug)
+        assert entry["status"] == "open"
+        assert "status/open" in entry["tags"]
+        assert "status/new" not in entry["tags"]
+
+
+def test_update_entry_status_returns_false_for_missing_entry(vault):
+    with patch("app.services.vault.VAULT_PATH", vault):
+        from app.services.vault import update_entry_status
+        result = update_entry_status("bcr-waivers", "no-such-slug", "open")
+        assert result is False

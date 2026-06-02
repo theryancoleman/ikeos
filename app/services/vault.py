@@ -10,6 +10,7 @@ VAULT_PATH = Path(os.environ.get("VAULT_PATH", "/vault"))
 VALID_TYPES = {"note", "idea", "bug"}
 VALID_STATUSES = {"new", "open", "in-progress", "done", "deferred"}
 TYPE_FOLDERS = {"note": "notes", "idea": "ideas", "bug": "bugs"}
+TYPE_TAGS = {"note": "documentation", "idea": "enhancement", "bug": "bug"}
 
 
 def get_projects() -> list[str]:
@@ -40,13 +41,23 @@ def write_entry(data: dict) -> str:
     target_dir = VAULT_PATH / "projects" / project / folder
     target_dir.mkdir(parents=True, exist_ok=True)
 
+    type_tag = TYPE_TAGS[entry_type]
+    tags = [type_tag, project, "status/new"]
+    if entry_type == "idea":
+        tags.append(f"urgency/{data.get('priority', 'medium')}")
+    elif entry_type == "bug":
+        urgency = "critical" if data.get("severity") == "critical" else data.get("severity", "medium")
+        tags.append(f"urgency/{urgency}")
+    for domain in data.get("domains", []):
+        tags.append(f"domain/{domain}")
+
     metadata = {
         "type": entry_type,
         "title": title,
         "project": project,
         "status": "new",
         "created": datetime.now().isoformat(timespec="seconds"),
-        "tags": [entry_type, project],
+        "tags": tags,
     }
 
     if entry_type == "idea":
@@ -110,3 +121,21 @@ def read_entry(project: str, slug: str) -> dict | None:
             entry["slug"] = slug
             return entry
     return None
+
+
+def update_entry_status(project: str, slug: str, new_status: str) -> bool:
+    if new_status not in VALID_STATUSES:
+        return False
+    proj_dir = VAULT_PATH / "projects" / project
+    for folder in ("bugs", "ideas", "notes"):
+        filepath = proj_dir / folder / f"{slug}.md"
+        if filepath.exists():
+            post = frontmatter.load(filepath)
+            post.metadata["status"] = new_status
+            tags = [t for t in post.metadata.get("tags", []) if not t.startswith("status/")]
+            tags.append(f"status/{new_status}")
+            post.metadata["tags"] = tags
+            with open(filepath, "w", encoding="utf-8") as f:
+                f.write(frontmatter.dumps(post))
+            return True
+    return False

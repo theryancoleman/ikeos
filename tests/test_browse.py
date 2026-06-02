@@ -2,6 +2,7 @@ import pytest
 import os
 from unittest.mock import patch
 from app import create_app
+from app.services.vault import write_entry, read_entry
 
 
 @pytest.fixture
@@ -59,3 +60,31 @@ def test_entry_view_shows_content(client):
 def test_entry_view_404_for_missing(client):
     response = client.get("/projects/bcr-waivers/nonexistent")
     assert response.status_code == 404
+
+
+def test_post_update_status_redirects(client, vault):
+    with patch("app.services.vault.VAULT_PATH", vault):
+        slug = write_entry({
+            "type": "idea", "project": "bcr-waivers", "title": "Update me",
+            "body": "", "priority": "medium", "effort": "medium",
+        })
+        response = client.post(
+            f"/projects/bcr-waivers/{slug}/status",
+            data={"status": "open"},
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+
+
+def test_post_update_status_persists_to_vault(client, vault):
+    with patch("app.services.vault.VAULT_PATH", vault):
+        slug = write_entry({
+            "type": "idea", "project": "bcr-waivers", "title": "Update me",
+            "body": "", "priority": "medium", "effort": "medium",
+        })
+        client.post(
+            f"/projects/bcr-waivers/{slug}/status",
+            data={"status": "done"},
+        )
+        entry = read_entry("bcr-waivers", slug)
+        assert entry["status"] == "done"
