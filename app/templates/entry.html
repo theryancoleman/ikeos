@@ -26,8 +26,10 @@
     <p><strong>Priority:</strong> {{ entry.priority }} &nbsp; <strong>Effort:</strong> {{ entry.effort }}</p>
   {% endif %}
 
-  <div class="entry-body">
-    {{ entry.body | replace('\n', '<br>') | safe }}
-  </div>
+  <div class="entry-body" id="entry-body"></div>
+  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
+  <script>
+    document.getElementById("entry-body").innerHTML = marked.parse({{ entry.body | tojson }});
+  </script>
 </div>
 {% endblock %}

@@ -2,6 +2,7 @@
 {% block title %}New entry{% endblock %}
 
 {% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.css">
 <h1>New entry</h1>
 
 <form method="post" action="{{ url_for('capture.capture_submit') }}">
@@ -117,5 +118,21 @@ function updateProject(value) {
     input.required = false;
   }
 }
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.js"></script>
+<script>
+  const easyMDE = new EasyMDE({
+    element: document.getElementById("body"),
+    spellChecker: false,
+    autosave: { enabled: false },
+    toolbar: [
+      "bold", "italic", "heading", "|",
+      "quote", "unordered-list", "ordered-list", "|",
+      "link", "code", "|",
+      "preview", "side-by-side", "fullscreen"
+    ],
+    minHeight: "120px",
+  });
 </script>
 {% endblock %}
