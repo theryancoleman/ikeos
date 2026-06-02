@@ -110,6 +110,78 @@ button[type="submit"]:hover { opacity: 0.9; }
 
 .hidden { display: none; }
 
+/* Domain tag checkboxes */
+.field-optional { color: var(--text-muted); font-size: 0.8rem; font-weight: 400; }
+.domain-checkboxes { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.35rem; }
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  cursor: pointer;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.3rem 0.65rem;
+  user-select: none;
+}
+.checkbox-label:hover { border-color: var(--accent); }
+.checkbox-label input[type="checkbox"] { width: auto; accent-color: var(--accent); }
+
+/* Project grid (dashboard) */
+.project-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.project-card {
+  display: block;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.9rem 1rem;
+  text-decoration: none;
+  color: var(--text);
+  transition: border-color 0.15s;
+}
+.project-card:hover { border-color: var(--accent); text-decoration: none; }
+
+.project-card-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.triage-dot {
+  background: var(--badge-new);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 0.1rem 0.45rem;
+  margin-left: auto;
+}
+
+.project-counts { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+
+.count-chip {
+  font-size: 0.72rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 3px;
+  font-weight: 600;
+}
+.chip-bug { background: var(--badge-bug); }
+.chip-idea { background: var(--badge-idea); }
+.chip-note { background: var(--badge-note); }
+.chip-empty { background: transparent; color: var(--text-muted); font-weight: 400; }
+
+.entry-project { color: var(--text-muted); font-size: 0.82rem; }
+
 /* Entry list (dashboard) */
 .entry-list { width: 100%; border-collapse: collapse; }
 .entry-list th { text-align: left; font-size: 0.8rem; color: var(--text-muted); padding: 0.4rem 0.75rem; border-bottom: 1px solid var(--border); }
@@ -130,3 +202,24 @@ button[type="submit"]:hover { opacity: 0.9; }
 .entry-body { margin-top: 1.5rem; line-height: 1.8; }
 
 .empty { color: var(--text-muted); font-style: italic; }
+
+/* Inline status update form */
+.status-form {
+  display: inline-flex;
+  align-items: center;
+}
+
+.status-select {
+  background: var(--surface, #16213e);
+  color: var(--fg, #e0e0e0);
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.status-select:focus {
+  outline: none;
+  border-color: var(--accent, #7c5cbf);
+}

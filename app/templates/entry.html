@@ -6,7 +6,15 @@
   <div class="entry-meta">
     <a href="{{ url_for('browse.project', name=project) }}">← {{ project }}</a>
     <span class="badge type-{{ entry.type }}">{{ entry.type }}</span>
-    <span class="badge status-{{ entry.status | replace('-', '') }}">{{ entry.status }}</span>
+    <form method="post"
+          action="{{ url_for('browse.update_status', name=project, slug=entry.slug) }}"
+          class="status-form">
+      <select name="status" class="status-select" onchange="this.form.submit()">
+        {% for s in ['new', 'open', 'in-progress', 'done', 'deferred'] %}
+          <option value="{{ s }}" {% if entry.status == s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </form>
     <span class="entry-date">{{ entry.created[:10] if entry.created else '' }}</span>
   </div>
 

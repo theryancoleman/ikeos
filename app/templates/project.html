@@ -17,7 +17,18 @@
     <ul class="entry-group">
       {% for e in section_entries %}
       <li class="entry-row">
-        <span class="badge status-{{ e.status | replace('-', '') }}">{{ e.status }}</span>
+        <form method="post"
+              action="{{ url_for('browse.update_status', name=name, slug=e.slug) }}"
+              class="status-form">
+          <input type="hidden" name="next"
+                 value="{{ url_for('browse.project', name=name) }}">
+          <select name="status" class="status-select"
+                  onchange="this.form.submit()">
+            {% for s in ['new', 'open', 'in-progress', 'done', 'deferred'] %}
+              <option value="{{ s }}" {% if e.status == s %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+          </select>
+        </form>
         <a href="{{ url_for('browse.entry', name=name, slug=e.slug) }}">{{ e.title }}</a>
         <span class="entry-date">{{ e.created[:10] if e.created else '' }}</span>
         {% if e.type == 'bug' and e.severity %}
