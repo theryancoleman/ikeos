@@ -2,28 +2,75 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<h1>Recent entries</h1>
+<h1>Dashboard</h1>
 
-{% if entries %}
-  <table class="entry-list">
-    <thead>
-      <tr>
-        <th>Type</th><th>Title</th><th>Project</th><th>Status</th><th>Date</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for e in entries %}
-      <tr>
-        <td><span class="badge type-{{ e.type }}">{{ e.type }}</span></td>
-        <td><a href="{{ url_for('browse.entry', name=e.project, slug=e.slug) }}">{{ e.title }}</a></td>
-        <td><a href="{{ url_for('browse.project', name=e.project) }}">{{ e.project }}</a></td>
-        <td><span class="badge status-{{ e.status | replace('-', '') }}">{{ e.status }}</span></td>
-        <td>{{ e.created[:10] if e.created else '' }}</td>
-      </tr>
+<section>
+  <h2>Projects</h2>
+  {% if projects %}
+    <div class="project-grid">
+      {% for p in projects %}
+        <a href="{{ url_for('browse.project', name=p) }}" class="project-card">
+          <div class="project-card-name">
+            {{ p }}
+            {% if project_stats[p].new > 0 %}
+              <span class="triage-dot" title="{{ project_stats[p].new }} needs triage">{{ project_stats[p].new }}</span>
+            {% endif %}
+          </div>
+          <div class="project-counts">
+            {% if project_stats[p].bugs > 0 %}
+              <span class="count-chip chip-bug">{{ project_stats[p].bugs }} bug{{ 's' if project_stats[p].bugs != 1 }}</span>
+            {% endif %}
+            {% if project_stats[p].ideas > 0 %}
+              <span class="count-chip chip-idea">{{ project_stats[p].ideas }} idea{{ 's' if project_stats[p].ideas != 1 }}</span>
+            {% endif %}
+            {% if project_stats[p].notes > 0 %}
+              <span class="count-chip chip-note">{{ project_stats[p].notes }} note{{ 's' if project_stats[p].notes != 1 }}</span>
+            {% endif %}
+            {% if project_stats[p].bugs == 0 and project_stats[p].ideas == 0 and project_stats[p].notes == 0 %}
+              <span class="count-chip chip-empty">no open items</span>
+            {% endif %}
+          </div>
+        </a>
       {% endfor %}
-    </tbody>
-  </table>
-{% else %}
-  <p class="empty">No entries yet. <a href="{{ url_for('capture.capture_form') }}">Add one.</a></p>
+    </div>
+  {% else %}
+    <p class="empty">No projects yet.</p>
+  {% endif %}
+</section>
+
+{% if in_flight %}
+<section>
+  <h2>In flight</h2>
+  <ul class="entry-group">
+    {% for e in in_flight %}
+    <li class="entry-row">
+      <span class="badge type-{{ e.type }}">{{ e.type }}</span>
+      <a href="{{ url_for('browse.entry', name=e.project, slug=e.slug) }}">{{ e.title }}</a>
+      <span class="entry-project">{{ e.project }}</span>
+      <span class="entry-date">{{ e.created[:10] if e.created else '' }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+{% if needs_triage %}
+<section>
+  <h2>Needs triage ({{ needs_triage | length }})</h2>
+  <ul class="entry-group">
+    {% for e in needs_triage %}
+    <li class="entry-row">
+      <span class="badge type-{{ e.type }}">{{ e.type }}</span>
+      <a href="{{ url_for('browse.entry', name=e.project, slug=e.slug) }}">{{ e.title }}</a>
+      <span class="entry-project">{{ e.project }}</span>
+      <span class="entry-date">{{ e.created[:10] if e.created else '' }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+{% if not in_flight and not needs_triage %}
+  <p class="empty" style="margin-top:2rem">All clear. <a href="{{ url_for('capture.capture_form') }}">Capture something.</a></p>
 {% endif %}
 {% endblock %}
