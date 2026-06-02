@@ -223,3 +223,29 @@ button[type="submit"]:hover { opacity: 0.9; }
   outline: none;
   border-color: var(--accent);
 }
+
+/* New Item button */
+.btn {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.btn:hover {
+  opacity: 0.85;
+}
+
+.project-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.stay-field {
+  margin-top: 0.5rem;
+}

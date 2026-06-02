@@ -7,7 +7,8 @@ bp = Blueprint("capture", __name__)
 @bp.route("/capture", methods=["GET"])
 def capture_form():
     projects = get_projects()
-    return render_template("capture.html", projects=projects)
+    selected_project = request.args.get("project", "")
+    return render_template("capture.html", projects=projects, selected_project=selected_project)
 
 
 @bp.route("/capture", methods=["POST"])
@@ -21,6 +22,7 @@ def capture_submit():
         "project": project,
         "title": request.form["title"],
         "body": request.form.get("body", ""),
+        "domains": request.form.getlist("domains"),
     }
     if entry_type == "idea":
         data["priority"] = request.form.get("priority", "medium")
@@ -31,4 +33,7 @@ def capture_submit():
 
     write_entry(data)
     flash("Entry saved.")
+
+    if request.form.get("stay") == "1":
+        return redirect(url_for("capture.capture_form", project=project))
     return redirect(url_for("browse.dashboard"))

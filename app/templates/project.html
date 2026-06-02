@@ -4,11 +4,14 @@
 {% block content %}
 <div class="project-header">
   <h1>{{ name }}</h1>
-  {% if show_all %}
-    <a href="{{ url_for('browse.project', name=name) }}">Show active only</a>
-  {% else %}
-    <a href="{{ url_for('browse.project', name=name, show_all='true') }}">Show all</a>
-  {% endif %}
+  <div class="project-header-actions">
+    <a href="{{ url_for('capture.capture_form', project=name) }}" class="btn">+ New item</a>
+    {% if show_all %}
+      <a href="{{ url_for('browse.project', name=name) }}">Show active only</a>
+    {% else %}
+      <a href="{{ url_for('browse.project', name=name, show_all='true') }}">Show all</a>
+    {% endif %}
+  </div>
 </div>
 
 {% for section_label, section_entries in [('Bugs', bugs), ('Ideas', ideas), ('Notes', notes)] %}

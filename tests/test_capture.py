@@ -47,3 +47,45 @@ def test_capture_post_creates_file(client, tmp_path):
         })
         files = list((tmp_path / "projects" / "bcr-waivers" / "notes").glob("*.md"))
     assert len(files) == 1
+
+
+def test_capture_form_preselects_project_from_query_param(client):
+    response = client.get("/capture?project=bcr-waivers")
+    assert response.status_code == 200
+    assert b'value="bcr-waivers" selected' in response.data
+
+
+def test_capture_submit_stay_redirects_back_to_capture(client, tmp_path):
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        response = client.post(
+            "/capture",
+            data={
+                "type": "note",
+                "project": "bcr-waivers",
+                "title": "Quick note",
+                "body": "",
+                "stay": "1",
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+        location = response.headers["Location"]
+        assert "/capture" in location
+        assert "project=bcr-waivers" in location
+
+
+def test_capture_submit_without_stay_redirects_to_dashboard(client, tmp_path):
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        response = client.post(
+            "/capture",
+            data={
+                "type": "note",
+                "project": "bcr-waivers",
+                "title": "Quick note",
+                "body": "",
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+        location = response.headers["Location"]
+        assert "/capture" not in location
