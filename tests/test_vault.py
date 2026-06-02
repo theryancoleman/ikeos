@@ -142,3 +142,16 @@ def test_update_entry_status_returns_false_for_missing_entry(vault):
         from app.services.vault import update_entry_status
         result = update_entry_status("bcr-waivers", "no-such-slug", "open")
         assert result is False
+
+
+def test_update_entry_status_returns_false_for_invalid_status(vault):
+    with patch("app.services.vault.VAULT_PATH", vault):
+        from app.services.vault import write_entry, update_entry_status, read_entry
+        slug = write_entry({
+            "type": "idea", "project": "bcr-waivers", "title": "My idea",
+            "body": "body", "priority": "medium", "effort": "medium",
+        })
+        result = update_entry_status("bcr-waivers", slug, "not-a-real-status")
+        assert result is False
+        entry = read_entry("bcr-waivers", slug)
+        assert entry["status"] == "new"  # unchanged

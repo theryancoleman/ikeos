@@ -66,7 +66,7 @@ def entry(name, slug):
 @bp.route("/projects/<name>/<slug>/status", methods=["POST"])
 def update_status(name, slug):
     new_status = request.form.get("status", "")
-    update_entry_status(name, slug, new_status)
-    flash("Status updated.")
+    success = update_entry_status(name, slug, new_status)
+    flash("Status updated." if success else "Could not update status.")
     next_url = request.form.get("next") or url_for("browse.project", name=name)
     return redirect(next_url)
