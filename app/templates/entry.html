@@ -27,9 +27,10 @@
   {% endif %}
 
   <div class="entry-body" id="entry-body"></div>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
   <script>
-    document.getElementById("entry-body").innerHTML = marked.parse({{ entry.body | tojson }});
+    document.getElementById("entry-body").innerHTML = DOMPurify.sanitize(marked.parse({{ entry.body | tojson }}));
   </script>
 </div>
 {% endblock %}
