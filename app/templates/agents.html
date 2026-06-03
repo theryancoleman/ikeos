@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Agents{% endblock %}
+
+{% block content %}
+<h1>Agent Sessions</h1>
+
+<section>
+  <h2>Active Sessions</h2>
+  {% if sessions %}
+    <ul class="entry-group">
+      {% for s in sessions %}
+      <li class="entry-row">
+        <span class="badge">{{ s.name }}</span>
+        <span class="entry-project">{{ s.project }}</span>
+        <span class="entry-date">{{ s.age_str }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="empty">No active sessions.</p>
+  {% endif %}
+</section>
+
+{% endblock %}
