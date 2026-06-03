@@ -2,23 +2,175 @@
 {% block title %}Agents{% endblock %}
 
 {% block content %}
-<h1>Agent Sessions</h1>
+<link rel="stylesheet" href="{{ url_for('static', filename='agents.css') }}">
+<h1>Agents</h1>
 
 <section>
-  <h2>Active Sessions</h2>
+  <h2>New session</h2>
+  <form class="new-session-form" id="new-session-form">
+    <div class="field">
+      <label for="s-name">Name</label>
+      <input id="s-name" name="name" type="text" placeholder="e.g. wayvr-dev" required>
+    </div>
+    <div class="field">
+      <label for="s-project">Project</label>
+      <select id="s-project" name="project" onchange="updateDir(this.value)">
+        {% for p in projects %}
+          <option value="{{ p.slug }}">{{ p.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="s-dir">Project dir</label>
+      <input id="s-dir" name="project_dir" type="text"
+             value="/mnt/c/Server/projects/{{ projects[0].slug if projects else '' }}"
+             style="width:280px">
+    </div>
+    <div class="field">
+      <label for="s-rc">Remote control</label>
+      <select id="s-rc" name="remote_control">
+        <option value="false">Off</option>
+        <option value="true">On</option>
+      </select>
+    </div>
+    <div class="field" style="justify-content:flex-end">
+      <button type="submit" class="pill pill-primary">Start session</button>
+    </div>
+  </form>
+</section>
+
+<section>
+  <h2>Sessions</h2>
   {% if sessions %}
-    <ul class="entry-group">
-      {% for s in sessions %}
-      <li class="entry-row">
-        <span class="badge">{{ s.name }}</span>
-        <span class="entry-project">{{ s.project }}</span>
-        <span class="entry-date">{{ s.age_str }}</span>
-      </li>
-      {% endfor %}
-    </ul>
+    <table class="sessions-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Project</th>
+          <th>Age</th>
+          <th>Status</th>
+          <th>Remote control</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in sessions %}
+        <tr class="session-row health-{{ s.health or 'fresh' }}" data-id="{{ s.id }}">
+          <td>{{ s.name }}</td>
+          <td>{{ s.project }}</td>
+          <td>{{ s.age_str }}</td>
+          <td>
+            {% if s.status == "active" %}
+              <span class="dot-active">● active</span>
+            {% else %}
+              <span class="dot-stopped">○ stopped</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if s.status == "active" %}
+              {% if s.remote_control %}
+                <span class="rc-on {% if not s.remote_control_confirmed %}rc-unconfirmed{% endif %}"
+                      onclick="correctRc('{{ s.id }}', false)"
+                      title="{% if not s.remote_control_confirmed %}Unconfirmed — click to correct{% endif %}">
+                  ✓ on{% if not s.remote_control_confirmed %} [?]{% endif %}
+                </span>
+              {% else %}
+                <span class="rc-off {% if not s.remote_control_confirmed %}rc-unconfirmed{% endif %}"
+                      onclick="correctRc('{{ s.id }}', true)"
+                      title="{% if not s.remote_control_confirmed %}Unconfirmed — click to correct{% endif %}">
+                  ✗ off{% if not s.remote_control_confirmed %} [?]{% endif %}
+                </span>
+              {% endif %}
+            {% else %}
+              <span class="rc-off">—</span>
+            {% endif %}
+          </td>
+          <td style="display:flex;gap:0.4rem;flex-wrap:wrap;align-items:center;">
+            {% if s.status == "active" %}
+              <button class="pill" onclick="toggleRc('{{ s.id }}')">Toggle RC</button>
+              <button class="pill" onclick="sendCmd('{{ s.id }}', '/clear')">Clear</button>
+              <button class="pill" onclick="sendCmd('{{ s.id }}', '/compact')">Compact</button>
+              <button class="pill" onclick="resetSession('{{ s.id }}')">Reset</button>
+              <button class="pill pill-danger" onclick="stopSession('{{ s.id }}')">Stop</button>
+              <input class="cmd-input" type="text" placeholder="/command"
+                     id="cmd-{{ s.id }}" onkeydown="if(event.key==='Enter')sendCustom('{{ s.id }}')">
+            {% else %}
+              <button class="pill pill-primary" onclick="resetSession('{{ s.id }}')">Start</button>
+              <button class="pill pill-danger" onclick="removeSession('{{ s.id }}')">Remove</button>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   {% else %}
-    <p class="empty">No active sessions.</p>
+    <p class="empty">No sessions yet. Start one above.</p>
   {% endif %}
 </section>
 
+<script>
+async function api(method, path, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const resp = await fetch('/agents' + path, opts);
+  return resp;
+}
+
+function reload() { window.location.reload(); }
+
+document.getElementById('new-session-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = e.target;
+  await api('POST', '/sessions', {
+    name: f.name.value,
+    project: f.project.value,
+    project_dir: f.project_dir.value,
+    remote_control: f.remote_control.value === 'true',
+  });
+  reload();
+});
+
+function updateDir(slug) {
+  document.getElementById('s-dir').value = '/mnt/c/Server/projects/' + slug;
+}
+
+async function stopSession(id) {
+  await api('DELETE', '/sessions/' + id);
+  reload();
+}
+
+async function removeSession(id) {
+  await api('DELETE', '/sessions/' + id + '/remove');
+  reload();
+}
+
+async function resetSession(id) {
+  await api('POST', '/sessions/' + id + '/reset');
+  reload();
+}
+
+async function toggleRc(id) {
+  await api('PATCH', '/sessions/' + id + '/remote_control');
+  reload();
+}
+
+async function correctRc(id, newState) {
+  await api('PATCH', '/sessions/' + id + '/remote_control_state',
+            { remote_control: newState });
+  reload();
+}
+
+async function sendCmd(id, cmd) {
+  await api('POST', '/sessions/' + id + '/command', { command: cmd });
+  reload();
+}
+
+async function sendCustom(id) {
+  const input = document.getElementById('cmd-' + id);
+  const cmd = input.value.trim();
+  if (!cmd) return;
+  await api('POST', '/sessions/' + id + '/command', { command: cmd });
+  reload();
+}
+</script>
 {% endblock %}
