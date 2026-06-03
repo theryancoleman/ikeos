@@ -18,7 +18,7 @@ def _age_str(started_at: str | None) -> str:
         return "—"
     try:
         started = datetime.fromisoformat(started_at)
-        delta = datetime.now() - started
+        delta = datetime.utcnow() - started
         hours, remainder = divmod(int(delta.total_seconds()), 3600)
         minutes = remainder // 60
         if hours:
