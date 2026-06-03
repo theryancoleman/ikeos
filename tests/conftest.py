@@ -1,5 +1,11 @@
+import os
 import pytest
 from app import create_app
+
+
+@pytest.fixture(autouse=True)
+def set_env(monkeypatch):
+    monkeypatch.setenv("FLASK_SECRET_KEY", "test-secret")
 
 
 @pytest.fixture
