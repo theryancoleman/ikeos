@@ -10,7 +10,7 @@
     <label for="project">Project</label>
     <select id="project" name="project" required onchange="updateProject(this.value)">
       {% for p in projects %}
-        <option value="{{ p }}" {% if p == selected_project %}selected{% endif %}>{{ p }}</option>
+        <option value="{{ p.slug }}" {% if p.slug == selected_project %}selected{% endif %}>{{ p.name }}</option>
       {% endfor %}
       <option value="__future__">— Future project —</option>
     </select>
@@ -118,6 +118,14 @@ function updateProject(value) {
     input.required = false;
   }
 }
+
+(function () {
+  const stayBox = document.querySelector('input[name="stay"]');
+  if (localStorage.getItem('captureStay') === '1') stayBox.checked = true;
+  stayBox.addEventListener('change', function () {
+    localStorage.setItem('captureStay', this.checked ? '1' : '0');
+  });
+})();
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.js"></script>

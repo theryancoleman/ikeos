@@ -95,3 +95,8 @@ def test_style_css_contains_codemirror_cursor_rule():
     with open("app/static/style.css") as f:
         css = f.read()
     assert "CodeMirror-cursor" in css
+
+
+def test_capture_form_contains_stay_persistence_js(client):
+    response = client.get("/capture")
+    assert b"captureStay" in response.data
