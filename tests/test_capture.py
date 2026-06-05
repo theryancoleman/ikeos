@@ -89,3 +89,9 @@ def test_capture_submit_without_stay_redirects_to_dashboard(client, tmp_path):
         assert response.status_code == 302
         location = response.headers["Location"]
         assert "/capture" not in location
+
+
+def test_style_css_contains_codemirror_cursor_rule():
+    with open("app/static/style.css") as f:
+        css = f.read()
+    assert "CodeMirror-cursor" in css

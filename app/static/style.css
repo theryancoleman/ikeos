@@ -288,6 +288,10 @@ button[type="submit"]:hover { opacity: 0.9; }
   min-height: 120px;
 }
 
+.EasyMDEContainer .CodeMirror-cursor {
+  border-left-color: var(--text);
+}
+
 /* Markdown-rendered body in entry view */
 .entry-body h1, .entry-body h2, .entry-body h3 {
   margin: 0.75rem 0 0.25rem;
