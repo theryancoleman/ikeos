@@ -26,13 +26,6 @@
              value="/mnt/c/Server/projects/{{ projects[0].slug if projects else '' }}"
              style="width:280px">
     </div>
-    <div class="field">
-      <label for="s-rc">Remote control</label>
-      <select id="s-rc" name="remote_control">
-        <option value="false">Off</option>
-        <option value="true">On</option>
-      </select>
-    </div>
     <div class="field" style="justify-content:flex-end">
       <button type="submit" class="pill pill-primary">Start session</button>
     </div>
@@ -50,6 +43,7 @@
           <th>Age</th>
           <th>Status</th>
           <th>Remote control</th>
+          <th>Autonomous</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -85,9 +79,21 @@
               <span class="rc-off">—</span>
             {% endif %}
           </td>
+          <td>
+            {% if s.status == "active" %}
+              {% if s.autonomous_mode %}
+                <span class="rc-on" onclick="toggleAuto('{{ s.id }}')">✓ on</span>
+              {% else %}
+                <span class="rc-off" onclick="toggleAuto('{{ s.id }}')">✗ off</span>
+              {% endif %}
+            {% else %}
+              <span class="rc-off">—</span>
+            {% endif %}
+          </td>
           <td style="display:flex;gap:0.4rem;flex-wrap:wrap;align-items:center;">
             {% if s.status == "active" %}
               <button class="pill" onclick="toggleRc('{{ s.id }}')">Toggle RC</button>
+              <button class="pill" onclick="toggleAuto('{{ s.id }}')">Toggle Auto</button>
               <button class="pill" onclick="sendCmd('{{ s.id }}', '/clear')">Clear</button>
               <button class="pill" onclick="sendCmd('{{ s.id }}', '/compact')">Compact</button>
               <button class="pill" onclick="resetSession('{{ s.id }}')">Reset</button>
@@ -125,7 +131,7 @@ document.getElementById('new-session-form').addEventListener('submit', async e =
     name: f.name.value,
     project: f.project.value,
     project_dir: f.project_dir.value,
-    remote_control: f.remote_control.value === 'true',
+    remote_control: false,
   });
   reload();
 });
@@ -151,6 +157,11 @@ async function resetSession(id) {
 
 async function toggleRc(id) {
   await api('PATCH', '/sessions/' + id + '/remote_control');
+  reload();
+}
+
+async function toggleAuto(id) {
+  await api('PATCH', '/sessions/' + id + '/autonomous_mode');
   reload();
 }
 
