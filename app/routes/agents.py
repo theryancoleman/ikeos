@@ -78,6 +78,12 @@ def toggle_remote_control(session_id):
     return jsonify(data), status
 
 
+@bp.route("/agents/sessions/<session_id>/autonomous_mode", methods=["PATCH"])
+def toggle_autonomous_mode(session_id):
+    data, status = _proxy("PATCH", f"/sessions/{session_id}/autonomous_mode")
+    return jsonify(data), status
+
+
 @bp.route("/agents/sessions/<session_id>/remote_control_state", methods=["PATCH"])
 def correct_remote_control_state(session_id):
     data, status = _proxy("PATCH", f"/sessions/{session_id}/remote_control_state",
