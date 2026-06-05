@@ -121,6 +121,7 @@ function updateProject(value) {
 
 (function () {
   const stayBox = document.querySelector('input[name="stay"]');
+  if (!stayBox) return;
   if (localStorage.getItem('captureStay') === '1') stayBox.checked = true;
   stayBox.addEventListener('change', function () {
     localStorage.setItem('captureStay', this.checked ? '1' : '0');
