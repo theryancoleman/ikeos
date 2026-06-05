@@ -124,7 +124,11 @@ function updateProject(value) {
   if (!stayBox) return;
   if (localStorage.getItem('captureStay') === '1') stayBox.checked = true;
   stayBox.addEventListener('change', function () {
-    localStorage.setItem('captureStay', this.checked ? '1' : '0');
+    if (this.checked) {
+      localStorage.setItem('captureStay', '1');
+    } else {
+      localStorage.removeItem('captureStay');
+    }
   });
 })();
 </script>

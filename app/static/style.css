@@ -289,7 +289,7 @@ button[type="submit"]:hover { opacity: 0.9; }
 }
 
 .EasyMDEContainer .CodeMirror-cursor {
-  border-left-color: var(--text);
+  border-left-color: var(--text) !important;
 }
 
 /* Markdown-rendered body in entry view */

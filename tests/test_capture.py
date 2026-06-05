@@ -25,27 +25,25 @@ def test_capture_get_contains_form(client):
     assert b"<form" in response.data
 
 
-def test_capture_post_redirects_to_dashboard(client, tmp_path):
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
-        response = client.post("/capture", data={
-            "type": "note",
-            "project": "bcr-waivers",
-            "title": "Test note",
-            "body": "Some content",
-        })
+def test_capture_post_redirects_to_dashboard(client):
+    response = client.post("/capture", data={
+        "type": "note",
+        "project": "bcr-waivers",
+        "title": "Test note",
+        "body": "Some content",
+    })
     assert response.status_code == 302
     assert response.location == "/"
 
 
 def test_capture_post_creates_file(client, tmp_path):
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
-        client.post("/capture", data={
-            "type": "note",
-            "project": "bcr-waivers",
-            "title": "Test note",
-            "body": "Content",
-        })
-        files = list((tmp_path / "projects" / "bcr-waivers" / "notes").glob("*.md"))
+    client.post("/capture", data={
+        "type": "note",
+        "project": "bcr-waivers",
+        "title": "Test note",
+        "body": "Content",
+    })
+    files = list((tmp_path / "projects" / "bcr-waivers" / "notes").glob("*.md"))
     assert len(files) == 1
 
 
@@ -91,10 +89,10 @@ def test_capture_submit_without_stay_redirects_to_dashboard(client, tmp_path):
         assert "/capture" not in location
 
 
-def test_style_css_contains_codemirror_cursor_rule():
-    with open("app/static/style.css") as f:
-        css = f.read()
-    assert "CodeMirror-cursor" in css
+def test_style_css_contains_codemirror_cursor_rule(client):
+    response = client.get("/static/style.css")
+    assert response.status_code == 200
+    assert b"CodeMirror-cursor" in response.data
 
 
 def test_capture_form_contains_stay_persistence_js(client):
