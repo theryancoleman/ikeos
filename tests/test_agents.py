@@ -9,6 +9,7 @@ MOCK_SESSION = {
     "project_dir": "/mnt/c/Server/projects/bcr-waivers",
     "remote_control": False,
     "remote_control_confirmed": False,
+    "autonomous_mode": False,
     "status": "active",
     "tmux_session": "test-session",
     "started_at": "2026-06-03T10:00:00",
@@ -77,3 +78,11 @@ def test_send_command_proxy(client, mocker):
     resp = client.post("/agents/sessions/abc123/command",
                        json={"command": "/clear"})
     assert resp.status_code == 200
+
+
+def test_toggle_autonomous_mode_proxy(client, mocker):
+    mocker.patch("app.routes.agents.requests.request",
+                 return_value=_mock_response({**MOCK_SESSION, "autonomous_mode": True}))
+    resp = client.patch("/agents/sessions/abc123/autonomous_mode")
+    assert resp.status_code == 200
+    assert resp.get_json()["autonomous_mode"] is True
