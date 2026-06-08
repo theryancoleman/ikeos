@@ -56,6 +56,9 @@
           <td>
             {% if s.status == "active" %}
               <span class="dot-active">● active</span>
+              {% if s.activity %}
+                <span class="activity activity-{{ s.activity }}">{{ s.activity }}</span>
+              {% endif %}
             {% else %}
               <span class="dot-stopped">○ stopped</span>
             {% endif %}

@@ -28,6 +28,12 @@
 .dot-active  { color: var(--color-success, #4caf50); }
 .dot-stopped { color: var(--color-muted, #888); }
 
+/* Activity indicator */
+.activity { font-size: 0.7rem; display: block; margin-top: 0.1rem; }
+.activity-thinking { color: #a78bfa; }
+.activity-working  { color: #38bdf8; }
+.activity-idle     { color: var(--color-muted, #888); }
+
 /* New session form */
 .new-session-form {
   display: flex;
