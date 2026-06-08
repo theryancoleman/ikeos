@@ -109,7 +109,28 @@ def _priority(entry):
 # ---------------------------------------------------------------------------
 
 def projects_cmd(entries, plain):
-    print("projects_cmd: not yet implemented")
+    from collections import defaultdict
+
+    STATUSES = ["new", "open", "in-progress", "done", "deferred"]
+    counts = defaultdict(lambda: defaultdict(int))
+
+    for entry in entries:
+        proj = entry.get("_project", "unknown")
+        status = entry.get("status", "unknown")
+        counts[proj][status] += 1
+
+    if not counts:
+        render_table([], [], plain=plain)
+        return
+
+    headers = ["Project", "New", "Open", "In-Progress", "Done", "Deferred", "Total"]
+    rows = []
+    for proj in sorted(counts):
+        c = counts[proj]
+        row = [proj] + [c.get(s, 0) for s in STATUSES] + [sum(c.values())]
+        rows.append(row)
+
+    render_table(headers, rows, plain=plain, title="Projects")
 
 
 def status_cmd(entries, project_filter, plain):

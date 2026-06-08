@@ -49,3 +49,27 @@ def test_load_vault_missing_path_exits(tmp_path):
     from vault_cli import load_vault
     with pytest.raises(SystemExit):
         load_vault(str(tmp_path / "does-not-exist"))
+
+
+def test_projects_cmd_counts_by_status(fake_vault, capsys):
+    from vault_cli import load_vault, projects_cmd
+    _vault, entries, _warnings = load_vault(str(fake_vault))
+    projects_cmd(entries, plain=True)
+    out = capsys.readouterr().out
+    lines = out.strip().splitlines()
+    # Header + 2 projects
+    assert len(lines) == 3
+    # worldwardle: 1 open, 1 in-progress
+    ww = next(l for l in lines if l.startswith("worldwardle"))
+    cols = ww.split("\t")
+    assert cols[0] == "worldwardle"
+    assert cols[2] == "1"   # open
+    assert cols[3] == "1"   # in-progress
+
+
+def test_projects_cmd_empty_vault(tmp_path, capsys):
+    from vault_cli import load_vault, projects_cmd
+    _vault, entries, _warnings = load_vault(str(tmp_path))
+    projects_cmd(entries, plain=True)
+    out = capsys.readouterr().out
+    assert "Nothing found." in out
