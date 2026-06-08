@@ -1,0 +1,51 @@
+import pytest
+import frontmatter as fm
+from pathlib import Path
+
+
+@pytest.fixture
+def fake_vault(tmp_path):
+    entries = [
+        ("worldwardle", "bugs",  "Score bug",    "open",        "2026-01-01T00:00:00", "bug",  {"severity": "high"}),
+        ("worldwardle", "ideas", "New feature",  "in-progress", "2026-05-01T00:00:00", "idea", {"priority": "medium"}),
+        ("spotify-beatport", "ideas", "BPM filter", "done",     "2026-06-01T00:00:00", "idea", {"priority": "low"}),
+        ("spotify-beatport", "notes", "Setup note", "open",     "2026-03-01T00:00:00", "note", {}),
+    ]
+    for project, folder, title, status, created, entry_type, extra in entries:
+        d = tmp_path / "projects" / project / folder
+        d.mkdir(parents=True, exist_ok=True)
+        metadata = {
+            "title": title,
+            "status": status,
+            "created": created,
+            "project": project,
+            "type": entry_type,
+            "tags": [entry_type, project, f"status/{status}"],
+            **extra,
+        }
+        post = fm.Post(f"## Description\nBody\n", **metadata)
+        slug = f"2026-01-01-{title.lower().replace(' ', '-')}"
+        (d / f"{slug}.md").write_text(fm.dumps(post))
+    return tmp_path
+
+
+def test_load_vault_returns_all_project_entries(fake_vault):
+    from vault_cli import load_vault
+    _vault, entries, warnings = load_vault(str(fake_vault))
+    assert len(entries) == 4
+    assert warnings == []
+
+
+def test_load_vault_entries_have_required_keys(fake_vault):
+    from vault_cli import load_vault
+    _vault, entries, _warnings = load_vault(str(fake_vault))
+    for entry in entries:
+        assert "_note" in entry
+        assert "_project" in entry
+        assert "_folder" in entry
+
+
+def test_load_vault_missing_path_exits(tmp_path):
+    from vault_cli import load_vault
+    with pytest.raises(SystemExit):
+        load_vault(str(tmp_path / "does-not-exist"))
