@@ -162,3 +162,39 @@ def test_find_cmd_no_results(fake_vault, capsys):
     find_cmd(entries, {"status": "new", "project": None, "type": None, "tag": None}, plain=True)
     out = capsys.readouterr().out
     assert "Nothing found." in out
+
+
+def test_audit_cmd_detects_schema_violation(tmp_path, capsys):
+    # Entry missing required 'title' field
+    d = tmp_path / "projects" / "test-proj" / "notes"
+    d.mkdir(parents=True)
+    (d / "2026-01-01-no-title.md").write_text(
+        "---\nstatus: open\nproject: test-proj\ntype: note\ncreated: '2026-01-01T00:00:00'\ntags:\n- note\n---\n## Description\nMissing title\n"
+    )
+    from vault_cli import load_vault, audit_cmd
+    vault, entries, _warnings = load_vault(str(tmp_path))
+    audit_cmd(vault, entries, project_filter=None, plain=True)
+    out = capsys.readouterr().out
+    assert "2026-01-01-no-title" in out
+
+
+def test_audit_cmd_detects_stale_open_items(tmp_path, capsys):
+    d = tmp_path / "projects" / "test-proj" / "ideas"
+    d.mkdir(parents=True)
+    (d / "2026-01-01-old-idea.md").write_text(
+        "---\ntitle: Old idea\nstatus: open\nproject: test-proj\ntype: idea\ncreated: '2020-01-01T00:00:00'\ntags:\n- enhancement\n- test-proj\n- status/open\n---\n## Description\nVery old\n"
+    )
+    from vault_cli import load_vault, audit_cmd
+    vault, entries, _warnings = load_vault(str(tmp_path))
+    audit_cmd(vault, entries, project_filter=None, plain=True)
+    out = capsys.readouterr().out
+    assert "Old idea" in out
+
+
+def test_audit_cmd_project_filter(fake_vault, capsys):
+    from vault_cli import load_vault, audit_cmd
+    vault, entries, _warnings = load_vault(str(fake_vault))
+    audit_cmd(vault, entries, project_filter="worldwardle", plain=True)
+    out = capsys.readouterr().out
+    # spotify-beatport entries should not appear in output
+    assert "spotify-beatport" not in out

@@ -174,7 +174,86 @@ def find_cmd(entries, filters, plain):
 
 
 def audit_cmd(vault, entries, project_filter, plain):
-    print("audit_cmd: not yet implemented")
+    REQUIRED_FIELDS = {"type", "status", "project", "title"}
+    ACTIVE = {"open", "in-progress"}
+    STALE_DAYS = 30
+
+    scoped = entries if project_filter is None else [
+        e for e in entries if e.get("_project") == project_filter
+    ]
+    project_notes = {e["_note"] for e in entries}
+
+    # --- Orphaned project entries (no links in or out) ---
+    orphaned = [
+        n for n in (vault.isolated_notes or [])
+        if n in project_notes
+        and (project_filter is None or any(e["_note"] == n and e["_project"] == project_filter for e in entries))
+    ]
+
+    # --- Broken wikilink targets ---
+    broken_targets = list(vault.nonexistent_notes or [])
+
+    # --- Schema violations ---
+    violations = [
+        e for e in scoped
+        if not REQUIRED_FIELDS.issubset(k for k in e if not k.startswith("_"))
+    ]
+
+    # --- Stale open items ---
+    stale = []
+    for e in scoped:
+        if e.get("status") not in ACTIVE:
+            continue
+        try:
+            created = datetime.fromisoformat(str(e.get("created", "")))
+            if created.tzinfo is None:
+                created = created.replace(tzinfo=timezone.utc)
+            if (datetime.now(timezone.utc) - created).days > STALE_DAYS:
+                stale.append(e)
+        except Exception:
+            pass
+
+    printed_something = False
+
+    if orphaned:
+        printed_something = True
+        render_table(
+            ["Note", "Project"],
+            [[n, next((e["_project"] for e in entries if e["_note"] == n), "?")]
+             for n in sorted(orphaned)],
+            plain=plain, title="Orphaned Notes"
+        )
+
+    if broken_targets:
+        printed_something = True
+        render_table(
+            ["Broken Wikilink Target"],
+            [[t] for t in sorted(broken_targets)],
+            plain=plain, title="Broken Wikilinks"
+        )
+
+    if violations:
+        printed_something = True
+        render_table(
+            ["Note", "Project", "Missing Fields"],
+            [[e["_note"], e.get("_project", "?"),
+              ", ".join(REQUIRED_FIELDS - set(k for k in e if not k.startswith("_")))]
+             for e in violations],
+            plain=plain, title="Schema Violations"
+        )
+
+    if stale:
+        printed_something = True
+        render_table(
+            ["Project", "Type", "Title", "Age"],
+            [[e.get("_project", "?"), e.get("type", "?"),
+              e.get("title", "?"), _age(e.get("created"))]
+             for e in stale],
+            plain=plain, title="Stale Open Items (>30d)"
+        )
+
+    if not printed_something:
+        print("Vault looks clean.")
 
 
 # ---------------------------------------------------------------------------
