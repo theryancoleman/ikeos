@@ -113,3 +113,52 @@ def test_status_cmd_no_results(fake_vault, capsys):
     status_cmd(entries, project_filter="nonexistent-project", plain=True)
     out = capsys.readouterr().out
     assert "Nothing found." in out
+
+
+def test_find_cmd_filter_by_status(fake_vault, capsys):
+    from vault_cli import load_vault, find_cmd
+    _vault, entries, _warnings = load_vault(str(fake_vault))
+    find_cmd(entries, {"status": "done", "project": None, "type": None, "tag": None}, plain=True)
+    out = capsys.readouterr().out
+    lines = [l for l in out.strip().splitlines() if not l.startswith("Project")]
+    assert len(lines) == 1
+    assert "BPM filter" in lines[0]
+
+
+def test_find_cmd_filter_by_type(fake_vault, capsys):
+    from vault_cli import load_vault, find_cmd
+    _vault, entries, _warnings = load_vault(str(fake_vault))
+    find_cmd(entries, {"status": None, "project": None, "type": "bug", "tag": None}, plain=True)
+    out = capsys.readouterr().out
+    lines = [l for l in out.strip().splitlines() if not l.startswith("Project")]
+    assert len(lines) == 1
+    assert "Score bug" in lines[0]
+
+
+def test_find_cmd_filter_by_tag(fake_vault, capsys):
+    from vault_cli import load_vault, find_cmd
+    _vault, entries, _warnings = load_vault(str(fake_vault))
+    find_cmd(entries, {"status": None, "project": None, "type": None, "tag": "status/done"}, plain=True)
+    out = capsys.readouterr().out
+    lines = [l for l in out.strip().splitlines() if not l.startswith("Project")]
+    assert len(lines) == 1
+    assert "BPM filter" in lines[0]
+
+
+def test_find_cmd_filters_are_anded(fake_vault, capsys):
+    from vault_cli import load_vault, find_cmd
+    _vault, entries, _warnings = load_vault(str(fake_vault))
+    # open AND worldwardle → 1 result (Score bug; New feature is in-progress)
+    find_cmd(entries, {"status": "open", "project": "worldwardle", "type": None, "tag": None}, plain=True)
+    out = capsys.readouterr().out
+    lines = [l for l in out.strip().splitlines() if not l.startswith("Project")]
+    assert len(lines) == 1
+    assert "Score bug" in lines[0]
+
+
+def test_find_cmd_no_results(fake_vault, capsys):
+    from vault_cli import load_vault, find_cmd
+    _vault, entries, _warnings = load_vault(str(fake_vault))
+    find_cmd(entries, {"status": "new", "project": None, "type": None, "tag": None}, plain=True)
+    out = capsys.readouterr().out
+    assert "Nothing found." in out

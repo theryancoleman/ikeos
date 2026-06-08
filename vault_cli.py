@@ -153,7 +153,24 @@ def status_cmd(entries, project_filter, plain):
 
 
 def find_cmd(entries, filters, plain):
-    print("find_cmd: not yet implemented")
+    result = entries
+    if filters.get("project"):
+        result = [e for e in result if e.get("_project") == filters["project"]]
+    if filters.get("status"):
+        result = [e for e in result if e.get("status") == filters["status"]]
+    if filters.get("type"):
+        result = [e for e in result if e.get("type") == filters["type"]]
+    if filters.get("tag"):
+        result = [e for e in result if filters["tag"] in (e.get("tags") or [])]
+
+    result.sort(key=lambda e: str(e.get("created", "")))
+    headers = ["Project", "Type", "Title", "Priority", "Age"]
+    rows = [
+        [e.get("_project", "?"), e.get("type", "?"), e.get("title", "?"),
+         _priority(e), _age(e.get("created"))]
+        for e in result
+    ]
+    render_table(headers, rows, plain=plain, title="Results")
 
 
 def audit_cmd(vault, entries, project_filter, plain):
