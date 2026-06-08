@@ -73,3 +73,43 @@ def test_projects_cmd_empty_vault(tmp_path, capsys):
     projects_cmd(entries, plain=True)
     out = capsys.readouterr().out
     assert "Nothing found." in out
+
+
+def test_status_cmd_shows_open_and_in_progress(fake_vault, capsys):
+    from vault_cli import load_vault, status_cmd
+    _vault, entries, _warnings = load_vault(str(fake_vault))
+    status_cmd(entries, project_filter=None, plain=True)
+    out = capsys.readouterr().out
+    lines = out.strip().splitlines()
+    # Header + 3 entries (1 open bug, 1 in-progress idea, 1 open note) — not the done idea
+    data_lines = [l for l in lines if not l.startswith("Project")]
+    assert len(data_lines) == 3
+
+
+def test_status_cmd_project_filter(fake_vault, capsys):
+    from vault_cli import load_vault, status_cmd
+    _vault, entries, _warnings = load_vault(str(fake_vault))
+    status_cmd(entries, project_filter="worldwardle", plain=True)
+    out = capsys.readouterr().out
+    lines = [l for l in out.strip().splitlines() if not l.startswith("Project")]
+    assert len(lines) == 2
+    assert all("worldwardle" in l for l in lines)
+
+
+def test_status_cmd_sorted_oldest_first(fake_vault, capsys):
+    from vault_cli import load_vault, status_cmd
+    _vault, entries, _warnings = load_vault(str(fake_vault))
+    status_cmd(entries, project_filter=None, plain=True)
+    out = capsys.readouterr().out
+    lines = [l for l in out.strip().splitlines() if not l.startswith("Project")]
+    # Score bug created 2026-01-01 should appear before New feature (2026-05-01)
+    titles = [l.split("\t")[2] for l in lines]
+    assert titles.index("Score bug") < titles.index("New feature")
+
+
+def test_status_cmd_no_results(fake_vault, capsys):
+    from vault_cli import load_vault, status_cmd
+    _vault, entries, _warnings = load_vault(str(fake_vault))
+    status_cmd(entries, project_filter="nonexistent-project", plain=True)
+    out = capsys.readouterr().out
+    assert "Nothing found." in out

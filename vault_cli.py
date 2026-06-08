@@ -134,7 +134,22 @@ def projects_cmd(entries, plain):
 
 
 def status_cmd(entries, project_filter, plain):
-    print("status_cmd: not yet implemented")
+    ACTIVE = {"open", "in-progress"}
+    filtered = [
+        e for e in entries
+        if e.get("status") in ACTIVE
+        and (project_filter is None or e.get("_project") == project_filter)
+    ]
+    # Sort oldest first (smallest created value first)
+    filtered.sort(key=lambda e: str(e.get("created", "")))
+
+    headers = ["Project", "Type", "Title", "Priority", "Age"]
+    rows = [
+        [e.get("_project", "?"), e.get("type", "?"), e.get("title", "?"),
+         _priority(e), _age(e.get("created"))]
+        for e in filtered
+    ]
+    render_table(headers, rows, plain=plain, title="Open Items")
 
 
 def find_cmd(entries, filters, plain):
