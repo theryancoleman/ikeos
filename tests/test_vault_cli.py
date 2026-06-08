@@ -191,10 +191,26 @@ def test_audit_cmd_detects_stale_open_items(tmp_path, capsys):
     assert "Old idea" in out
 
 
-def test_audit_cmd_project_filter(fake_vault, capsys):
+def test_audit_cmd_project_filter(tmp_path, capsys):
+    # Create a stale open entry in proj-a and a valid fresh entry in proj-b
+    import frontmatter as fm
+    for project, title, created in [
+        ("proj-a", "Old bug", "2020-01-01T00:00:00"),
+        ("proj-b", "Recent bug", "2026-06-01T00:00:00"),
+    ]:
+        d = tmp_path / "projects" / project / "bugs"
+        d.mkdir(parents=True, exist_ok=True)
+        metadata = {
+            "title": title, "status": "open", "project": project,
+            "type": "bug", "created": created,
+            "tags": ["bug", project, "status/open"],
+        }
+        post = fm.Post("## Description\nBody\n", **metadata)
+        (d / f"2026-01-01-{title.lower().replace(' ', '-')}.md").write_text(fm.dumps(post))
+
     from vault_cli import load_vault, audit_cmd
-    vault, entries, _warnings = load_vault(str(fake_vault))
-    audit_cmd(vault, entries, project_filter="worldwardle", plain=True)
+    vault, entries, _warnings = load_vault(str(tmp_path))
+    audit_cmd(vault, entries, project_filter="proj-a", plain=True)
     out = capsys.readouterr().out
-    # spotify-beatport entries should not appear in output
-    assert "spotify-beatport" not in out
+    assert "Old bug" in out          # proj-a stale item appears
+    assert "proj-b" not in out       # proj-b filtered out

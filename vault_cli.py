@@ -55,8 +55,8 @@ def load_vault(vault_path=None):
                         entry["_project"] = project
                         entry["_folder"] = folder
                         entries.append(entry)
-                    except Exception:
-                        warnings.append(filepath.name)
+                    except Exception as e:
+                        warnings.append(f"{filepath.name} ({e})")
 
     return vault, entries, warnings
 
@@ -141,7 +141,7 @@ def status_cmd(entries, project_filter, plain):
         and (project_filter is None or e.get("_project") == project_filter)
     ]
     # Sort oldest first (smallest created value first)
-    filtered.sort(key=lambda e: str(e.get("created", "")))
+    filtered.sort(key=lambda e: str(e.get("created") or "9999"))
 
     headers = ["Project", "Type", "Title", "Priority", "Age"]
     rows = [
@@ -163,7 +163,7 @@ def find_cmd(entries, filters, plain):
     if filters.get("tag"):
         result = [e for e in result if filters["tag"] in (e.get("tags") or [])]
 
-    result.sort(key=lambda e: str(e.get("created", "")))
+    result.sort(key=lambda e: str(e.get("created") or "9999"))
     headers = ["Project", "Type", "Title", "Priority", "Age"]
     rows = [
         [e.get("_project", "?"), e.get("type", "?"), e.get("title", "?"),
@@ -190,8 +190,16 @@ def audit_cmd(vault, entries, project_filter, plain):
         and (project_filter is None or any(e["_note"] == n and e["_project"] == project_filter for e in entries))
     ]
 
-    # --- Broken wikilink targets ---
-    broken_targets = list(vault.nonexistent_notes or [])
+    # --- Broken wikilink targets (from scoped project entries only) ---
+    scoped_notes = {e["_note"] for e in scoped}
+    broken_targets = [
+        t for t in (vault.nonexistent_notes or [])
+        if any(
+            t in (vault.get_wikilinks(n) or [])
+            for n in scoped_notes
+            if n in (vault._md_file_index or {})
+        )
+    ]
 
     # --- Schema violations ---
     violations = [
