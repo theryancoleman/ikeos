@@ -96,3 +96,9 @@ def send_command(session_id):
     data, status = _proxy("POST", f"/sessions/{session_id}/command",
                           json=request.get_json())
     return jsonify(data), status
+
+
+@bp.route("/agents/sessions/<session_id>/pane")
+def session_pane(session_id):
+    data, status = _proxy("GET", f"/sessions/{session_id}/pane")
+    return jsonify(data), status
