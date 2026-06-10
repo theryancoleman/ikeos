@@ -23,5 +23,5 @@ Your output must follow this structure:
 - Reuse existing utilities before creating new ones.
 - Consult CLAUDE.md for architecture, boundaries, and known pitfalls.
 - Run the project's lint/test commands after making changes if available.
-- **First verification failure:** run `docker compose logs obsidian-capture` to identify the error, apply one targeted fix, rebuild, and re-run verification. If it passes, continue.
+- **First verification failure:** run `docker compose logs <service>` to identify the error, apply one targeted fix, rebuild, and re-run verification. If it passes, continue.
 - **After one failed fix attempt, STOP.** Do not propose another approach. Output exactly four things: (1) Root cause hypothesis, (2) Fix attempted, (3) Remaining issue, (4) Suggested next action. Then end your response. Do not commit.

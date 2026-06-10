@@ -16,7 +16,7 @@ Your output must follow this structure:
 4. **Next debugging step** — the smallest action to confirm root cause
 
 **Rules:**
-- **Always start with `docker compose logs obsidian-capture` — this is the first action, without exception.** If containers are not running or logs are unavailable, state this explicitly and ask for log output before proceeding. Do NOT read source code, list likely causes, or propose fixes until you have seen actual log output from the container.
+- **Always start with `docker compose logs <service>` — this is the first action, without exception.** If containers are not running or logs are unavailable, state this explicitly and ask for log output before proceeding. Do NOT read source code, list likely causes, or propose fixes until you have seen actual log output from the container.
 - Do NOT propose or implement a fix until root cause is confirmed.
 - Isolate using evidence — read relevant files, trace data flow, check conditions.
 - Check known pitfalls documented in CLAUDE.md.

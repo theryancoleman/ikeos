@@ -29,7 +29,7 @@ Do not provide any merge verdict, even conditional, until all verification steps
 - No hardcoded credentials, API keys, or secrets
 - Input validation at system boundaries
 - Error handling that doesn't swallow exceptions silently
-- File path validation — reject traversal patterns (`../`)
+- SQL parameterized (no string interpolation)
 - Docker containers run as non-root
 - `.env` changes reflected in `.env.example`
 - No unintended file permission changes
