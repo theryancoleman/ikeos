@@ -122,18 +122,18 @@ function activityPill(s) {
 function cardFooter(s) {
   if (s.status === 'active') {
     return `
-      <button class="pill pill-danger" onclick="event.stopPropagation();stopSession('${s.id}')">Stop</button>
+      <button class="pill pill-danger" onclick="event.stopPropagation();stopSession('${esc(s.id)}')">Stop</button>
       <button class="pill ${s.remote_control ? 'pill-on' : ''}"
-              onclick="event.stopPropagation();toggleRc('${s.id}')">RC: ${s.remote_control ? 'on' : 'off'}</button>
+              onclick="event.stopPropagation();toggleRc('${esc(s.id)}')">RC: ${s.remote_control ? 'on' : 'off'}</button>
       <button class="pill ${s.autonomous_mode ? 'pill-on' : ''}"
-              onclick="event.stopPropagation();toggleAuto('${s.id}')">Auto: ${s.autonomous_mode ? 'on' : 'off'}</button>
+              onclick="event.stopPropagation();toggleAuto('${esc(s.id)}')">Auto: ${s.autonomous_mode ? 'on' : 'off'}</button>
     `;
   }
   return `
     <button class="pill pill-primary-filled"
-            onclick="event.stopPropagation();resetSession('${s.id}')">Start</button>
+            onclick="event.stopPropagation();resetSession('${esc(s.id)}')">Start</button>
     <button class="pill pill-danger pill-ghost"
-            onclick="event.stopPropagation();removeSession('${s.id}')">Remove</button>
+            onclick="event.stopPropagation();removeSession('${esc(s.id)}')">Remove</button>
   `;
 }
 
@@ -145,7 +145,7 @@ function renderCard(s) {
     : `<span class="status-badge status-stopped">○ stopped</span>`;
   return `
     <div class="session-card health-${health}${selected}"
-         data-id="${s.id}" onclick="openPanel('${s.id}')">
+         data-id="${esc(s.id)}" onclick="openPanel('${esc(s.id)}')">
       <div class="card-body">
         <div class="card-name">${esc(s.name)}</div>
         <div class="card-project">${esc(s.project)}</div>
@@ -186,7 +186,7 @@ async function pollSessions() {
       const sel = data.find(s => s.id === selectedId);
       if (sel) renderPanelActions(sel);
     }
-  } catch (_) {}
+  } catch (e) { console.error('pollSessions failed:', e); }
 }
 
 // ── Pane polling ────────────────────────────────────────────────────────────
@@ -209,7 +209,7 @@ async function pollPane() {
       out.textContent = data.lines.join('\n');
       if (atBottom) out.scrollTop = out.scrollHeight;
     }
-  } catch (_) {}
+  } catch (e) { console.error('pollPane failed:', e); }
 }
 
 function startPanePolling() { pollPane(); paneTimer = setInterval(pollPane, 2000); }
@@ -221,21 +221,21 @@ function renderPanelActions(s) {
   if (s.status === 'active') {
     el.innerHTML = `
       <button class="pill ${s.remote_control  ? 'pill-on' : ''}"
-              onclick="toggleRc('${s.id}')">Toggle RC  (${s.remote_control  ? 'on' : 'off'})</button>
+              onclick="toggleRc('${esc(s.id)}')">Toggle RC  (${s.remote_control  ? 'on' : 'off'})</button>
       <button class="pill ${s.autonomous_mode ? 'pill-on' : ''}"
-              onclick="toggleAuto('${s.id}')">Toggle Auto (${s.autonomous_mode ? 'on' : 'off'})</button>
-      <button class="pill" onclick="sendCmd('${s.id}','/clear')">Clear context</button>
-      <button class="pill" onclick="sendCmd('${s.id}','/compact')">Compact</button>
-      <button class="pill" onclick="resetSession('${s.id}')">Reset session</button>
-      <button class="pill pill-danger" onclick="stopSession('${s.id}')">Stop session</button>
+              onclick="toggleAuto('${esc(s.id)}')">Toggle Auto (${s.autonomous_mode ? 'on' : 'off'})</button>
+      <button class="pill" onclick="sendCmd('${esc(s.id)}','/clear')">Clear context</button>
+      <button class="pill" onclick="sendCmd('${esc(s.id)}','/compact')">Compact</button>
+      <button class="pill" onclick="resetSession('${esc(s.id)}')">Reset session</button>
+      <button class="pill pill-danger" onclick="stopSession('${esc(s.id)}')">Stop session</button>
       <button class="pill pill-danger pill-ghost" style="font-size:0.72rem"
-              onclick="removeSession('${s.id}')">Remove</button>
+              onclick="removeSession('${esc(s.id)}')">Remove</button>
     `;
   } else {
     el.innerHTML = `
-      <button class="pill pill-primary-filled" onclick="resetSession('${s.id}')">Start session</button>
+      <button class="pill pill-primary-filled" onclick="resetSession('${esc(s.id)}')">Start session</button>
       <button class="pill pill-danger pill-ghost" style="font-size:0.72rem"
-              onclick="removeSession('${s.id}')">Remove</button>
+              onclick="removeSession('${esc(s.id)}')">Remove</button>
     `;
   }
 }
