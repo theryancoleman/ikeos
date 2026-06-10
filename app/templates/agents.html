@@ -20,6 +20,7 @@
     </div>
 
     <div class="detail-panel" id="detail-panel">
+      <div class="panel-placeholder" id="panel-placeholder">Select a session to view details</div>
       <div class="panel-header">
         <div>
           <div class="panel-title" id="panel-title"></div>
@@ -138,13 +139,13 @@ function cardFooter(s) {
 }
 
 function renderCard(s) {
-  const health   = s.health || 'fresh';
-  const selected = s.id === selectedId ? ' selected' : '';
-  const statusHtml = s.status === 'active'
+  const activeClass = s.status === 'active' ? ' session-active' : '';
+  const selected    = s.id === selectedId ? ' selected' : '';
+  const statusHtml  = s.status === 'active'
     ? `<span class="status-badge"><span class="status-active">● active</span>${activityPill(s)}</span>`
     : `<span class="status-badge status-stopped">○ stopped</span>`;
   return `
-    <div class="session-card health-${health}${selected}"
+    <div class="session-card${activeClass}${selected}"
          data-id="${esc(s.id)}" onclick="openPanel('${esc(s.id)}')">
       <div class="card-body">
         <div class="card-name">${esc(s.name)}</div>
@@ -166,7 +167,7 @@ function esc(str) {
 }
 
 function updateGrid(newSessions) {
-  sessions = newSessions;
+  sessions = [...newSessions].sort((a, b) => (b.status === 'active') - (a.status === 'active'));
   const grid = document.getElementById('card-grid');
   if (!sessions.length) {
     grid.innerHTML = '<div class="empty-state">No sessions yet. Click + New Session to start one.</div>';

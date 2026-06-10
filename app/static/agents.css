@@ -14,10 +14,29 @@
   --working:    #38bdf8;
 }
 
+/* ── Override base template container for full-bleed layout ──────────────── */
+body:has(.agents-page) {
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+body:has(.agents-page) main {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
 /* ── Layout ───────────────────────────────────────────────────────────────── */
 .agents-page {
   display: flex;
   flex-direction: column;
+  flex: 1;
   min-height: 0;
 }
 
@@ -66,10 +85,7 @@
 
 .session-card:hover           { border-color: #444; }
 .session-card.selected        { box-shadow: 0 0 0 2px var(--accent); border-color: var(--accent); }
-
-.session-card.health-fresh { border-top-color: var(--success); }
-.session-card.health-aging  { border-top-color: var(--warn); }
-.session-card.health-heavy  { border-top-color: var(--danger); }
+.session-card.session-active  { border-top-color: var(--success); }
 
 .card-body {
   padding: 1rem;
@@ -156,21 +172,33 @@
 
 /* ── Detail panel ─────────────────────────────────────────────────────────── */
 .detail-panel {
-  width: 0;
-  overflow: hidden;
-  transition: width 0.2s ease;
-  border-left: 1px solid transparent;
+  width: 380px;
+  border-left: 1px solid var(--border);
   background: var(--bg-panel);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-}
-
-.detail-panel.open {
-  width: 380px;
-  border-left-color: var(--border);
   overflow-y: auto;
 }
+
+/* Placeholder shown when no session is selected */
+.panel-placeholder {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  padding: 2rem;
+  text-align: center;
+}
+
+/* Hide placeholder and show content when panel is open */
+.detail-panel .panel-header,
+.detail-panel .panel-body      { display: none; }
+.detail-panel.open .panel-placeholder { display: none; }
+.detail-panel.open .panel-header,
+.detail-panel.open .panel-body { display: flex; }
 
 .panel-header {
   display: flex;
