@@ -35,3 +35,11 @@ Added a JSON endpoint so the capture column in the workspace can submit without 
 ## 2026-06-11: Claude config version mounted read-only into container
 
 `~/.claude/VERSION` mounted at `/claude-config/VERSION:ro`. Flask context processor reads it at request time and exposes `config_version` to all templates. No app rebuild needed when config version changes.
+
+## 2026-06-11: Loading screen at `/` — one-per-session splash
+
+`/` renders `loading.html` (standalone, no base.html). A `sessionStorage` guard in `<head>` fires before body paint — repeat visitors are instantly redirected to `/dashboard`. rAF-based 6.5s animation, 5 brand captions, orbital dots, aurora bloom. On complete: 280ms delay → Welcome overlay → 1200ms → fade out → redirect to `/dashboard`. A hidden `<iframe src="/dashboard">` preloads the destination during the animation.
+
+## 2026-06-11: Nav structure — Dashboard / Tasks / Sessions / Capture
+
+`/dashboard` is a new route (`agents.dashboard`) serving `workspace.html` with `three_col=True`. This separates "Dashboard" (three-col: Sessions + Detail + Capture) from "Sessions" (`/agents`, two-col). Each nav item has a distinct endpoint so `request.endpoint` highlights exactly one item per page. Loading screen redirects to `/dashboard`, not `/tasks`. Brand logo also links to `/dashboard`.

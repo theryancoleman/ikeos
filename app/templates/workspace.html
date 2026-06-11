@@ -4,15 +4,17 @@
 {% block content %}
 <link rel="stylesheet" href="{{ url_for('static', filename='workspace.css') }}">
 
+<header class="page-header workspace-page-header">
+  <span class="ike-eyebrow">Sessions</span>
+  <h1>Claude Chat Sessions</h1>
+</header>
+
 <div class="workspace-page ike-constellation-field{% if three_col %} workspace-3col{% endif %}">
 
   <!-- ── Col 1: Sessions ── -->
   <div class="sessions-col">
     <div class="col-header">
-      <div>
-        <div class="col-title">Claude Chat Sessions</div>
-        <span class="ike-eyebrow">Sessions <span class="eyebrow-count" id="session-count">/ —</span></span>
-      </div>
+      <span class="ike-eyebrow">Sessions <span class="eyebrow-count" id="session-count">/ —</span></span>
     </div>
     <div class="card-grid" id="card-grid">
       <div class="ike-loading-mark">

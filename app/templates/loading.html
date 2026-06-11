@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ʻIkeOS</title>
+  <script>if (sessionStorage.getItem('ike_splash_seen')) { window.location.replace('/dashboard'); }</script>
+  <link rel="icon" type="image/png" href="/static/img/logo-ikeos-okina.png">
+  <link rel="stylesheet" href="/static/ikeos/styles.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: #0B061A;
+      overflow: hidden;
+    }
+
+    /* ── Root screen ── */
+    .ls-screen {
+      position: fixed; inset: 0;
+      min-height: 720px;
+      background: var(--ike-grad-cosmos, radial-gradient(ellipse 80% 60% at 50% 30%, #1E0A3C 0%, #0B061A 100%));
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ── Layer 1: constellation field ── */
+    .ls-stars {
+      position: absolute; inset: 0;
+      pointer-events: none;
+      opacity: 0.5;
+    }
+    .ls-stars::before, .ls-stars::after {
+      content: "";
+      position: absolute; inset: 0;
+      background-image:
+        radial-gradient(1px 1px at 12% 18%, rgba(200,192,218,0.7) 0%, transparent 100%),
+        radial-gradient(1px 1px at 28% 72%, rgba(200,192,218,0.5) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 43% 9%, rgba(180,151,255,0.6) 0%, transparent 100%),
+        radial-gradient(1px 1px at 61% 55%, rgba(200,192,218,0.4) 0%, transparent 100%),
+        radial-gradient(1px 1px at 77% 33%, rgba(200,192,218,0.6) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 88% 14%, rgba(180,151,255,0.5) 0%, transparent 100%),
+        radial-gradient(1px 1px at 5% 62%, rgba(200,192,218,0.4) 0%, transparent 100%),
+        radial-gradient(1px 1px at 34% 41%, rgba(200,192,218,0.3) 0%, transparent 100%),
+        radial-gradient(1px 1px at 52% 87%, rgba(200,192,218,0.5) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 69% 76%, rgba(180,151,255,0.4) 0%, transparent 100%),
+        radial-gradient(1px 1px at 91% 49%, rgba(200,192,218,0.6) 0%, transparent 100%),
+        radial-gradient(1px 1px at 23% 95%, rgba(200,192,218,0.3) 0%, transparent 100%),
+        radial-gradient(1px 1px at 45% 28%, rgba(200,192,218,0.5) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 78% 92%, rgba(180,151,255,0.35) 0%, transparent 100%),
+        radial-gradient(1px 1px at 15% 84%, rgba(200,192,218,0.4) 0%, transparent 100%),
+        radial-gradient(1px 1px at 58% 3%, rgba(200,192,218,0.6) 0%, transparent 100%),
+        radial-gradient(1px 1px at 82% 67%, rgba(200,192,218,0.3) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 7% 37%, rgba(180,151,255,0.45) 0%, transparent 100%);
+    }
+    .ls-stars::after {
+      background-image:
+        radial-gradient(1px 1px at 19% 5%, rgba(200,192,218,0.45) 0%, transparent 100%),
+        radial-gradient(1px 1px at 38% 58%, rgba(200,192,218,0.3) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 55% 22%, rgba(180,151,255,0.5) 0%, transparent 100%),
+        radial-gradient(1px 1px at 73% 79%, rgba(200,192,218,0.4) 0%, transparent 100%),
+        radial-gradient(1px 1px at 94% 11%, rgba(200,192,218,0.55) 0%, transparent 100%),
+        radial-gradient(1px 1px at 2% 48%, rgba(200,192,218,0.35) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 47% 69%, rgba(180,151,255,0.3) 0%, transparent 100%),
+        radial-gradient(1px 1px at 64% 91%, rgba(200,192,218,0.5) 0%, transparent 100%),
+        radial-gradient(1px 1px at 85% 44%, rgba(200,192,218,0.4) 0%, transparent 100%),
+        radial-gradient(1px 1px at 31% 25%, rgba(200,192,218,0.6) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 10% 73%, rgba(180,151,255,0.4) 0%, transparent 100%),
+        radial-gradient(1px 1px at 67% 15%, rgba(200,192,218,0.35) 0%, transparent 100%),
+        radial-gradient(1px 1px at 41% 83%, rgba(200,192,218,0.45) 0%, transparent 100%),
+        radial-gradient(1px 1px at 97% 61%, rgba(200,192,218,0.3) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 24% 38%, rgba(180,151,255,0.55) 0%, transparent 100%),
+        radial-gradient(1px 1px at 76% 26%, rgba(200,192,218,0.4) 0%, transparent 100%),
+        radial-gradient(1px 1px at 56% 97%, rgba(200,192,218,0.35) 0%, transparent 100%),
+        radial-gradient(1px 1px at 3% 19%, rgba(200,192,218,0.5) 0%, transparent 100%);
+    }
+
+    /* ── Layer 2: aurora bloom ── */
+    .ls-aurora {
+      position: absolute; inset: 0;
+      pointer-events: none;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ls-aurora-disc {
+      width: 760px; height: 760px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse at center,
+        rgba(124,58,237,0.22) 0%,
+        rgba(124,58,237,0.10) 40%,
+        rgba(255,120,73,0.05) 70%,
+        transparent 100%);
+      filter: blur(30px);
+      animation: ls-aurora-drift 18s linear infinite, ls-aurora-breath 4.8s ease-in-out infinite;
+    }
+
+    /* ── Layer 3: vignette ── */
+    .ls-vignette {
+      position: absolute; inset: 0;
+      pointer-events: none;
+      background: radial-gradient(ellipse 90% 90% at 50% 50%,
+        transparent 40%, rgba(11,6,26,0.65) 100%);
+    }
+
+    /* ── Eyebrow (top center) ── */
+    .ls-eyebrow {
+      position: absolute;
+      top: 40px; left: 50%; transform: translateX(-50%);
+      display: flex; align-items: center; gap: 10px;
+      white-space: nowrap;
+    }
+    .ls-eyebrow-dot {
+      width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+      background: var(--ike-discovery-green, #2DD4BF);
+      box-shadow: 0 0 12px rgba(45,212,191,0.7);
+      animation: ls-dot-glow 2.4s ease-in-out infinite;
+    }
+    .ls-eyebrow-label {
+      font-family: var(--font-sans, 'Geist', system-ui, sans-serif);
+      font-size: 11px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--text-tertiary, #8B82A4);
+      font-weight: 500;
+    }
+
+    /* ── Content stage ── */
+    .ls-stage {
+      position: relative; z-index: 1;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 56px;
+      padding: 32px;
+      width: 100%;
+    }
+
+    /* ── Logo zone ── */
+    .ls-logo-zone {
+      width: 560px; max-width: 88vw;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      position: relative;
+      animation: ls-float 6s ease-in-out infinite;
+    }
+    .ls-logo {
+      width: 100%; max-width: 480px; height: auto;
+      user-select: none; pointer-events: none; display: block;
+      filter:
+        drop-shadow(0 0 60px rgba(124,58,237,0.45))
+        drop-shadow(0 0 24px rgba(255,120,73,0.2));
+    }
+
+    /* Orbital dots */
+    .ls-orbit-wrap {
+      position: absolute; inset: 0;
+      pointer-events: none;
+    }
+    .ls-orbital {
+      position: absolute;
+      border-radius: 50%;
+      top: 50%; left: 50%;
+    }
+    .ls-orbital-a {
+      width: 8px; height: 8px;
+      background: var(--ike-soft-lavender, #B497FF);
+      box-shadow: 0 0 16px rgba(180,151,255,0.8);
+      margin: -4px 0 0 -4px;
+      animation: ls-orbit-a 12s linear infinite;
+    }
+    .ls-orbital-b {
+      width: 6px; height: 6px;
+      background: var(--ike-sunset-orange, #FF7849);
+      box-shadow: 0 0 18px rgba(255,120,73,0.8);
+      margin: -3px 0 0 -3px;
+      animation: ls-orbit-b 16s linear infinite;
+    }
+
+    /* ── Caption + progress cluster ── */
+    .ls-cluster {
+      display: flex; flex-direction: column;
+      gap: 28px;
+      width: 480px; max-width: 90vw;
+    }
+
+    /* Caption row */
+    .ls-caption-row {
+      height: 24px;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+    .ls-caption {
+      font-family: var(--font-editorial, 'Manrope', system-ui, sans-serif);
+      font-size: 16px;
+      letter-spacing: 0.005em;
+      color: var(--text-secondary, #C8C0DA);
+      text-align: center;
+      animation: ls-caption-in 480ms var(--ease-out, cubic-bezier(0.16,1,0.3,1)) both;
+    }
+
+    /* Progress bar */
+    .ls-bar-wrap {
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .ls-bar-track {
+      height: 2px; width: 100%;
+      border-radius: 999px;
+      background: rgba(180,151,255,0.12);
+      position: relative; overflow: hidden;
+    }
+    .ls-bar-fill {
+      position: absolute; top: 0; left: 0; bottom: 0;
+      border-radius: 999px;
+      background: var(--ike-grad-aurora, linear-gradient(135deg, #7C3AED 0%, #FF7849 100%));
+      box-shadow: 0 0 12px rgba(124,58,237,0.6);
+      width: 0%;
+      transition: width 120ms linear;
+    }
+    .ls-bar-shimmer {
+      position: absolute; top: 0; bottom: 0;
+      width: 240px;
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.7) 50%, transparent 100%);
+      mix-blend-mode: screen;
+      opacity: 0.7;
+      animation: ls-shimmer 2.4s linear infinite;
+    }
+    .ls-tagline {
+      font-family: var(--font-editorial, 'Manrope', system-ui, sans-serif);
+      font-style: italic;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      color: var(--text-muted, #5E5675);
+      text-align: center;
+    }
+
+    /* ── Footer hairline ── */
+    .ls-footer {
+      position: absolute;
+      bottom: 28px; left: 50%; transform: translateX(-50%);
+      display: flex; align-items: center; gap: 12px;
+      white-space: nowrap;
+      font-family: var(--font-mono, 'Geist Mono', monospace);
+      font-size: 10px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--text-muted, #5E5675);
+    }
+    .ls-footer-dot {
+      width: 4px; height: 4px; border-radius: 50%;
+      background: currentColor;
+      opacity: 0.6; flex-shrink: 0;
+    }
+
+    /* ── Welcome overlay ── */
+    .ls-welcome {
+      position: fixed; inset: 0;
+      background: linear-gradient(180deg, rgba(18,10,31,0.92), rgba(18,10,31,0.78));
+      backdrop-filter: blur(8px);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 20px;
+      z-index: 10;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(16px);
+      transition: opacity 600ms var(--ease-out, cubic-bezier(0.16,1,0.3,1)),
+                  transform 600ms var(--ease-out, cubic-bezier(0.16,1,0.3,1));
+    }
+    .ls-welcome.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+    .ls-welcome-headline {
+      font-family: var(--font-display, 'DM Serif Display', serif);
+      font-size: 72px;
+      line-height: 1;
+      letter-spacing: -0.028em;
+      font-weight: 400;
+      color: var(--text-primary, #F8F7FC);
+      text-align: center;
+    }
+    .ls-welcome-sub {
+      font-family: var(--font-editorial, 'Manrope', system-ui, sans-serif);
+      font-size: 18px;
+      line-height: 1.55;
+      color: var(--text-secondary, #C8C0DA);
+      max-width: 420px;
+      text-align: center;
+    }
+
+    /* ── Fade-out for whole screen ── */
+    .ls-screen.is-exiting {
+      transition: opacity 500ms ease-in-out;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* ── Keyframes ── */
+    @keyframes ls-float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+    @keyframes ls-aurora-drift {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @keyframes ls-aurora-breath {
+      0%, 100% { transform: scale(0.96); }
+      50% { transform: scale(1.08); }
+    }
+    @keyframes ls-orbit-a {
+      from { transform: translate(190px, 0) rotate(0deg) translateX(-190px); }
+      to   { transform: translate(190px, 0) rotate(360deg) translateX(-190px); }
+    }
+    @keyframes ls-orbit-b {
+      from { transform: translate(240px, 0) rotate(0deg) translateX(-240px); }
+      to   { transform: translate(240px, 0) rotate(-360deg) translateX(-240px); }
+    }
+    @keyframes ls-shimmer {
+      from { transform: translateX(-300px); }
+      to   { transform: translateX(calc(100vw + 300px)); }
+    }
+    @keyframes ls-caption-in {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes ls-dot-glow {
+      0%, 100% { opacity: 0.75; }
+      50%       { opacity: 0.35; }
+    }
+
+    /* ── Reduced motion ── */
+    @media (prefers-reduced-motion: reduce) {
+      .ls-aurora-disc,
+      .ls-logo-zone,
+      .ls-orbital-a,
+      .ls-orbital-b,
+      .ls-bar-shimmer,
+      .ls-eyebrow-dot { animation: none !important; }
+      .ls-caption { animation: none !important; }
+      .ls-welcome { transition: opacity 200ms ease !important; transform: none !important; }
+    }
+  </style>
+</head>
+<body>
+<!-- Preload /dashboard in the background so it's ready when we redirect -->
+<iframe src="/dashboard" style="position:fixed;width:0;height:0;border:0;opacity:0;pointer-events:none;" aria-hidden="true" tabindex="-1"></iframe>
+
+<div class="ls-screen" id="ls-screen">
+
+  <!-- Layer 1: stars -->
+  <div class="ls-stars" aria-hidden="true"></div>
+
+  <!-- Layer 2: aurora bloom -->
+  <div class="ls-aurora" aria-hidden="true">
+    <div class="ls-aurora-disc"></div>
+  </div>
+
+  <!-- Layer 3: vignette -->
+  <div class="ls-vignette" aria-hidden="true"></div>
+
+  <!-- Eyebrow -->
+  <div class="ls-eyebrow" aria-hidden="true">
+    <div class="ls-eyebrow-dot"></div>
+    <span class="ls-eyebrow-label">Personal Intelligence System</span>
+  </div>
+
+  <!-- Content stage -->
+  <div class="ls-stage">
+
+    <!-- Logo zone -->
+    <div class="ls-logo-zone">
+      <div class="ls-orbit-wrap" aria-hidden="true">
+        <div class="ls-orbital ls-orbital-a"></div>
+        <div class="ls-orbital ls-orbital-b"></div>
+      </div>
+      <img
+        src="/static/img/logo-ikeos-color-dark-transparent.png"
+        alt="ʻIkeOS"
+        class="ls-logo"
+        draggable="false">
+    </div>
+
+    <!-- Caption + progress -->
+    <div class="ls-cluster">
+      <div class="ls-caption-row" role="status" aria-live="polite">
+        <span class="ls-caption" id="ls-caption">Tracing connections…</span>
+      </div>
+      <div class="ls-bar-wrap">
+        <div class="ls-bar-track">
+          <div class="ls-bar-fill" id="ls-fill"></div>
+          <div class="ls-bar-shimmer"></div>
+        </div>
+        <div class="ls-tagline">A trusted navigator for knowledge</div>
+      </div>
+    </div>
+
+  </div><!-- .ls-stage -->
+
+  <!-- Welcome overlay -->
+  <div class="ls-welcome" id="ls-welcome" aria-live="assertive">
+    <div class="ls-welcome-headline">Welcome.</div>
+    <div class="ls-welcome-sub">Your constellation is ready.</div>
+  </div>
+
+</div><!-- .ls-screen -->
+
+<script>
+(function () {
+  const DURATION = 6500; // ms
+  const CAPTIONS = [
+    'Tracing connections…',
+    'Re-reading what you’ve captured…',
+    'Threading memory through time…',
+    'Surfacing the patterns you’d forgotten…',
+    'Drawing the constellation…',
+  ];
+  const CAPTION_INTERVAL = DURATION / CAPTIONS.length; // 1300ms each
+
+  const fillEl    = document.getElementById('ls-fill');
+  const captionEl = document.getElementById('ls-caption');
+  const welcomeEl = document.getElementById('ls-welcome');
+  const screenEl  = document.getElementById('ls-screen');
+
+  let startTime    = null;
+  let captionIndex = 0;
+  let rafHandle    = null;
+  let done         = false;
+
+  function setCaption(idx) {
+    captionEl.textContent = CAPTIONS[idx];
+    // Re-trigger CSS animation by forcing a reflow
+    captionEl.style.animation = 'none';
+    void captionEl.offsetWidth;
+    captionEl.style.animation = '';
+  }
+
+  function tick(ts) {
+    if (!startTime) startTime = ts;
+    const elapsed = ts - startTime;
+    const progress = Math.min(elapsed / DURATION, 1);
+
+    // Update fill
+    fillEl.style.width = (progress * 100).toFixed(1) + '%';
+
+    // Advance caption
+    const expectedCaption = Math.min(Math.floor(elapsed / CAPTION_INTERVAL), CAPTIONS.length - 1);
+    if (expectedCaption !== captionIndex) {
+      captionIndex = expectedCaption;
+      setCaption(captionIndex);
+    }
+
+    if (progress < 1) {
+      rafHandle = requestAnimationFrame(tick);
+    } else if (!done) {
+      done = true;
+      onComplete();
+    }
+  }
+
+  function onComplete() {
+    // Show welcome overlay after 280ms
+    setTimeout(function () {
+      welcomeEl.classList.add('is-visible');
+
+      // Fade out and redirect after welcome has been visible 1200ms
+      setTimeout(function () {
+        screenEl.classList.add('is-exiting');
+        sessionStorage.setItem('ike_splash_seen', '1');
+        setTimeout(function () {
+          window.location.href = '/dashboard';
+        }, 520);
+      }, 1200);
+    }, 280);
+  }
+
+  rafHandle = requestAnimationFrame(tick);
+
+  // Clean up on unload
+  window.addEventListener('pagehide', function () {
+    if (rafHandle) cancelAnimationFrame(rafHandle);
+  });
+}());
+</script>
+</body>
+</html>

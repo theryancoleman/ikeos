@@ -30,6 +30,11 @@ def _age_str(started_at: str | None) -> str:
 
 @bp.route("/")
 def home():
+    return render_template("loading.html")
+
+
+@bp.route("/dashboard")
+def dashboard():
     try:
         sessions, _ = _proxy("GET", "/sessions")
         for s in sessions:

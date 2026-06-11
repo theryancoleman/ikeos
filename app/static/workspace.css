@@ -1,5 +1,18 @@
 /* ʻIkeOS — Workspace (Sessions) view */
 
+/* ── Page header above the grid ── */
+.workspace-page-header {
+  padding: 1rem 1.5rem;
+  margin-bottom: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-canvas);
+  flex-shrink: 0;
+}
+.workspace-page-header h1 {
+  font-size: 28px;
+  margin-bottom: 0;
+}
+
 /* ── Full-bleed body ── */
 body:has(.workspace-page) {
   height: 100vh;
@@ -69,6 +82,10 @@ body:has(.workspace-page) main {
   text-transform: uppercase;
   letter-spacing: 0.22em;
   font-family: inherit;
+}
+.col-header .ike-eyebrow {
+  font-size: 13px;
+  color: var(--text-secondary);
 }
 .col-title {
   font-family: var(--font-sans);
