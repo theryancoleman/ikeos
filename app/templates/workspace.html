@@ -9,14 +9,19 @@
   <!-- ── Col 1: Sessions ── -->
   <div class="sessions-col">
     <div class="col-header">
-      <span class="ike-eyebrow">Sessions <span class="eyebrow-count" id="session-count">/ —</span></span>
-      <button class="ike-btn-primary" onclick="openModal()">＋ New Session</button>
+      <div>
+        <div class="col-title">Claude Chat Sessions</div>
+        <span class="ike-eyebrow">Sessions <span class="eyebrow-count" id="session-count">/ —</span></span>
+      </div>
     </div>
     <div class="card-grid" id="card-grid">
       <div class="ike-loading-mark">
         <div class="ike-loading-orbit" aria-hidden="true"></div>
         <span>Tracing connections</span>
       </div>
+    </div>
+    <div class="sessions-footer">
+      <button class="ike-btn-primary sessions-new-btn" onclick="openModal()">＋ New Session</button>
     </div>
   </div>
 

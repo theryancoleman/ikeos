@@ -70,6 +70,26 @@ body:has(.workspace-page) main {
   letter-spacing: 0.22em;
   font-family: inherit;
 }
+.col-title {
+  font-family: var(--font-sans);
+  font-size: var(--fs-body-sm);
+  font-weight: var(--fw-medium);
+  color: var(--text-primary);
+  margin-bottom: 0.2rem;
+}
+
+/* ── Sessions footer (pinned New Session button) ── */
+.sessions-footer {
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+  background: rgba(27, 17, 48, 0.70);
+  backdrop-filter: blur(12px);
+}
+.sessions-new-btn {
+  width: 100%;
+  justify-content: center;
+}
 
 /* ── Card grid ── */
 .card-grid {
@@ -88,8 +108,18 @@ body:has(.workspace-page) main {
   border-radius: var(--radius-lg);
   overflow: hidden;
   cursor: pointer;
+  position: relative;
   transition: border-color var(--dur-quick) var(--ease-out),
               box-shadow var(--dur-base) var(--ease-out);
+}
+
+/* Activity chip — top-right corner of card */
+.card-activity {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.6rem;
+  z-index: 1;
+  pointer-events: none;
 }
 .session-card:hover {
   border-color: var(--border-default);

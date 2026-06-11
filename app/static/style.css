@@ -57,7 +57,15 @@
 }
 
 /* ── Layout ─────────────────────────────────────────────────────────────── */
-main { max-width: 900px; margin: 2rem auto; padding: 0 1.5rem; }
+main { max-width: none; margin: 0; padding: 2rem 2.5rem; }
+
+/* ── Dashboard two-column grid ── */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 60fr 40fr;
+  gap: 3rem;
+  align-items: start;
+}
 
 a {
   color: var(--ike-soft-lavender);
@@ -426,7 +434,7 @@ button[type="submit"] { margin-top: var(--space-3); }
 }
 
 /* ── Entry detail ────────────────────────────────────────────────────────── */
-.entry-detail { max-width: 700px; }
+.entry-detail { max-width: 700px; margin: 0 auto; }
 .entry-meta {
   display: flex;
   align-items: center;

@@ -68,12 +68,14 @@ function renderCard(s) {
   const activeClass = s.status === 'active' ? ' session-active' : '';
   const selected    = s.id === selectedId ? ' selected' : '';
   const dotClass    = s.status === 'active' ? 'is-active' : 'is-stopped';
+  const chip        = activityChip(s);
   const statusHtml  = s.status === 'active'
-    ? `<span class="status-badge status-active"><span class="status-dot"></span>active ${activityChip(s)}</span>`
+    ? `<span class="status-badge status-active"><span class="status-dot"></span>active</span>`
     : `<span class="status-badge status-stopped"><span class="status-dot"></span>stopped</span>`;
   return `
     <div class="session-card${activeClass}${selected}"
          data-id="${esc(s.id)}" onclick="openPanel('${esc(s.id)}')">
+      ${chip ? `<div class="card-activity">${chip}</div>` : ''}
       <div class="card-body">
         <div class="card-name"><span class="session-dot ${dotClass}"></span>${esc(s.name)}</div>
         <div class="card-project">${esc(s.project)}</div>
