@@ -1,21 +1,22 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
-from app.services.vault import get_projects, read_entries, read_entry, update_entry_status
+from app.services.vault import get_projects_with_meta, read_entries, read_entry, update_entry_status, _read_project_meta
 
 bp = Blueprint("browse", __name__)
 
 ACTIVE_STATUSES = ["new", "open", "in-progress"]
 
 
-@bp.route("/")
-def dashboard():
-    projects = get_projects()
+@bp.route("/tasks")
+def tasks():
+    projects = get_projects_with_meta()
     all_entries = read_entries()
 
     project_stats = {}
     for p in projects:
-        p_entries = [e for e in all_entries if e.get("project") == p]
+        slug = p["slug"]
+        p_entries = [e for e in all_entries if e.get("project") == slug]
         active = [e for e in p_entries if e.get("status") in ACTIVE_STATUSES]
-        project_stats[p] = {
+        project_stats[slug] = {
             "bugs": len([e for e in active if e.get("type") == "bug"]),
             "ideas": len([e for e in active if e.get("type") == "idea"]),
             "notes": len([e for e in active if e.get("type") == "note"]),
@@ -34,6 +35,11 @@ def dashboard():
     )
 
 
+@bp.route("/")
+def home_redirect():
+    return redirect(url_for("browse.tasks"))
+
+
 @bp.route("/projects/<name>")
 def project(name):
     show_all = request.args.get("show_all") == "true"
@@ -44,14 +50,17 @@ def project(name):
     ideas = [e for e in entries if e.get("type") == "idea"]
     notes = [e for e in entries if e.get("type") == "note"]
 
+    display_name = _read_project_meta(name)["name"]
+
     return render_template(
         "project.html",
         name=name,
+        display_name=display_name,
         bugs=bugs,
         ideas=ideas,
         notes=notes,
         show_all=show_all,
-        projects=get_projects(),
+        projects=get_projects_with_meta(),
     )
 
 

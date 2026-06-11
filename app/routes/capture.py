@@ -1,12 +1,35 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
-from app.services.vault import get_projects, write_entry
+import os
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from app.services.vault import get_projects_with_meta, write_entry, update_entry_status_generic
 
 bp = Blueprint("capture", __name__)
 
 
+def _get_capture_token():
+    """Get CAPTURE_TOKEN from environment, return None if unset."""
+    return os.environ.get("CAPTURE_TOKEN")
+
+
+def _validate_token(token):
+    """Validate the provided token against CAPTURE_TOKEN. Return (is_valid, status_code)."""
+    env_token = _get_capture_token()
+    if env_token is None:
+        return False, 503  # Service unavailable - token not configured
+    if token != env_token:
+        return False, 401  # Unauthorized
+    return True, 200
+
+
+def _reject_path_traversal(filename):
+    """Check if filename contains path separators or traversal patterns. Return True if safe."""
+    if ".." in filename or "/" in filename or "\\" in filename:
+        return False
+    return True
+
+
 @bp.route("/capture", methods=["GET"])
 def capture_form():
-    projects = get_projects()
+    projects = get_projects_with_meta()
     selected_project = request.args.get("project", "")
     return render_template("capture.html", projects=projects, selected_project=selected_project)
 
@@ -14,16 +37,24 @@ def capture_form():
 @bp.route("/capture", methods=["POST"])
 def capture_submit():
     entry_type = request.form["type"]
-    project = request.form["project"]
-    if project == "__future__":
-        project = request.form.get("future_project_name", "").strip() or "future"
     data = {
         "type": entry_type,
-        "project": project,
         "title": request.form["title"],
         "body": request.form.get("body", ""),
         "domains": request.form.getlist("domains"),
     }
+
+    # Decision entries don't require a project in the form
+    if entry_type == "decision":
+        project = request.form.get("project", "")
+        if project:
+            data["project"] = project
+    else:
+        project = request.form["project"]
+        if project == "__future__":
+            project = request.form.get("future_project_name", "").strip() or "future"
+        data["project"] = project
+
     if entry_type == "idea":
         data["priority"] = request.form.get("priority", "medium")
         data["effort"] = request.form.get("effort", "medium")
@@ -35,5 +66,59 @@ def capture_submit():
     flash("Entry saved.")
 
     if request.form.get("stay") == "1":
-        return redirect(url_for("capture.capture_form", project=project))
-    return redirect(url_for("browse.dashboard"))
+        return redirect(url_for("capture.capture_form", project=project if entry_type != "decision" else ""))
+    return redirect(url_for("browse.tasks"))
+
+
+@bp.route("/entries", methods=["PATCH"])
+def patch_entries():
+    """Update entry status via PATCH with token authentication."""
+    # Extract token from header
+    token = request.headers.get("X-Capture-Token", "")
+    is_valid, status_code = _validate_token(token)
+    if not is_valid:
+        return jsonify({"error": "Unauthorized" if status_code == 401 else "Service unavailable"}), status_code
+
+    # Parse request data (form or JSON)
+    if request.is_json:
+        req_data = request.get_json()
+    else:
+        req_data = request.form.to_dict()
+
+    # Extract parameters
+    project = req_data.get("project", "").strip()
+    entry_type = req_data.get("type", "").strip()
+    filename = req_data.get("filename", "").strip()
+    status = req_data.get("status", "").strip()
+
+    # Validate path traversal
+    if not _reject_path_traversal(filename):
+        return jsonify({"error": "Invalid filename"}), 400
+
+    # Validate entry_type
+    if entry_type not in ("bug", "idea", "note", "decision"):
+        return jsonify({"error": "Invalid entry type"}), 400
+
+    # Validate status against the lifecycle for this entry type
+    valid_statuses = (
+        ("proposed", "accepted", "rejected", "superseded")
+        if entry_type == "decision"
+        else ("new", "open", "in-progress", "done", "deferred")
+    )
+    if status not in valid_statuses:
+        return jsonify({"error": f"Invalid status for {entry_type}"}), 400
+
+    # For decisions, project is optional
+    if entry_type == "decision":
+        if not project:
+            project = None  # Will be checked in update function
+    else:
+        if not project:
+            return jsonify({"error": "Project required for this entry type"}), 400
+
+    # Attempt to update
+    success = update_entry_status_generic(entry_type, project, filename, status)
+    if not success:
+        return jsonify({"error": "Entry not found or invalid status"}), 404
+
+    return jsonify({"message": "Status updated"}), 200

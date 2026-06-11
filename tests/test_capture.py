@@ -1,11 +1,26 @@
 import pytest
 import os
+import hashlib
 from unittest.mock import patch
 from app import create_app
 
 
 @pytest.fixture
-def client(tmp_path):
+def client(tmp_path, monkeypatch):
+    os.environ["FLASK_SECRET_KEY"] = "test-secret-key"
+    monkeypatch.setenv("CAPTURE_TOKEN", "test-token-secret")
+    app = create_app()
+    app.config["TESTING"] = True
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        (tmp_path / "projects" / "bcr-waivers").mkdir(parents=True)
+        with app.test_client() as client:
+            yield client
+
+
+@pytest.fixture
+def client_no_token(tmp_path):
+    """Client fixture with no CAPTURE_TOKEN env var."""
+    os.environ.pop("CAPTURE_TOKEN", None)
     os.environ["FLASK_SECRET_KEY"] = "test-secret-key"
     app = create_app()
     app.config["TESTING"] = True
@@ -33,7 +48,7 @@ def test_capture_post_redirects_to_dashboard(client):
         "body": "Some content",
     })
     assert response.status_code == 302
-    assert response.location == "/"
+    assert response.location == "/tasks"
 
 
 def test_capture_post_creates_file(client, tmp_path):
@@ -98,3 +113,381 @@ def test_style_css_contains_codemirror_cursor_rule(client):
 def test_capture_form_contains_stay_persistence_js(client):
     response = client.get("/capture")
     assert b"captureStay" in response.data
+
+
+# ============= Decision type support tests =============
+
+def test_capture_post_decision_creates_file_in_decisions(client, tmp_path):
+    """POST /capture with type=decision should create file in vault root decisions/."""
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        client.post("/capture", data={
+            "type": "decision",
+            "title": "Use PostgreSQL",
+            "body": "Performance reasons",
+        })
+    files = list((tmp_path / "decisions").glob("*.md"))
+    assert len(files) == 1
+
+
+def test_capture_post_decision_without_project(client, tmp_path):
+    """POST /capture with type=decision should work without project field."""
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        response = client.post("/capture", data={
+            "type": "decision",
+            "title": "Test decision",
+            "body": "Some context",
+        }, follow_redirects=False)
+    assert response.status_code == 302
+    assert response.location == "/tasks"
+
+
+def test_capture_post_decision_with_optional_project(client, tmp_path):
+    """POST /capture with type=decision can include optional project field."""
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        client.post("/capture", data={
+            "type": "decision",
+            "project": "bcr-waivers",
+            "title": "Test decision with project",
+            "body": "Context",
+        })
+    files = list((tmp_path / "decisions").glob("*.md"))
+    assert len(files) == 1
+    import frontmatter
+    post = frontmatter.load(files[0])
+    assert post.metadata.get("project") == "bcr-waivers"
+
+
+def test_capture_post_decision_has_correct_frontmatter(client, tmp_path):
+    """Decision entries should have correct initial frontmatter."""
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        client.post("/capture", data={
+            "type": "decision",
+            "title": "Use Postgres",
+            "body": "For scalability",
+        })
+    files = list((tmp_path / "decisions").glob("*.md"))
+    import frontmatter
+    post = frontmatter.load(files[0])
+    assert post.metadata["type"] == "decision"
+    assert post.metadata["status"] == "proposed"
+    assert "status/proposed" in post.metadata["tags"]
+    assert post.metadata["title"] == "Use Postgres"
+
+
+def test_capture_post_decision_body_structure(client, tmp_path):
+    """Decision entry body should have Context/Decision/Consequences sections."""
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        client.post("/capture", data={
+            "type": "decision",
+            "title": "ADR-001",
+            "body": "Scale the database",
+        })
+    files = list((tmp_path / "decisions").glob("*.md"))
+    import frontmatter
+    post = frontmatter.load(files[0])
+    assert "## Context" in post.content
+    assert "## Decision" in post.content
+    assert "## Consequences" in post.content
+
+
+# ============= PATCH /entries endpoint tests =============
+
+def test_patch_entries_requires_token(client, tmp_path):
+    """PATCH /entries without token should return 401."""
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        response = client.patch("/entries", json={
+            "project": "bcr-waivers",
+            "type": "bug",
+            "filename": "2026-06-11-test-bug",
+            "status": "open",
+        })
+    assert response.status_code == 401
+
+
+def test_patch_entries_with_correct_token(client, tmp_path):
+    """PATCH /entries with correct token should update status."""
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        # First create an entry
+        from app.services.vault import write_entry
+        slug = write_entry({
+            "type": "bug",
+            "project": "bcr-waivers",
+            "title": "Test bug",
+            "body": "Description",
+            "severity": "medium",
+        })
+        # Now update its status
+        response = client.patch("/entries",
+            json={
+                "project": "bcr-waivers",
+                "type": "bug",
+                "filename": slug,
+                "status": "open",
+            },
+            headers={"X-Capture-Token": "test-token-secret"}
+        )
+    assert response.status_code == 200
+    data = response.get_json()
+    assert "Status updated" in data.get("message", "")
+
+
+def test_patch_entries_wrong_token_returns_401(client, tmp_path):
+    """PATCH /entries with wrong token should return 401."""
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        response = client.patch("/entries",
+            json={
+                "project": "bcr-waivers",
+                "type": "bug",
+                "filename": "test",
+                "status": "open",
+            },
+            headers={"X-Capture-Token": "wrong-token"}
+        )
+    assert response.status_code == 401
+
+
+def test_patch_entries_missing_token_env_returns_503(client_no_token, tmp_path):
+    """PATCH /entries without CAPTURE_TOKEN env should return 503."""
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        response = client_no_token.patch("/entries",
+            json={
+                "project": "bcr-waivers",
+                "type": "bug",
+                "filename": "test",
+                "status": "open",
+            },
+            headers={"X-Capture-Token": "any-token"}
+        )
+    assert response.status_code == 503
+
+
+def test_patch_entries_form_data(client, tmp_path):
+    """PATCH /entries should accept form data in addition to JSON."""
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        from app.services.vault import write_entry
+        slug = write_entry({
+            "type": "idea",
+            "project": "bcr-waivers",
+            "title": "Test idea",
+            "body": "Description",
+            "priority": "high",
+            "effort": "small",
+        })
+        response = client.patch("/entries",
+            data={
+                "project": "bcr-waivers",
+                "type": "idea",
+                "filename": slug,
+                "status": "in-progress",
+            },
+            headers={"X-Capture-Token": "test-token-secret"}
+        )
+    assert response.status_code == 200
+
+
+def test_patch_entries_invalid_status(client, tmp_path):
+    """PATCH /entries with invalid status should return 400."""
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        from app.services.vault import write_entry
+        slug = write_entry({
+            "type": "note",
+            "project": "bcr-waivers",
+            "title": "Test note",
+            "body": "Description",
+        })
+        response = client.patch("/entries",
+            json={
+                "project": "bcr-waivers",
+                "type": "note",
+                "filename": slug,
+                "status": "not-a-valid-status",
+            },
+            headers={"X-Capture-Token": "test-token-secret"}
+        )
+    assert response.status_code == 400
+
+
+def test_patch_entries_missing_entry(client, tmp_path):
+    """PATCH /entries for non-existent entry should return 404."""
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        response = client.patch("/entries",
+            json={
+                "project": "bcr-waivers",
+                "type": "bug",
+                "filename": "nonexistent-slug",
+                "status": "open",
+            },
+            headers={"X-Capture-Token": "test-token-secret"}
+        )
+    assert response.status_code == 404
+
+
+def test_patch_entries_invalid_type(client, tmp_path):
+    """PATCH /entries with invalid type should return 400."""
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        response = client.patch("/entries",
+            json={
+                "project": "bcr-waivers",
+                "type": "invalid-type",
+                "filename": "test",
+                "status": "open",
+            },
+            headers={"X-Capture-Token": "test-token-secret"}
+        )
+    assert response.status_code == 400
+
+
+def test_patch_entries_path_traversal_rejection(client, tmp_path):
+    """PATCH /entries should reject filenames with path traversal patterns."""
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        response = client.patch("/entries",
+            json={
+                "project": "bcr-waivers",
+                "type": "bug",
+                "filename": "../../etc/passwd",
+                "status": "open",
+            },
+            headers={"X-Capture-Token": "test-token-secret"}
+        )
+    assert response.status_code == 400
+
+
+def test_patch_entries_path_traversal_double_dot(client, tmp_path):
+    """PATCH /entries should reject filenames with .. patterns."""
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        response = client.patch("/entries",
+            json={
+                "project": "bcr-waivers",
+                "type": "bug",
+                "filename": "test..md",
+                "status": "open",
+            },
+            headers={"X-Capture-Token": "test-token-secret"}
+        )
+    assert response.status_code == 400
+
+
+def test_patch_entries_status_tag_updated(client, tmp_path):
+    """PATCH /entries should update the status/* tag correctly."""
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        from app.services.vault import write_entry, read_entry
+        slug = write_entry({
+            "type": "bug",
+            "project": "bcr-waivers",
+            "title": "Test bug",
+            "body": "Description",
+            "severity": "medium",
+        })
+        response = client.patch("/entries",
+            json={
+                "project": "bcr-waivers",
+                "type": "bug",
+                "filename": slug,
+                "status": "done",
+            },
+            headers={"X-Capture-Token": "test-token-secret"}
+        )
+        assert response.status_code == 200
+        entry = read_entry("bcr-waivers", slug)
+        assert entry["status"] == "done"
+        assert "status/done" in entry["tags"]
+        assert "status/new" not in entry["tags"]
+
+
+def test_patch_entries_body_byte_identical(client, tmp_path):
+    """PATCH /entries should preserve body content exactly (byte-identical)."""
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        from app.services.vault import write_entry
+        slug = write_entry({
+            "type": "note",
+            "project": "bcr-waivers",
+            "title": "Test note",
+            "body": "Original body with special chars: éàü\nMultiple lines\n  Indentation",
+        })
+        # Get original file content's body hash
+        note_path = tmp_path / "projects" / "bcr-waivers" / "notes" / f"{slug}.md"
+        import frontmatter
+        original_post = frontmatter.load(note_path)
+        original_body = original_post.content
+
+        # Update status
+        response = client.patch("/entries",
+            json={
+                "project": "bcr-waivers",
+                "type": "note",
+                "filename": slug,
+                "status": "done",
+            },
+            headers={"X-Capture-Token": "test-token-secret"}
+        )
+        assert response.status_code == 200
+
+        # Verify body is unchanged
+        updated_post = frontmatter.load(note_path)
+        assert updated_post.content == original_body
+
+
+def test_patch_entries_updated_field_added(client, tmp_path):
+    """PATCH /entries should add/update the 'updated' field."""
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        from app.services.vault import write_entry, read_entry
+        slug = write_entry({
+            "type": "bug",
+            "project": "bcr-waivers",
+            "title": "Test bug",
+            "body": "Description",
+            "severity": "medium",
+        })
+        response = client.patch("/entries",
+            json={
+                "project": "bcr-waivers",
+                "type": "bug",
+                "filename": slug,
+                "status": "open",
+            },
+            headers={"X-Capture-Token": "test-token-secret"}
+        )
+        assert response.status_code == 200
+        entry = read_entry("bcr-waivers", slug)
+        assert "updated" in entry
+
+
+def test_patch_entries_decision_type(client, tmp_path):
+    """PATCH /entries should support decision type with decision/* tags."""
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        from app.services.vault import write_entry, read_entry
+        slug = write_entry({
+            "type": "decision",
+            "title": "Use PostgreSQL",
+            "body": "For scalability",
+        })
+        response = client.patch("/entries",
+            json={
+                "type": "decision",
+                "filename": slug,
+                "status": "accepted",
+            },
+            headers={"X-Capture-Token": "test-token-secret"}
+        )
+    assert response.status_code == 200
+
+
+def test_patch_entries_decision_valid_statuses(client, tmp_path):
+    """PATCH /entries for decisions should only accept valid decision statuses."""
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        from app.services.vault import write_entry
+        slug = write_entry({
+            "type": "decision",
+            "title": "Use PostgreSQL",
+            "body": "For scalability",
+        })
+        # Try to set invalid status for decision type
+        response = client.patch("/entries",
+            json={
+                "type": "decision",
+                "filename": slug,
+                "status": "open",  # This is task status, not decision status
+            },
+            headers={"X-Capture-Token": "test-token-secret"}
+        )
+    assert response.status_code == 400  # Invalid status for decision lifecycle

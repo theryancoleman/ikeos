@@ -28,12 +28,22 @@ def client(vault):
 
 
 def test_dashboard_returns_200(client):
-    response = client.get("/")
+    response = client.get("/tasks")
     assert response.status_code == 200
 
 
 def test_dashboard_shows_entry_title(client):
-    response = client.get("/")
+    response = client.get("/tasks")
+    assert b"Test note" in response.data
+
+
+def test_tasks_page_renders(client):
+    response = client.get("/tasks")
+    assert response.status_code == 200
+
+
+def test_tasks_page_shows_entry_title(client):
+    response = client.get("/tasks")
     assert b"Test note" in response.data
 
 
