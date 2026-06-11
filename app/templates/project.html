@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block title %}{{ name }}{% endblock %}
+{% block title %}{{ display_name }}{% endblock %}
 
 {% block content %}
 <div class="project-header">
-  <h1>{{ name }}</h1>
+  <h1>{{ display_name }}</h1>
   <div class="project-header-actions">
     <a href="{{ url_for('capture.capture_form', project=name) }}" class="btn">+ New item</a>
     {% if show_all %}
