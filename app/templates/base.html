@@ -8,9 +8,11 @@
 </head>
 <body>
   <nav>
-    <a href="{{ url_for('browse.tasks') }}" class="nav-brand">Capture</a>
-    <a href="{{ url_for('capture.capture_form') }}" class="nav-link">+ New entry</a>
-    <a href="{{ url_for('agents.agents') }}" class="nav-link">Agents</a>
+    <a href="{{ url_for('agents.home') }}" class="nav-brand">Obsidian Capture</a>
+    <a href="{{ url_for('agents.home') }}"   class="nav-link">Home</a>
+    <a href="{{ url_for('browse.tasks') }}"  class="nav-link">Tasks</a>
+    <a href="{{ url_for('agents.agents') }}" class="nav-link">Sessions</a>
+    <a href="{{ url_for('capture.capture_form') }}" class="nav-link">Capture</a>
   </nav>
 
   <main>
