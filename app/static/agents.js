@@ -39,10 +39,10 @@ function esc(str) {
 }
 
 // ── Card rendering ──────────────────────────────────────────────────────────
-function activityPill(s) {
+function activityChip(s) {
   if (s.status !== 'active' || !s.activity || s.activity === 'idle') return '';
   const cls = s.activity === 'thinking' ? 'activity-thinking' : 'activity-working';
-  return `<span class="activity-pill ${cls}">${s.activity}</span>`;
+  return `<span class="activity-chip ${cls}">${s.activity}</span>`;
 }
 
 function cardFooter(s) {
@@ -68,8 +68,8 @@ function renderCard(s) {
   const activeClass = s.status === 'active' ? ' session-active' : '';
   const selected    = s.id === selectedId ? ' selected' : '';
   const statusHtml  = s.status === 'active'
-    ? `<span class="status-badge"><span class="status-active">● active</span>${activityPill(s)}</span>`
-    : `<span class="status-badge status-stopped">○ stopped</span>`;
+    ? `<span class="status-badge status-active"><span class="status-dot"></span>active ${activityChip(s)}</span>`
+    : `<span class="status-badge status-stopped"><span class="status-dot"></span>stopped</span>`;
   return `
     <div class="session-card${activeClass}${selected}"
          data-id="${esc(s.id)}" onclick="openPanel('${esc(s.id)}')">
