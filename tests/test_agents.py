@@ -86,3 +86,26 @@ def test_toggle_autonomous_mode_proxy(client, mocker):
     resp = client.patch("/agents/sessions/abc123/autonomous_mode")
     assert resp.status_code == 200
     assert resp.get_json()["autonomous_mode"] is True
+
+
+def test_home_page_renders(client, mocker):
+    mocker.patch("app.routes.agents.requests.request",
+                 return_value=_mock_response([MOCK_SESSION]))
+    resp = client.get("/")
+    assert resp.status_code == 200
+    assert b"Sessions" in resp.data
+
+
+def test_home_page_has_capture_column(client, mocker):
+    mocker.patch("app.routes.agents.requests.request",
+                 return_value=_mock_response([MOCK_SESSION]))
+    resp = client.get("/")
+    assert b"cap-project" in resp.data
+
+
+def test_agents_page_no_capture_column(client, mocker):
+    mocker.patch("app.routes.agents.requests.request",
+                 return_value=_mock_response([MOCK_SESSION]))
+    resp = client.get("/agents")
+    assert resp.status_code == 200
+    assert b"cap-project" not in resp.data

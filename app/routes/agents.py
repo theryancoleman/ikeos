@@ -28,6 +28,21 @@ def _age_str(started_at: str | None) -> str:
         return "—"
 
 
+@bp.route("/")
+def home():
+    try:
+        sessions, _ = _proxy("GET", "/sessions")
+        for s in sessions:
+            s["age_str"] = _age_str(s.get("started_at"))
+    except Exception:
+        sessions = []
+
+    from app.services.vault import get_projects_with_meta
+    projects = get_projects_with_meta()
+    return render_template("workspace.html", sessions=sessions,
+                           projects=projects, three_col=True)
+
+
 @bp.route("/agents")
 def agents():
     try:
@@ -39,7 +54,8 @@ def agents():
 
     from app.services.vault import get_projects_with_meta
     projects = get_projects_with_meta()
-    return render_template("agents.html", sessions=sessions, projects=projects)
+    return render_template("workspace.html", sessions=sessions,
+                           projects=projects, three_col=False)
 
 
 @bp.route("/agents/sessions", methods=["GET"])

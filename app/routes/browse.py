@@ -35,11 +35,6 @@ def tasks():
     )
 
 
-@bp.route("/")
-def home_redirect():
-    return redirect(url_for("browse.tasks"))
-
-
 @bp.route("/projects/<name>")
 def project(name):
     show_all = request.args.get("show_all") == "true"

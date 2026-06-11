@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block title %}{% if three_col %}Home{% else %}Sessions{% endif %}{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='workspace.css') }}">
+
+<div class="workspace-page{% if three_col %} workspace-3col{% endif %}">
+
+  <!-- ── Col 1: Sessions ── -->
+  <div class="sessions-col">
+    <div class="col-header">
+      <h2>Sessions</h2>
+      <button class="pill pill-primary" onclick="openModal()">+ New</button>
+    </div>
+    <div class="card-grid" id="card-grid">
+      <div class="empty-state">Loading…</div>
+    </div>
+  </div>
+
+  <!-- ── Col 2: Session Detail ── -->
+  <div class="detail-col" id="detail-col">
+    <div class="panel-placeholder" id="panel-placeholder">Select a session to view details</div>
+
+    <div class="panel-header" id="panel-header">
+      <div>
+        <div class="panel-title" id="panel-title"></div>
+        <div class="panel-subtitle" id="panel-subtitle"></div>
+      </div>
+      <button class="panel-close" onclick="closePanel()">×</button>
+    </div>
+
+    <div class="panel-body" id="panel-body">
+      <!-- Command input is first -->
+      <div>
+        <div class="panel-section-label">Command</div>
+        <div class="cmd-row">
+          <input type="text" id="panel-cmd" placeholder="Type a /command…"
+                 onkeydown="if(event.key==='Enter') sendPanelCmd()">
+          <button class="pill pill-primary" onclick="sendPanelCmd()">Send</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="pane-label">
+          <span class="pane-dot" id="pane-dot"></span>
+          Live output
+        </div>
+        <div class="pane-output" id="pane-output"></div>
+      </div>
+
+      <div>
+        <div class="panel-section-label">Actions</div>
+        <div class="panel-actions" id="panel-actions"></div>
+      </div>
+    </div>
+  </div>
+
+  {% if three_col %}
+  <!-- ── Col 3: Capture ── -->
+  <div class="capture-col">
+    <div class="col-header">
+      <h2>Capture</h2>
+    </div>
+    <div class="capture-form-body">
+      <div class="field">
+        <label for="cap-project">Project</label>
+        <select id="cap-project">
+          {% for p in projects %}
+            <option value="{{ p.slug }}">{{ p.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="cap-type">Type</label>
+        <select id="cap-type">
+          <option value="note">Note</option>
+          <option value="idea">Idea</option>
+          <option value="bug">Bug</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="cap-title">Title</label>
+        <input type="text" id="cap-title" placeholder="Entry title…" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="cap-body">Description</label>
+        <textarea id="cap-body" rows="5" placeholder="Optional description…"></textarea>
+      </div>
+      <div class="capture-footer">
+        <span class="capture-msg" id="capture-msg"></span>
+        <button class="pill pill-primary-filled" onclick="submitCapture()">Capture</button>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+</div><!-- .workspace-page -->
+
+<!-- ── New session modal ── -->
+<div class="modal-overlay" id="modal-overlay"
+     onclick="if(event.target===this) closeModal()">
+  <div class="modal">
+    <h2>New Session</h2>
+    <form id="new-session-form" onsubmit="submitNewSession(event)">
+      <div class="field">
+        <label for="m-name">Name</label>
+        <input id="m-name" name="name" type="text"
+               placeholder="e.g. zone-builder-dev" required autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="m-project">Project</label>
+        <select id="m-project" name="project" onchange="updateModalDir(this.value)">
+          {% for p in projects %}
+            <option value="{{ p.slug }}">{{ p.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="m-dir">Project dir</label>
+        <input id="m-dir" name="project_dir" type="text"
+               value="/mnt/c/Server/projects/{{ projects[0].slug if projects else '' }}">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="pill" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="pill pill-primary-filled">Start Session</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>window.INITIAL_SESSIONS = {{ sessions | tojson }};</script>
+<script src="{{ url_for('static', filename='agents.js') }}"></script>
+{% endblock %}
