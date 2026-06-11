@@ -29,3 +29,8 @@ __pycache__/
 dist/
 build/
 .eggs/
+.venv/
+venv/
+
+# Claude internal
+.claude/agent-memory/

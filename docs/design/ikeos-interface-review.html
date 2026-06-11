@@ -1,0 +1,1790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IkeOS interface — design review</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  /* ── Doc shell ───────────────────────────────────────────────── */
+  body {
+    background: var(--ike-deep-plum);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+  }
+  .page {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 96px 56px 160px;
+  }
+  .ike-eyebrow.tone-insight { color: var(--ike-sunset-orange); }
+  .ike-eyebrow.tone-memory  { color: var(--ike-soft-lavender); }
+  .ike-eyebrow.tone-knowledge { color: var(--ike-knowledge-blue); }
+  .ike-eyebrow.tone-discovery { color: var(--ike-discovery-green); }
+
+  h1.display {
+    font-family: var(--font-display);
+    font-size: 76px;
+    line-height: 1.02;
+    letter-spacing: -0.030em;
+    font-weight: 700;
+    margin: 16px 0 24px;
+    color: var(--ike-lunar);
+    max-width: 18ch;
+    text-wrap: balance;
+  }
+  h2.section {
+    font-family: var(--font-sans);
+    font-size: 36px;
+    line-height: 1.12;
+    letter-spacing: -0.022em;
+    font-weight: 600;
+    color: var(--ike-lunar);
+    margin: 0 0 12px;
+    text-wrap: balance;
+  }
+  h3.sub {
+    font-family: var(--font-sans);
+    font-size: 20px;
+    line-height: 1.30;
+    letter-spacing: -0.010em;
+    font-weight: 600;
+    margin: 0 0 12px;
+    color: var(--ike-lunar);
+  }
+  p.prose {
+    font-family: var(--font-editorial);
+    font-size: 17px;
+    line-height: 1.65;
+    color: var(--text-secondary);
+    max-width: 64ch;
+    margin: 0 0 16px;
+    text-wrap: pretty;
+  }
+  p.prose strong { color: var(--ike-lunar); font-weight: 600; }
+  p.prose em { color: var(--ike-soft-lavender); font-style: italic; }
+  .lede { font-size: 19px; color: var(--text-primary); max-width: 70ch; }
+  .meta {
+    display: flex;
+    gap: 32px;
+    align-items: baseline;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-bottom: 64px;
+    flex-wrap: wrap;
+  }
+  .meta span b { color: var(--ike-soft-lavender); font-weight: 500; }
+
+  /* Hero constellation field */
+  .cover {
+    position: relative;
+    padding-top: 64px;
+    margin-bottom: 96px;
+  }
+  .cover::before {
+    content: "";
+    position: absolute;
+    inset: -120px -56px -40px;
+    background:
+      radial-gradient(ellipse at 78% 18%, rgba(255,120,73,0.10), transparent 55%),
+      radial-gradient(ellipse at 18% 70%, rgba(124,58,237,0.18), transparent 55%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .cover > * { position: relative; z-index: 1; }
+  .star {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--ike-soft-lavender);
+    box-shadow: 0 0 12px rgba(180,151,255,0.8);
+    vertical-align: middle;
+    margin: 0 6px 4px 0;
+  }
+  .okina {
+    font-family: var(--font-display);
+    font-size: 92px;
+    color: var(--ike-sunset-orange);
+    line-height: 1;
+    display: inline-block;
+    transform: translateY(8px);
+    text-shadow: 0 0 32px rgba(255,120,73,0.45);
+  }
+
+  /* ── Sections ────────────────────────────────────────────────── */
+  section { margin-bottom: 96px; scroll-margin-top: 32px; }
+  .section-num {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ike-sunset-orange);
+    letter-spacing: 0.10em;
+    margin-bottom: 8px;
+  }
+  .section-head { margin-bottom: 40px; max-width: 70ch; }
+
+  /* ── Verdict cards ──────────────────────────────────────────── */
+  .verdict-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin: 32px 0;
+  }
+  .verdict-card {
+    background: var(--ike-plum-800);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    box-shadow: var(--rim-card);
+  }
+  .verdict-card .num {
+    font-family: var(--font-display);
+    font-size: 48px;
+    line-height: 1;
+    color: var(--ike-lunar);
+    margin-bottom: 8px;
+  }
+  .verdict-card .num.purple { color: var(--ike-soft-lavender); }
+  .verdict-card .num.orange { color: var(--ike-sunset-orange); }
+  .verdict-card .num.gold   { color: var(--ike-understanding-gold); }
+  .verdict-card .label {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    line-height: 1.5;
+  }
+
+  /* ── Misalignment table ────────────────────────────────────── */
+  table.audit {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 14px;
+  }
+  table.audit th {
+    text-align: left;
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    font-weight: 500;
+    color: var(--ike-sunset-orange);
+    border-bottom: 1px solid var(--border-strong);
+    padding: 12px 16px 12px 0;
+    vertical-align: bottom;
+  }
+  table.audit td {
+    padding: 18px 16px 18px 0;
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    vertical-align: top;
+    line-height: 1.55;
+  }
+  table.audit td.num {
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    width: 36px;
+  }
+  table.audit td.what { color: var(--ike-lunar); font-weight: 500; width: 22%; }
+  table.audit td.has { color: var(--status-error); font-family: var(--font-mono); font-size: 12px; width: 24%; }
+  table.audit td.needs { color: var(--ike-discovery-green); font-family: var(--font-mono); font-size: 12px; width: 24%; }
+  table.audit td .swatch {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border-radius: 2px;
+    vertical-align: middle;
+    margin-right: 6px;
+    border: 1px solid rgba(255,255,255,0.12);
+  }
+
+  /* ── Mockup frames ─────────────────────────────────────────── */
+  .mockup-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin: 32px 0 16px;
+    align-items: stretch;
+  }
+  .mockup-row.solo { grid-template-columns: 1fr; }
+  .mockup {
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    border: 1px solid var(--border-default);
+    position: relative;
+    background: var(--ike-plum-800);
+    box-shadow: var(--rim-card);
+  }
+  .mockup .label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    background: rgba(0,0,0,0.30);
+    border-bottom: 1px solid var(--border-subtle);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+  }
+  .mockup .label .tag-current { color: var(--status-error); }
+  .mockup .label .tag-recommended { color: var(--ike-discovery-green); }
+  .mockup .label .caption { color: var(--text-tertiary); text-transform: none; letter-spacing: 0; font-family: var(--font-sans); font-size: 11px; }
+  .mockup .frame {
+    aspect-ratio: 16 / 10;
+    display: block;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* ──────────────────────────────────────────────────────────── *
+   * BEFORE: faithful reproduction of current /app workspace
+   * ──────────────────────────────────────────────────────────── */
+  .before {
+    --b-bg: #1a1a2e;       /* style.css */
+    --b-bg2: #1a1a1a;       /* workspace.css canvas */
+    --b-surface: #16213e;
+    --b-card: #1a1a1a;
+    --b-pane: #000;
+    --b-border: #2e2e2e;
+    --b-accent: #7c6af7;
+    --b-text: #e0e0e0;
+    --b-muted: #888;
+    --b-text2: #f0f0f0;
+    --b-success: #4ade80;
+    --b-thinking: #a78bfa;
+    background: var(--b-bg2);
+    color: var(--b-text);
+    font-family: system-ui, sans-serif;
+    font-size: 13px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  .before .nav {
+    background: var(--b-surface);
+    border-bottom: 1px solid #0f3460;
+    padding: 8px 16px;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+  .before .nav .brand { color: #7c5cbf; font-weight: 700; font-size: 14px; }
+  .before .nav .link { color: var(--b-text); }
+  .before .nav .version { margin-left: auto; color: var(--b-muted); font-family: monospace; font-size: 10px; }
+  .before .grid {
+    display: grid;
+    grid-template-columns: 32% 1fr 30%;
+    flex: 1;
+    min-height: 0;
+  }
+  .before .col {
+    border-right: 1px solid var(--b-border);
+    display: flex; flex-direction: column;
+    min-height: 0;
+  }
+  .before .col:last-child { border-right: none; border-left: 1px solid var(--b-border); background: #141414; }
+  .before .col-mid { background: #141414; border-right: none; }
+  .before .col-head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--b-border);
+  }
+  .before .col-head h3 {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--b-muted); margin: 0; font-family: system-ui;
+  }
+  .before .pill {
+    border: 1px solid currentColor; border-radius: 999px;
+    padding: 3px 9px; font-size: 10px; color: var(--b-accent); background: transparent;
+  }
+  .before .pill.filled { background: var(--b-accent); color: white; font-weight: 600; }
+  .before .pill.ghost { color: var(--b-muted); }
+  .before .cards { display: flex; flex-direction: column; gap: 7px; padding: 10px; overflow: hidden; }
+  .before .session-card {
+    background: var(--b-card);
+    border: 1px solid var(--b-border);
+    border-top: 3px solid var(--b-border);
+    border-radius: 8px;
+    padding: 8px 10px;
+  }
+  .before .session-card.active { border-top-color: var(--b-success); }
+  .before .session-card.selected { box-shadow: 0 0 0 2px var(--b-accent); border-color: var(--b-accent); }
+  .before .card-name { font-size: 11px; font-weight: 600; color: var(--b-text2); }
+  .before .card-project { font-size: 9px; color: var(--b-muted); margin-bottom: 6px; }
+  .before .card-meta { display: flex; justify-content: space-between; align-items: center; font-size: 9px; }
+  .before .status-pill {
+    border: 1px solid var(--b-thinking); color: var(--b-thinking);
+    font-size: 8px; padding: 1px 5px; border-radius: 999px;
+  }
+  .before .age { color: var(--b-muted); font-size: 9px; font-family: monospace; }
+  .before .panel-head {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--b-border);
+    display: flex; justify-content: space-between; align-items: flex-start;
+  }
+  .before .panel-head .title { font-size: 12px; color: var(--b-text2); font-weight: 600; }
+  .before .panel-head .subt { font-size: 9px; color: var(--b-muted); }
+  .before .panel-body {
+    padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0; overflow: hidden;
+  }
+  .before .section-label {
+    font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--b-muted); margin-bottom: 4px;
+  }
+  .before .cmd-row { display: flex; gap: 6px; }
+  .before .cmd-row input {
+    flex: 1; background: #111; border: 1px solid var(--b-border); border-radius: 6px;
+    color: var(--b-text); padding: 5px 8px; font-size: 10px;
+  }
+  .before .cmd-row input::placeholder { color: #4a4a4a; }
+  .before .pane {
+    background: #000; border: 1px solid #1e1e1e; border-radius: 4px;
+    padding: 8px; font-family: monospace; font-size: 9px;
+    color: var(--b-success); flex: 1; min-height: 80px;
+    white-space: pre-wrap;
+  }
+  .before .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  .before .actions .pill { padding: 4px; font-size: 9px; }
+  .before .cap-body { padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 0; }
+  .before .cap-body label { font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--b-muted); margin-bottom: 2px; display: block; }
+  .before .cap-body select, .before .cap-body input, .before .cap-body textarea {
+    background: #111; border: 1px solid var(--b-border); border-radius: 6px;
+    color: var(--b-text); padding: 5px 7px; font-size: 10px;
+    width: 100%; font-family: inherit;
+  }
+  .before .cap-footer { display: flex; justify-content: flex-end; }
+
+  /* ──────────────────────────────────────────────────────────── *
+   * AFTER: ʻIkeOS-aligned workspace
+   * ──────────────────────────────────────────────────────────── */
+  .after {
+    background: var(--ike-deep-plum);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    position: relative;
+  }
+  /* faint constellation field */
+  .after::before {
+    content: "";
+    position: absolute; inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 10% 30%, rgba(180,151,255,0.50), transparent 60%),
+      radial-gradient(1px 1px at 24% 70%, rgba(180,151,255,0.35), transparent 60%),
+      radial-gradient(1.5px 1.5px at 42% 18%, rgba(255,184,128,0.45), transparent 60%),
+      radial-gradient(1px 1px at 58% 84%, rgba(180,151,255,0.35), transparent 60%),
+      radial-gradient(1px 1px at 72% 32%, rgba(59,130,246,0.40), transparent 60%),
+      radial-gradient(1px 1px at 88% 60%, rgba(180,151,255,0.40), transparent 60%),
+      radial-gradient(1px 1px at 33% 92%, rgba(180,151,255,0.30), transparent 60%);
+    background-size: 100% 100%;
+    opacity: 0.30;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .after > * { position: relative; z-index: 1; }
+  .after .nav {
+    padding: 12px 20px;
+    display: flex; gap: 24px; align-items: center;
+    border-bottom: 1px solid var(--border-subtle);
+    background: rgba(11,6,26,0.55);
+    backdrop-filter: blur(20px);
+  }
+  .after .nav .brand {
+    display: flex; align-items: center; gap: 8px;
+    font-family: var(--font-display); font-weight: 700; font-size: 16px;
+    color: var(--ike-lunar);
+    letter-spacing: -0.01em;
+  }
+  .after .nav .brand .mark {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #FF7849, #7C3AED 60%, transparent 80%);
+    box-shadow: 0 0 10px rgba(255,120,73,0.5);
+    position: relative;
+  }
+  .after .nav .brand .mark::after {
+    content: ""; position: absolute; inset: -3px;
+    border-radius: 50%;
+    border: 1px solid rgba(180,151,255,0.35);
+  }
+  .after .nav .brand .okina { color: var(--ike-sunset-orange); font-family: var(--font-display); }
+  .after .nav .link {
+    font-size: 12px; color: var(--text-secondary);
+    text-transform: none; letter-spacing: 0;
+  }
+  .after .nav .link.active { color: var(--ike-lunar); }
+  .after .nav .link.active::after {
+    content: ""; display: block; height: 1px;
+    background: var(--ike-sunset-orange);
+    box-shadow: 0 0 6px rgba(255,120,73,0.7);
+    margin-top: 4px;
+  }
+  .after .nav .version {
+    margin-left: auto;
+    font-family: var(--font-mono); font-size: 10px;
+    color: var(--text-muted);
+  }
+  .after .grid {
+    display: grid; grid-template-columns: 32% 1fr 30%;
+    flex: 1; min-height: 0;
+  }
+  .after .col {
+    display: flex; flex-direction: column;
+    border-right: 1px solid var(--border-subtle);
+    min-height: 0;
+  }
+  .after .col-mid { border-right: 1px solid var(--border-subtle); background: rgba(27,17,48,0.45); }
+  .after .col:last-child { border-right: none; }
+  .after .col-head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .after .eyebrow {
+    font-family: var(--font-sans);
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+  }
+  .after .btn-primary {
+    background: var(--ike-vibrant-purple);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 6px 12px;
+    font-size: 11px; font-weight: 500;
+    font-family: inherit;
+    box-shadow: 0 0 18px rgba(124,58,237,0.45);
+    display: inline-flex; align-items: center; gap: 5px;
+    cursor: pointer;
+  }
+  .after .btn-ghost {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-strong);
+    border-radius: 10px;
+    padding: 5px 10px;
+    font-size: 11px;
+    font-family: inherit;
+  }
+  .after .cards { display: flex; flex-direction: column; gap: 8px; padding: 12px; overflow: hidden; }
+  .after .scard {
+    background: var(--ike-plum-800);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 10px 12px;
+    position: relative;
+    overflow: hidden;
+  }
+  .after .scard.selected {
+    border-color: var(--ike-vibrant-purple);
+    box-shadow: 0 0 0 1px var(--ike-vibrant-purple), 0 0 24px rgba(124,58,237,0.25);
+  }
+  .after .scard .dot-row {
+    display: flex; align-items: center; gap: 6px;
+    margin-bottom: 4px;
+  }
+  .after .scard .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+  }
+  .after .scard .dot.memory { background: var(--ike-vibrant-purple); box-shadow: 0 0 8px rgba(124,58,237,0.7); }
+  .after .scard .dot.knowledge { background: var(--ike-knowledge-blue); box-shadow: 0 0 8px rgba(59,130,246,0.6); }
+  .after .scard .dot.discovery { background: var(--ike-discovery-green); box-shadow: 0 0 8px rgba(45,212,191,0.6); animation: pulse 2.2s ease-in-out infinite; }
+  .after .scard .dot.dim { background: var(--text-muted); box-shadow: none; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .after .scard .name { font-size: 12px; font-weight: 500; color: var(--ike-lunar); }
+  .after .scard .meta-row {
+    display: flex; align-items: center; justify-content: space-between; margin-top: 8px;
+    font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary);
+  }
+  .after .scard .project {
+    font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary);
+    letter-spacing: 0.04em;
+  }
+  .after .scard .activity {
+    font-size: 9px; padding: 2px 7px;
+    border-radius: 999px;
+    color: var(--ike-soft-lavender);
+    background: rgba(180,151,255,0.10);
+    letter-spacing: 0.06em; text-transform: uppercase;
+  }
+  .after .panel-head {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex; justify-content: space-between; align-items: flex-start;
+  }
+  .after .panel-head .title { font-size: 13px; font-weight: 600; color: var(--ike-lunar); margin-top: 2px; }
+  .after .panel-head .subt { font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary); margin-top: 2px; }
+  .after .panel-body { padding: 14px 20px; display: flex; flex-direction: column; gap: 14px; flex: 1; min-height: 0; overflow: hidden; }
+  .after .cmd-row { display: flex; gap: 8px; }
+  .after .cmd-row input {
+    flex: 1;
+    background: rgba(11,6,26,0.65);
+    border: 1px solid var(--border-default);
+    border-radius: 10px;
+    color: var(--ike-lunar);
+    padding: 7px 11px;
+    font-size: 11px;
+    font-family: inherit;
+  }
+  .after .cmd-row input::placeholder { color: var(--text-muted); }
+  .after .pane {
+    background: var(--bg-inset);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 10px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--ike-discovery-green);
+    flex: 1; min-height: 80px;
+    white-space: pre-wrap;
+    line-height: 1.55;
+  }
+  .after .actions {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+  }
+  .after .actions .btn-ghost { padding: 6px; font-size: 10px; text-align: center; }
+  .after .cap-body { padding: 14px 18px; display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 0; }
+  .after .cap-body label {
+    font-family: var(--font-sans); font-size: 10px;
+    letter-spacing: 0.22em; text-transform: uppercase; font-weight: 500;
+    color: var(--text-tertiary); margin-bottom: 4px; display: block;
+  }
+  .after .cap-body select, .after .cap-body input, .after .cap-body textarea {
+    background: rgba(11,6,26,0.65);
+    border: 1px solid var(--border-default);
+    border-radius: 10px;
+    color: var(--ike-lunar);
+    padding: 7px 10px;
+    font-size: 11px;
+    width: 100%;
+    font-family: inherit;
+  }
+  .after .cap-footer { display: flex; justify-content: space-between; align-items: center; }
+  .after .cap-footer .help { font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary); }
+  .after .type-row { display: flex; gap: 6px; }
+  .after .type-chip {
+    padding: 4px 9px; border-radius: 999px;
+    font-size: 10px; letter-spacing: 0.04em;
+    border: 1px solid currentColor;
+    background: transparent;
+  }
+  .after .type-chip.note { color: var(--ike-knowledge-blue); }
+  .after .type-chip.idea { color: var(--ike-soft-lavender); background: rgba(180,151,255,0.08); border-color: var(--ike-soft-lavender); }
+  .after .type-chip.bug  { color: var(--ike-sunset-orange); }
+
+  /* ── Dashboard mockups (tasks page) ────────────────────────── */
+  .dash {
+    height: 100%;
+    display: flex; flex-direction: column;
+  }
+  .dash.before { padding: 0; }
+  .dash.before .body { padding: 24px 32px; overflow: hidden; flex: 1; }
+  .dash.before h1 { font-size: 18px; margin-bottom: 12px; color: var(--b-text2); font-weight: 600; font-family: system-ui; }
+  .dash.before h2.sec {
+    font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase;
+    color: var(--b-muted); margin: 16px 0 6px; font-weight: 600; font-family: system-ui;
+  }
+  .dash.before .pgrid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px;
+  }
+  .dash.before .pcard {
+    background: var(--b-surface);
+    border: 1px solid #0f3460;
+    border-radius: 6px;
+    padding: 10px 12px;
+  }
+  .dash.before .pname { font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+  .dash.before .triage { background: #5a3e8c; color: white; font-size: 9px; border-radius: 10px; padding: 1px 6px; margin-left: auto; font-weight: 700; }
+  .dash.before .chips { display: flex; flex-wrap: wrap; gap: 4px; }
+  .dash.before .chip { font-size: 9px; padding: 1px 5px; border-radius: 3px; font-weight: 600; color: white; }
+  .dash.before .chip.bug { background: #7b2d2d; }
+  .dash.before .chip.idea { background: #1e4d8c; }
+  .dash.before .chip.note { background: #2d6a4f; }
+  .dash.before .erow {
+    display: flex; gap: 8px; align-items: center;
+    padding: 5px 0; border-bottom: 1px solid #0f3460;
+    font-size: 11px;
+  }
+  .dash.before .badge {
+    padding: 1px 6px; border-radius: 3px;
+    font-size: 9px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.04em; color: white;
+  }
+  .dash.before .badge.note { background: #2d6a4f; }
+  .dash.before .badge.idea { background: #1e4d8c; }
+  .dash.before .badge.bug { background: #7b2d2d; }
+  .dash.before .badge.new { background: #5a3e8c; }
+  .dash.before .erow .link { color: #7c5cbf; }
+  .dash.before .erow .proj { color: var(--b-muted); font-size: 10px; }
+  .dash.before .erow .date { margin-left: auto; color: var(--b-muted); font-size: 10px; font-family: monospace; }
+
+  .dash.after { padding: 0; }
+  .dash.after .body { padding: 28px 36px; overflow: hidden; flex: 1; }
+  .dash.after h1.title {
+    font-family: var(--font-display); font-size: 30px; line-height: 1.1; font-weight: 700;
+    color: var(--ike-lunar); margin: 0 0 6px;
+  }
+  .dash.after .sub {
+    font-family: var(--font-mono); font-size: 11px; color: var(--text-tertiary);
+    margin-bottom: 24px;
+  }
+  .dash.after .eye {
+    font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+    font-weight: 500; color: var(--text-tertiary);
+    margin: 20px 0 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .dash.after .eye .count { color: var(--ike-sunset-orange); font-family: var(--font-mono); }
+  .dash.after .pgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .dash.after .pcard {
+    background: var(--ike-plum-800);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    padding: 14px 16px;
+    position: relative;
+  }
+  .dash.after .pcard.triaged {
+    border-color: rgba(255,120,73,0.30);
+  }
+  .dash.after .pcard.triaged::before {
+    content: ""; position: absolute; inset: 0;
+    border-radius: 14px;
+    box-shadow: inset 0 0 30px rgba(255,120,73,0.06);
+    pointer-events: none;
+  }
+  .dash.after .pname {
+    font-family: var(--font-sans);
+    font-size: 13px; color: var(--ike-lunar); font-weight: 500;
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .dash.after .triage-pill {
+    background: rgba(255,120,73,0.12);
+    color: var(--ike-sunset-orange);
+    border: 1px solid rgba(255,120,73,0.40);
+    font-size: 10px; padding: 1px 7px;
+    border-radius: 999px;
+    font-family: var(--font-mono);
+  }
+  .dash.after .badges {
+    display: flex; gap: 6px; flex-wrap: wrap;
+  }
+  .dash.after .b {
+    font-size: 10px; padding: 2px 8px;
+    border-radius: 999px;
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+  .dash.after .b .d {
+    width: 5px; height: 5px; border-radius: 50%;
+  }
+  .dash.after .b.bug { color: var(--ike-sunset-orange); background: rgba(255,120,73,0.08); border: 1px solid rgba(255,120,73,0.30); }
+  .dash.after .b.bug .d { background: var(--ike-sunset-orange); }
+  .dash.after .b.idea { color: var(--ike-soft-lavender); background: rgba(180,151,255,0.08); border: 1px solid rgba(180,151,255,0.25); }
+  .dash.after .b.idea .d { background: var(--ike-soft-lavender); }
+  .dash.after .b.note { color: var(--ike-knowledge-blue); background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.30); }
+  .dash.after .b.note .d { background: var(--ike-knowledge-blue); }
+  .dash.after .erow {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 12px;
+  }
+  .dash.after .erow .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .dash.after .erow .dot.memory { background: var(--ike-soft-lavender); }
+  .dash.after .erow .dot.insight { background: var(--ike-sunset-orange); box-shadow: 0 0 6px rgba(255,120,73,0.55); }
+  .dash.after .erow .dot.knowledge { background: var(--ike-knowledge-blue); }
+  .dash.after .erow .ttl { color: var(--ike-lunar); }
+  .dash.after .erow .proj {
+    font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary);
+  }
+  .dash.after .erow .date {
+    margin-left: auto; font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary);
+  }
+
+  /* ── Token migration table ─────────────────────────────────── */
+  table.tokens {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    margin: 16px 0;
+  }
+  table.tokens th {
+    text-align: left;
+    font-family: var(--font-sans);
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    font-weight: 500;
+    color: var(--ike-sunset-orange);
+    border-bottom: 1px solid var(--border-strong);
+    padding: 12px 16px 12px 0;
+  }
+  table.tokens td {
+    padding: 10px 16px 10px 0;
+    border-bottom: 1px solid var(--border-subtle);
+    vertical-align: middle;
+  }
+  table.tokens td.from { color: var(--text-muted); }
+  table.tokens td.from .hex { color: var(--status-error); }
+  table.tokens td.to { color: var(--ike-soft-lavender); }
+  table.tokens td.to .hex { color: var(--ike-discovery-green); }
+  table.tokens td.why {
+    font-family: var(--font-sans); color: var(--text-secondary);
+    font-size: 12px; line-height: 1.55;
+  }
+  table.tokens td .swatch {
+    display: inline-block;
+    width: 12px; height: 12px;
+    border-radius: 3px;
+    border: 1px solid rgba(255,255,255,0.10);
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+
+  /* ── Phased plan ───────────────────────────────────────────── */
+  .phases {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin: 24px 0;
+  }
+  .phase {
+    background: var(--ike-plum-800);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    position: relative;
+  }
+  .phase .num {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ike-sunset-orange);
+    letter-spacing: 0.10em;
+    margin-bottom: 8px;
+  }
+  .phase h3 {
+    font-family: var(--font-sans);
+    font-size: 20px;
+    color: var(--ike-lunar);
+    font-weight: 600;
+    margin-bottom: 4px;
+    letter-spacing: -0.010em;
+  }
+  .phase .est {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ike-soft-lavender);
+    margin-bottom: 16px;
+  }
+  .phase ul {
+    list-style: none; padding: 0; margin: 0;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .phase ul li {
+    font-family: var(--font-editorial);
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    padding-left: 18px;
+    position: relative;
+  }
+  .phase ul li::before {
+    content: "◦";
+    position: absolute;
+    left: 0; top: 0;
+    color: var(--ike-soft-lavender);
+    font-size: 16px;
+    line-height: 1.3;
+  }
+  .phase ul li b { color: var(--ike-lunar); font-weight: 500; font-family: var(--font-sans); }
+
+  /* ── Voice patches table ──────────────────────────────────── */
+  table.voice {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-sans);
+    font-size: 13px;
+    margin: 16px 0;
+  }
+  table.voice th {
+    text-align: left;
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    font-weight: 500;
+    color: var(--ike-sunset-orange);
+    border-bottom: 1px solid var(--border-strong);
+    padding: 12px 16px 12px 0;
+  }
+  table.voice td {
+    padding: 14px 16px 14px 0;
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    vertical-align: top;
+    line-height: 1.55;
+  }
+  table.voice td.loc { font-family: var(--font-mono); font-size: 11px; color: var(--text-tertiary); width: 22%; }
+  table.voice td.bad { color: var(--text-muted); font-style: italic; width: 36%; }
+  table.voice td.bad::before { content: "“"; color: var(--status-error); }
+  table.voice td.bad::after { content: "”"; color: var(--status-error); }
+  table.voice td.good { color: var(--ike-lunar); }
+  table.voice td.good::before { content: "“"; color: var(--ike-discovery-green); }
+  table.voice td.good::after { content: "”"; color: var(--ike-discovery-green); }
+
+  hr.div {
+    border: none;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border-strong), transparent);
+    margin: 48px 0;
+  }
+
+  /* Headed callout */
+  .callout {
+    border-left: 2px solid var(--ike-sunset-orange);
+    padding: 4px 0 4px 18px;
+    margin: 24px 0;
+    background: linear-gradient(90deg, rgba(255,120,73,0.04), transparent 70%);
+  }
+  .callout .ike-eyebrow { margin-bottom: 6px; }
+  .callout p { margin: 0; font-family: var(--font-editorial); color: var(--text-secondary); line-height: 1.6; font-size: 15px; max-width: 64ch; }
+
+  @media print {
+    body { background: white !important; }
+    .page { padding: 32px; }
+    h1.display, .ike-lunar { color: var(--ike-plum-900) !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+<!-- ════════════════════ COVER ════════════════════ -->
+<header class="cover">
+  <div class="ike-eyebrow tone-insight">Insight &middot; Design Review &middot; 11 Jun 2026</div>
+  <h1 class="display"><span class="okina">ʻ</span>IkeOS interface review &mdash; <em style="font-style: italic; color: var(--ike-soft-lavender);">bolder, on-brand, one system.</em></h1>
+  <p class="prose lede">The interface inside <code style="color:var(--ike-soft-lavender)">obsidian-capture</code> works. It loads, it captures, the three-column workspace lands. But it doesn't look or feel like <strong>ʻIkeOS</strong> yet &mdash; it looks like a competent generic dark tool wearing the wrong purple. Below: an audit of where the gap sits, then a redrawn workspace, dashboard, and nav showing how far one CSS file can take it.</p>
+
+  <div class="meta">
+    <span>Reviewed&nbsp;&nbsp;<b>theryancoleman/obsidian-capture@b0673d</b></span>
+    <span>Against&nbsp;&nbsp;<b>ʻIkeOS Design System</b></span>
+    <span>Surfaces&nbsp;&nbsp;<b>workspace, tasks, capture, base nav</b></span>
+  </div>
+</header>
+
+<!-- ════════════════════ VERDICT ════════════════════ -->
+<section>
+  <div class="section-num">01 &middot; VERDICT</div>
+  <div class="section-head">
+    <h2 class="section">A working tool with no brand on it.</h2>
+    <p class="prose">The three-column layout is good &mdash; keep it. The visual language is not &mdash; the canvas is the wrong shade of dark (blue-black, not deep plum), the purple is the wrong purple (and there are two of them, by accident), and there is no ʻokina, no eyebrows, no halo, no constellation. Every component is doing generic-dark-tool work where the brand asks for navigator work. The fix is a token swap plus eight small component patches, not a rebuild.</p>
+  </div>
+
+  <div class="verdict-grid">
+    <div class="verdict-card">
+      <div class="num orange">12</div>
+      <div class="label">brand misalignments, sorted by visual impact &mdash; section 03</div>
+    </div>
+    <div class="verdict-card">
+      <div class="num purple">2</div>
+      <div class="label">parallel token sets in the codebase that disagree with each other &mdash; <code>style.css</code> &amp; <code>workspace.css</code></div>
+    </div>
+    <div class="verdict-card">
+      <div class="num gold">~1d</div>
+      <div class="label">to land Phase&nbsp;1 &mdash; tokens + nav + workspace look on-brand at the surface level</div>
+    </div>
+  </div>
+</section>
+
+<hr class="div">
+
+<!-- ════════════════════ AUDIT ════════════════════ -->
+<section>
+  <div class="section-num">02 &middot; AS BUILT</div>
+  <div class="section-head">
+    <h2 class="section">What's on screen today.</h2>
+    <p class="prose">A faithful redraw of the workspace home (<code>/</code>, <code>three_col=True</code>) as it ships from <code>workspace.html</code> + <code>workspace.css</code> + <code>style.css</code> + <code>base.html</code>. Every colour, font, radius, and border is the real value pulled from the repo.</p>
+  </div>
+
+  <div class="mockup-row solo">
+    <div class="mockup">
+      <div class="label">
+        <span class="tag-current">CURRENT &middot; obsidian-capture@main</span>
+        <span class="caption">Home &middot; three-column workspace</span>
+      </div>
+      <div class="frame">
+        <div class="before">
+          <div class="nav">
+            <span class="brand">Obsidian Capture</span>
+            <span class="link">Home</span>
+            <span class="link">Tasks</span>
+            <span class="link">Sessions</span>
+            <span class="link">Capture</span>
+            <span class="version">v2026.06.11</span>
+          </div>
+          <div class="grid">
+            <div class="col">
+              <div class="col-head">
+                <h3>Sessions</h3>
+                <span class="pill">+ New</span>
+              </div>
+              <div class="cards">
+                <div class="session-card active selected">
+                  <div class="card-name">zone-builder-dev</div>
+                  <div class="card-project">aurora-zone</div>
+                  <div class="card-meta">
+                    <span style="color:var(--b-success)">● active</span>
+                    <span class="status-pill">thinking</span>
+                    <span class="age">2m</span>
+                  </div>
+                </div>
+                <div class="session-card active">
+                  <div class="card-name">capture-refactor</div>
+                  <div class="card-project">obsidian-capture</div>
+                  <div class="card-meta">
+                    <span style="color:var(--b-success)">● active</span>
+                    <span class="status-pill" style="border-color:#38bdf8;color:#38bdf8">working</span>
+                    <span class="age">14m</span>
+                  </div>
+                </div>
+                <div class="session-card">
+                  <div class="card-name">spec-cursor-stay</div>
+                  <div class="card-project">obsidian-capture</div>
+                  <div class="card-meta">
+                    <span style="color:var(--b-muted)">● stopped</span>
+                    <span class="age">3h</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col col-mid">
+              <div class="panel-head">
+                <div>
+                  <div class="title">zone-builder-dev</div>
+                  <div class="subt">aurora-zone &middot; tmux: agents-zbd &middot; 14:22:08</div>
+                </div>
+                <div style="color:var(--b-muted)">×</div>
+              </div>
+              <div class="panel-body">
+                <div>
+                  <div class="section-label">Command</div>
+                  <div class="cmd-row">
+                    <input placeholder="Type a /command…">
+                    <span class="pill">Send</span>
+                  </div>
+                </div>
+                <div>
+                  <div class="section-label">● Live output</div>
+                  <div class="pane">› running tests…
+PASS  src/zone/builder.test.ts
+PASS  src/zone/layout.test.ts
+&nbsp;
+&nbsp;Test Suites: 2 passed, 2 total
+&nbsp;Tests:       18 passed, 18 total
+&nbsp;Time:        2.41 s</div>
+                </div>
+                <div>
+                  <div class="section-label">Actions</div>
+                  <div class="actions">
+                    <span class="pill">Save</span>
+                    <span class="pill ghost">Continue</span>
+                    <span class="pill" style="color:#f87171;border-color:#f87171">Stop</span>
+                    <span class="pill ghost">Detach</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col">
+              <div class="col-head"><h3>Capture</h3></div>
+              <div class="cap-body">
+                <div>
+                  <label>Project</label>
+                  <select><option>aurora-zone</option></select>
+                </div>
+                <div>
+                  <label>Type</label>
+                  <select><option>Note</option></select>
+                </div>
+                <div>
+                  <label>Title</label>
+                  <input placeholder="Entry title…">
+                </div>
+                <div>
+                  <label>Description</label>
+                  <textarea rows="3" placeholder="Optional description…"></textarea>
+                </div>
+                <div class="cap-footer">
+                  <span class="pill filled">Capture</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <div class="ike-eyebrow tone-insight">What this screen says about the brand</div>
+    <p>A blue-black canvas with a violet-leaning accent reads as <em>generic dark IDE</em>, not as a navigator's instrument. The wordmark says <em>Obsidian Capture</em>, not <em>ʻIkeOS</em>. The session badges are pill-borders in <code>currentColor</code> &mdash; cleanly executed, but doing decoration where the brand asks them to do <em>meaning</em>. Nothing here is wrong; almost nothing here is <em>ʻIkeOS</em>.</p>
+  </div>
+</section>
+
+<hr class="div">
+
+<!-- ════════════════════ MISALIGNMENTS ════════════════════ -->
+<section>
+  <div class="section-num">03 &middot; MISALIGNMENTS</div>
+  <div class="section-head">
+    <h2 class="section">Twelve gaps between code and system.</h2>
+    <p class="prose">Sorted roughly by visible impact. Most of these collapse into a single CSS swap; some are one-line copy edits; two are component patches.</p>
+  </div>
+
+  <table class="audit">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>What</th>
+        <th>Has today</th>
+        <th>System asks for</th>
+        <th>Why it matters</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="num">01</td>
+        <td class="what">Dark canvas</td>
+        <td class="has"><span class="swatch" style="background:#1a1a2e"></span>#1A1A2E  <span style="color:var(--text-muted)">/</span> <span class="swatch" style="background:#1a1a1a"></span>#1A1A1A</td>
+        <td class="needs"><span class="swatch" style="background:#120A1F"></span>#120A1F deep plum</td>
+        <td>The canvas <em>is</em> the brand. Today it's two competing dark greys; the spec calls for a single night-sky plum that all dark surfaces tint from.</td>
+      </tr>
+      <tr>
+        <td class="num">02</td>
+        <td class="what">Brand accent</td>
+        <td class="has"><span class="swatch" style="background:#7c5cbf"></span>#7C5CBF  <span style="color:var(--text-muted)">/</span> <span class="swatch" style="background:#7c6af7"></span>#7C6AF7</td>
+        <td class="needs"><span class="swatch" style="background:#7C3AED"></span>#7C3AED vibrant purple</td>
+        <td>Two purples in two stylesheets, neither of them brand purple. <code>style.css</code> reads dusty; <code>workspace.css</code> reads cold-violet. Memory is one specific hue.</td>
+      </tr>
+      <tr>
+        <td class="num">03</td>
+        <td class="what">Wordmark</td>
+        <td class="has">"Obsidian Capture"</td>
+        <td class="needs">ʻIkeOS + constellation mark</td>
+        <td>The product is ʻIkeOS. The lockup with the ʻokina + orbit mark should be the first thing you see; the current text wordmark gives the system no identity.</td>
+      </tr>
+      <tr>
+        <td class="num">04</td>
+        <td class="what">UI typeface</td>
+        <td class="has">system-ui, sans-serif</td>
+        <td class="needs">Geist (UI) + Geist Mono (IDs/timestamps)</td>
+        <td>System-ui defaults to San Francisco/Segoe and ships a different rhythm on every host. Geist is the brand's working font; Geist Mono is the brand's <em>numeric</em> font.</td>
+      </tr>
+      <tr>
+        <td class="num">05</td>
+        <td class="what">Display moments</td>
+        <td class="has">No serif anywhere</td>
+        <td class="needs">DM Serif Display on titles + page H1</td>
+        <td>The brand's slow-reading character lives in the serif. The dashboard <em>"Dashboard"</em> and workspace title are the right places for it &mdash; never in chrome, but always on page H1.</td>
+      </tr>
+      <tr>
+        <td class="num">06</td>
+        <td class="what">Section labels</td>
+        <td class="has">UPPER, 0.05&ndash;0.08em tracking</td>
+        <td class="needs">Eyebrow: 11px, 0.22em, semibold, lavender-tertiary</td>
+        <td>The signature eyebrow is one of the brand's smallest and most consistent moves &mdash; column heads, panel labels, capture form labels all want it. Today they're <em>almost</em>-eyebrows.</td>
+      </tr>
+      <tr>
+        <td class="num">07</td>
+        <td class="what">Focus + selected state</td>
+        <td class="has">2px solid border-color shift</td>
+        <td class="needs">Celestial halo (<code>--glow-purple-md</code>)</td>
+        <td>The brand's signature elevation is a halo, not a border. <code>0 0 24px rgba(124,58,237,0.35)</code> on the selected session card is the right reading.</td>
+      </tr>
+      <tr>
+        <td class="num">08</td>
+        <td class="what">Type badges (note/idea/bug)</td>
+        <td class="has"><span class="swatch" style="background:#2d6a4f"></span><span class="swatch" style="background:#1e4d8c"></span><span class="swatch" style="background:#7b2d2d"></span> arbitrary forest/navy/maroon</td>
+        <td class="needs">Semantic palette: knowledge / memory / insight</td>
+        <td>Today the badge colours are decorative. The system says <em>colour = meaning</em>: notes are <strong>knowledge</strong> (blue), ideas are <strong>memory</strong> (purple), bugs are <strong>insight</strong> (orange &mdash; "the thing demanding your attention").</td>
+      </tr>
+      <tr>
+        <td class="num">09</td>
+        <td class="what">Status badges (new/open/in-prog/done)</td>
+        <td class="has">Five hand-mixed plums + greys</td>
+        <td class="needs">SemanticDot + label, in semantic colour</td>
+        <td>Today five flat pills do the work. Replace with a <code>SemanticDot</code> (halo for active states, dim for closed) + a plain text label &mdash; less noise, more navigator.</td>
+      </tr>
+      <tr>
+        <td class="num">10</td>
+        <td class="what">Activity pills (thinking/working)</td>
+        <td class="has">Light purple + sky-blue, currentColor border</td>
+        <td class="needs">Memory (thinking) + Knowledge (working) with pulse dot</td>
+        <td>The colours are nearly right by accident. Lock them to the semantic tokens and pair with a 2.2s pulse <code>SemanticDot</code> so the system's ambient motion shows through.</td>
+      </tr>
+      <tr>
+        <td class="num">11</td>
+        <td class="what">Empty states</td>
+        <td class="has">"Select a session to view details"</td>
+        <td class="needs">Constellation field + wayfinder copy</td>
+        <td>The brand frames empty as the start of a journey, not a deficiency. <em>"Choose a session, or chart a new one."</em> over a <code>ConstellationField</code> reads as ʻIkeOS in three seconds.</td>
+      </tr>
+      <tr>
+        <td class="num">12</td>
+        <td class="what">Two parallel CSS files</td>
+        <td class="has"><code>style.css</code> + <code>workspace.css</code>, each redefining tokens</td>
+        <td class="needs">One token import from <code>ʻIkeOS Design System</code></td>
+        <td>The two files have already drifted (different purples, different surface greys). Consolidate to <code>@import "ikeos/styles.css"</code> at the top of one app stylesheet. Components reference tokens only.</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<hr class="div">
+
+<!-- ════════════════════ RECOMMENDED — WORKSPACE ════════════════════ -->
+<section>
+  <div class="section-num">04 &middot; RECOMMENDED &middot; WORKSPACE</div>
+  <div class="section-head">
+    <h2 class="section">The same three columns, redrawn as ʻIkeOS.</h2>
+    <p class="prose">Same layout, same information density, same affordances. Only the system changes: plum canvas, vibrant-purple memory, sunset-orange insight, Geist + Geist Mono, eyebrows on every label, a faint constellation field behind the canvas, and the signature halo on the selected session card.</p>
+  </div>
+
+  <div class="mockup-row">
+    <div class="mockup">
+      <div class="label">
+        <span class="tag-current">CURRENT</span>
+        <span class="caption">Workspace home</span>
+      </div>
+      <div class="frame">
+        <div class="before">
+          <div class="nav">
+            <span class="brand">Obsidian Capture</span>
+            <span class="link">Home</span>
+            <span class="link">Tasks</span>
+            <span class="link">Sessions</span>
+            <span class="link">Capture</span>
+          </div>
+          <div class="grid">
+            <div class="col">
+              <div class="col-head"><h3>Sessions</h3><span class="pill">+ New</span></div>
+              <div class="cards">
+                <div class="session-card active selected">
+                  <div class="card-name">zone-builder-dev</div>
+                  <div class="card-project">aurora-zone</div>
+                  <div class="card-meta"><span style="color:var(--b-success)">● active</span><span class="status-pill">thinking</span><span class="age">2m</span></div>
+                </div>
+                <div class="session-card active">
+                  <div class="card-name">capture-refactor</div>
+                  <div class="card-project">obsidian-capture</div>
+                  <div class="card-meta"><span style="color:var(--b-success)">● active</span><span class="status-pill" style="border-color:#38bdf8;color:#38bdf8">working</span><span class="age">14m</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="col col-mid">
+              <div class="panel-head">
+                <div><div class="title">zone-builder-dev</div><div class="subt">aurora-zone &middot; tmux: agents-zbd</div></div>
+                <div style="color:var(--b-muted)">×</div>
+              </div>
+              <div class="panel-body">
+                <div><div class="section-label">Command</div>
+                  <div class="cmd-row"><input placeholder="Type a /command…"><span class="pill">Send</span></div>
+                </div>
+                <div><div class="section-label">● Live output</div>
+                  <div class="pane">› npm test
+PASS  src/zone/builder.test.ts
+PASS  src/zone/layout.test.ts</div>
+                </div>
+              </div>
+            </div>
+            <div class="col">
+              <div class="col-head"><h3>Capture</h3></div>
+              <div class="cap-body">
+                <div><label>Project</label><select><option>aurora-zone</option></select></div>
+                <div><label>Type</label><select><option>Note</option></select></div>
+                <div><label>Title</label><input placeholder="Entry title…"></div>
+                <div class="cap-footer"><span class="pill filled">Capture</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mockup">
+      <div class="label">
+        <span class="tag-recommended">RECOMMENDED &middot; ʻIkeOS-aligned</span>
+        <span class="caption">Workspace home</span>
+      </div>
+      <div class="frame">
+        <div class="after">
+          <div class="nav">
+            <span class="brand"><span class="mark"></span><span class="okina">ʻ</span>IkeOS</span>
+            <span class="link active">Home</span>
+            <span class="link">Tasks</span>
+            <span class="link">Sessions</span>
+            <span class="link">Capture</span>
+            <span class="version">v2026.06.11</span>
+          </div>
+          <div class="grid">
+            <div class="col">
+              <div class="col-head">
+                <span class="eyebrow">Sessions &middot; 02</span>
+                <button class="btn-primary">＋ New</button>
+              </div>
+              <div class="cards">
+                <div class="scard selected">
+                  <div class="dot-row">
+                    <span class="dot discovery"></span>
+                    <span class="name">zone-builder-dev</span>
+                  </div>
+                  <div class="project">aurora-zone</div>
+                  <div class="meta-row">
+                    <span class="activity">Thinking</span>
+                    <span>2m ago</span>
+                  </div>
+                </div>
+                <div class="scard">
+                  <div class="dot-row">
+                    <span class="dot discovery"></span>
+                    <span class="name">capture-refactor</span>
+                  </div>
+                  <div class="project">obsidian-capture</div>
+                  <div class="meta-row">
+                    <span class="activity" style="color: var(--ike-knowledge-blue); background: rgba(59,130,246,0.10);">Working</span>
+                    <span>14m ago</span>
+                  </div>
+                </div>
+                <div class="scard">
+                  <div class="dot-row">
+                    <span class="dot dim"></span>
+                    <span class="name" style="color: var(--text-tertiary);">spec-cursor-stay</span>
+                  </div>
+                  <div class="project">obsidian-capture</div>
+                  <div class="meta-row">
+                    <span style="color: var(--text-muted);">Stopped</span>
+                    <span>3h ago</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col col-mid">
+              <div class="panel-head">
+                <div>
+                  <span class="eyebrow" style="color: var(--ike-soft-lavender);">Memory &middot; Session</span>
+                  <div class="title">zone-builder-dev</div>
+                  <div class="subt">aurora-zone &middot; tmux:agents-zbd &middot; 14:22:08</div>
+                </div>
+                <div style="color: var(--text-tertiary); font-size: 18px; cursor: pointer;">×</div>
+              </div>
+              <div class="panel-body">
+                <div>
+                  <div class="eyebrow" style="margin-bottom: 6px;">Command</div>
+                  <div class="cmd-row">
+                    <input placeholder="Tell ʻIkeOS what to do next…">
+                    <button class="btn-primary">Send</button>
+                  </div>
+                </div>
+                <div>
+                  <div class="eyebrow" style="margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                    <span class="dot discovery" style="width: 5px; height: 5px; display: inline-block; border-radius: 50%; background: var(--ike-discovery-green); box-shadow: 0 0 6px rgba(45,212,191,0.7);"></span>
+                    Live output
+                  </div>
+                  <div class="pane">› npm test
+PASS  src/zone/builder.test.ts
+PASS  src/zone/layout.test.ts
+
+Test Suites: 2 passed, 2 total
+Tests:       18 passed, 18 total
+Time:        2.41 s</div>
+                </div>
+                <div>
+                  <div class="eyebrow" style="margin-bottom: 6px;">Actions</div>
+                  <div class="actions">
+                    <button class="btn-ghost">Save</button>
+                    <button class="btn-ghost">Continue</button>
+                    <button class="btn-ghost" style="color: var(--ike-sunset-orange); border-color: rgba(255,120,73,0.30);">Stop</button>
+                    <button class="btn-ghost">Detach</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col">
+              <div class="col-head">
+                <span class="eyebrow tone-insight" style="color: var(--ike-sunset-orange);">Capture</span>
+              </div>
+              <div class="cap-body">
+                <div>
+                  <label>Project</label>
+                  <select><option>aurora-zone</option></select>
+                </div>
+                <div>
+                  <label>Type</label>
+                  <div class="type-row">
+                    <span class="type-chip note">Note</span>
+                    <span class="type-chip idea">Idea</span>
+                    <span class="type-chip bug">Bug</span>
+                  </div>
+                </div>
+                <div>
+                  <label>Title</label>
+                  <input placeholder="What did you notice?">
+                </div>
+                <div>
+                  <label>Description</label>
+                  <textarea rows="3" placeholder="Optional &mdash; a sentence is enough."></textarea>
+                </div>
+                <div class="cap-footer">
+                  <span class="help">⌘&nbsp;↵ to save</span>
+                  <button class="btn-primary">Capture</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <div class="ike-eyebrow tone-discovery" style="color: var(--ike-discovery-green);">What changed, concretely</div>
+    <p>Background plum (#120A1F), one purple (the brand purple), an okina + constellation lockup in the nav, the active link underlined by a glowing sunset-orange whisker, eyebrows in 0.22em on every column head and label, a real halo on the selected session card, idea/note/bug surfaced as semantic chips in the capture column (memory / knowledge / insight), and a faint constellation field behind the whole thing at 30% opacity. Information density and column proportions are identical.</p>
+  </div>
+</section>
+
+<hr class="div">
+
+<!-- ════════════════════ RECOMMENDED — DASHBOARD ════════════════════ -->
+<section>
+  <div class="section-num">05 &middot; RECOMMENDED &middot; TASKS</div>
+  <div class="section-head">
+    <h2 class="section">The Tasks dashboard, on-brand.</h2>
+    <p class="prose">Same three sections (Projects &middot; In flight &middot; Needs triage), same Jinja loops, same data. Type and status badges drop into the semantic palette; the H1 finally earns its serif; the triage indicator becomes the rare moment the brand reaches for sunset-orange.</p>
+  </div>
+
+  <div class="mockup-row">
+    <div class="mockup">
+      <div class="label">
+        <span class="tag-current">CURRENT</span>
+        <span class="caption">/tasks</span>
+      </div>
+      <div class="frame">
+        <div class="before dash">
+          <div class="nav">
+            <span class="brand">Obsidian Capture</span>
+            <span class="link">Home</span>
+            <span class="link">Tasks</span>
+            <span class="link">Sessions</span>
+            <span class="link">Capture</span>
+          </div>
+          <div class="body">
+            <h1>Dashboard</h1>
+            <h2 class="sec">Projects</h2>
+            <div class="pgrid">
+              <div class="pcard">
+                <div class="pname">aurora-zone <span class="triage">3</span></div>
+                <div class="chips"><span class="chip bug">2 bugs</span><span class="chip idea">1 idea</span></div>
+              </div>
+              <div class="pcard">
+                <div class="pname">obsidian-capture</div>
+                <div class="chips"><span class="chip note">5 notes</span><span class="chip idea">2 ideas</span></div>
+              </div>
+              <div class="pcard">
+                <div class="pname">homelab-os</div>
+                <div class="chips"><span class="chip bug">1 bug</span><span class="chip note">3 notes</span></div>
+              </div>
+            </div>
+            <h2 class="sec">Needs triage (3)</h2>
+            <div class="erow">
+              <span class="badge bug">bug</span>
+              <a class="link">Capture form double-submits on slow nets</a>
+              <span class="proj">obsidian-capture</span>
+              <span class="date">2026-06-09</span>
+            </div>
+            <div class="erow">
+              <span class="badge idea">idea</span>
+              <a class="link">Surface session age on hover</a>
+              <span class="proj">aurora-zone</span>
+              <span class="date">2026-06-08</span>
+            </div>
+            <div class="erow">
+              <span class="badge note">note</span>
+              <a class="link">Reading notes on Polynesian wayfinding</a>
+              <span class="proj">ʻIkeOS-research</span>
+              <span class="date">2026-06-07</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mockup">
+      <div class="label">
+        <span class="tag-recommended">RECOMMENDED</span>
+        <span class="caption">/tasks</span>
+      </div>
+      <div class="frame">
+        <div class="after dash">
+          <div class="nav">
+            <span class="brand"><span class="mark"></span><span class="okina">ʻ</span>IkeOS</span>
+            <span class="link">Home</span>
+            <span class="link active">Tasks</span>
+            <span class="link">Sessions</span>
+            <span class="link">Capture</span>
+          </div>
+          <div class="body">
+            <h1 class="title">What needs your attention.</h1>
+            <div class="sub">Three projects &middot; 11 active items &middot; 3 awaiting triage</div>
+
+            <div class="eye">Projects <span class="count">/&nbsp;03</span></div>
+            <div class="pgrid">
+              <div class="pcard triaged">
+                <div class="pname">aurora-zone <span class="triage-pill">3 to triage</span></div>
+                <div class="badges">
+                  <span class="b bug"><span class="d"></span>2 bugs</span>
+                  <span class="b idea"><span class="d"></span>1 idea</span>
+                </div>
+              </div>
+              <div class="pcard">
+                <div class="pname">obsidian-capture</div>
+                <div class="badges">
+                  <span class="b note"><span class="d"></span>5 notes</span>
+                  <span class="b idea"><span class="d"></span>2 ideas</span>
+                </div>
+              </div>
+              <div class="pcard">
+                <div class="pname">homelab-os</div>
+                <div class="badges">
+                  <span class="b bug"><span class="d"></span>1 bug</span>
+                  <span class="b note"><span class="d"></span>3 notes</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="eye">Needs triage <span class="count">/&nbsp;03</span></div>
+            <div class="erow">
+              <span class="dot insight"></span>
+              <span class="ttl">Capture form double-submits on slow nets</span>
+              <span class="proj">obsidian-capture</span>
+              <span class="date">9 Jun</span>
+            </div>
+            <div class="erow">
+              <span class="dot memory"></span>
+              <span class="ttl">Surface session age on hover</span>
+              <span class="proj">aurora-zone</span>
+              <span class="date">8 Jun</span>
+            </div>
+            <div class="erow">
+              <span class="dot knowledge"></span>
+              <span class="ttl">Reading notes on Polynesian wayfinding</span>
+              <span class="proj">ʻIkeOS-research</span>
+              <span class="date">7 Jun</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="div">
+
+<!-- ════════════════════ TOKEN MIGRATION ════════════════════ -->
+<section>
+  <div class="section-num">06 &middot; TOKEN MIGRATION</div>
+  <div class="section-head">
+    <h2 class="section">The CSS swap, end to end.</h2>
+    <p class="prose">Today, <code>app/static/style.css</code> and <code>app/static/workspace.css</code> each define their own token block at the top. Both blocks get deleted; both files start by importing the ʻIkeOS tokens and use semantic variables only. Concrete map:</p>
+  </div>
+
+  <table class="tokens">
+    <thead>
+      <tr><th>App variable today</th><th>Map to (ʻIkeOS)</th><th>What it's doing</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="from"><span class="swatch" style="background:#1a1a2e"></span>--bg: <span class="hex">#1A1A2E</span></td>
+        <td class="to"><span class="swatch" style="background:#120A1F"></span>--bg-canvas <span class="hex">#120A1F</span></td>
+        <td class="why">Page background. Use <code>--bg-canvas</code> on <code>body</code>; never set a hex.</td>
+      </tr>
+      <tr>
+        <td class="from"><span class="swatch" style="background:#1a1a1a"></span>--bg-pane: <span class="hex">#000</span></td>
+        <td class="to"><span class="swatch" style="background:#0B061A"></span>--bg-inset <span class="hex">#0B061A</span></td>
+        <td class="why">The terminal-output pane. <code>--bg-inset</code> is the brand's "sunk" surface; output green still reads against it.</td>
+      </tr>
+      <tr>
+        <td class="from"><span class="swatch" style="background:#16213e"></span>--surface: <span class="hex">#16213E</span></td>
+        <td class="to"><span class="swatch" style="background:#1B1130"></span>--bg-surface <span class="hex">#1B1130</span></td>
+        <td class="why">Nav, cards, inputs. <code>--bg-surface</code> is plum-tinted, not navy.</td>
+      </tr>
+      <tr>
+        <td class="from"><span class="swatch" style="background:#141414"></span>--bg-panel: <span class="hex">#141414</span></td>
+        <td class="to"><span class="swatch" style="background:#261845"></span>--bg-raised <span class="hex">#261845</span></td>
+        <td class="why">Mid column (detail) and right column (capture). One step lifted from canvas.</td>
+      </tr>
+      <tr>
+        <td class="from"><span class="swatch" style="background:#7c5cbf"></span>--accent (style): <span class="hex">#7C5CBF</span></td>
+        <td class="to"><span class="swatch" style="background:#7C3AED"></span>--ike-vibrant-purple <span class="hex">#7C3AED</span></td>
+        <td class="why">Brand purple. Use through <code>--brand-primary</code> &mdash; never reference the hex.</td>
+      </tr>
+      <tr>
+        <td class="from"><span class="swatch" style="background:#7c6af7"></span>--accent (workspace): <span class="hex">#7C6AF7</span></td>
+        <td class="to"><span class="swatch" style="background:#7C3AED"></span>--brand-primary <span class="hex">#7C3AED</span></td>
+        <td class="why">Same target. Both stylesheets converge on one alias.</td>
+      </tr>
+      <tr>
+        <td class="from"><span class="swatch" style="background:#2e2e2e"></span>--border: <span class="hex">#2E2E2E</span></td>
+        <td class="to"><span class="swatch" style="background:rgba(180,151,255,0.20)"></span>--border-default</td>
+        <td class="why">Lavender-tinted at low alpha on dark &mdash; the brand's whisper border, never pure grey.</td>
+      </tr>
+      <tr>
+        <td class="from"><span class="swatch" style="background:#e0e0e0"></span>--text: <span class="hex">#E0E0E0</span></td>
+        <td class="to"><span class="swatch" style="background:#F8F7FC"></span>--text-primary <span class="hex">#F8F7FC</span></td>
+        <td class="why">Subtly warm white &mdash; reads as moonlight, not LCD grey.</td>
+      </tr>
+      <tr>
+        <td class="from"><span class="swatch" style="background:#888"></span>--text-muted: <span class="hex">#888</span></td>
+        <td class="to"><span class="swatch" style="background:#8B82A4"></span>--text-tertiary <span class="hex">#8B82A4</span></td>
+        <td class="why">Dusk-lavender muted, sits inside the family. The current grey is hue-neutral.</td>
+      </tr>
+      <tr>
+        <td class="from"><span class="swatch" style="background:#4ade80"></span>--success: <span class="hex">#4ADE80</span></td>
+        <td class="to"><span class="swatch" style="background:#2DD4BF"></span>--sem-discovery <span class="hex">#2DD4BF</span></td>
+        <td class="why">"Discovery green" &mdash; active sessions, success toasts. Teal-warmer than the current lime.</td>
+      </tr>
+      <tr>
+        <td class="from"><span class="swatch" style="background:#fb923c"></span>--warn: <span class="hex">#FB923C</span></td>
+        <td class="to"><span class="swatch" style="background:#FF7849"></span>--sem-insight <span class="hex">#FF7849</span></td>
+        <td class="why">The brand's one accent. Triage counts, attention-needed states, hover for bugs.</td>
+      </tr>
+      <tr>
+        <td class="from"><span class="swatch" style="background:#a78bfa"></span>--thinking: <span class="hex">#A78BFA</span></td>
+        <td class="to"><span class="swatch" style="background:#B497FF"></span>--ike-soft-lavender <span class="hex">#B497FF</span></td>
+        <td class="why">Memory / agent-thinking. Already nearly correct &mdash; lock to the token.</td>
+      </tr>
+      <tr>
+        <td class="from"><span class="swatch" style="background:#38bdf8"></span>--working: <span class="hex">#38BDF8</span></td>
+        <td class="to"><span class="swatch" style="background:#3B82F6"></span>--sem-knowledge <span class="hex">#3B82F6</span></td>
+        <td class="why">Working = retrieving knowledge. Slightly cooler indigo, on-system.</td>
+      </tr>
+      <tr>
+        <td class="from"><span class="swatch" style="background:#f87171"></span>--danger: <span class="hex">#F87171</span></td>
+        <td class="to"><span class="swatch" style="background:#F87171"></span>--status-error <span class="hex">#F87171</span></td>
+        <td class="why">Already matches the system. Use the alias to inherit future changes.</td>
+      </tr>
+      <tr>
+        <td class="from">system-ui, sans-serif</td>
+        <td class="to">var(--font-sans) → Geist</td>
+        <td class="why">One <code>font-family</code> declaration on body. Headings inherit.</td>
+      </tr>
+      <tr>
+        <td class="from">monospace</td>
+        <td class="to">var(--font-mono) → Geist Mono</td>
+        <td class="why">Timestamps, IDs, tmux names, version string &mdash; everything currently `monospace`.</td>
+      </tr>
+      <tr>
+        <td class="from">border-radius: 6px / 8px / 4px (mixed)</td>
+        <td class="to">var(--radius-md) 10px &middot; --radius-lg 14px &middot; --radius-pill</td>
+        <td class="why">Cards → lg, inputs/buttons → md, badges → pill. Drop the loose 6/4/8 mix.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <div class="ike-eyebrow tone-memory" style="color: var(--ike-soft-lavender);">Implementation shape</div>
+    <p>Drop both <code>:root</code> token blocks. Add a single import at the top of <code>app/static/style.css</code>:&nbsp; <code style="color: var(--ike-discovery-green);">@import url("../static/ikeos/styles.css");</code> (vendored from this repo's <code>styles.css</code> → tokens/ + base.css). <code>workspace.css</code> stops redeclaring <code>--accent</code> entirely. Every <code>background: var(--bg)</code> becomes <code>var(--bg-canvas)</code>, and so on down the table.</p>
+  </div>
+</section>
+
+<hr class="div">
+
+<!-- ════════════════════ VOICE PATCHES ════════════════════ -->
+<section>
+  <div class="section-num">07 &middot; VOICE</div>
+  <div class="section-head">
+    <h2 class="section">Eleven copy edits.</h2>
+    <p class="prose">The brand's voice rules say <em>calm, second-person, declarative, no AI clichés, no exclamation points</em>. Most of today's strings are fine; a handful want a quieter line.</p>
+  </div>
+
+  <table class="voice">
+    <thead>
+      <tr><th>Where</th><th>Today</th><th>ʻIkeOS voice</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="loc">nav &middot; brand link</td>
+        <td class="bad">Obsidian Capture</td>
+        <td class="good">ʻIkeOS</td>
+      </tr>
+      <tr>
+        <td class="loc">workspace &middot; column 2 placeholder</td>
+        <td class="bad">Select a session to view details</td>
+        <td class="good">Choose a session, or chart a new one.</td>
+      </tr>
+      <tr>
+        <td class="loc">workspace &middot; col-1 button</td>
+        <td class="bad">+ New</td>
+        <td class="good">New Session</td>
+      </tr>
+      <tr>
+        <td class="loc">workspace &middot; cmd placeholder</td>
+        <td class="bad">Type a /command…</td>
+        <td class="good">Tell ʻIkeOS what to do next…</td>
+      </tr>
+      <tr>
+        <td class="loc">workspace &middot; live output label</td>
+        <td class="bad">Live output</td>
+        <td class="good">Listening &middot; live output</td>
+      </tr>
+      <tr>
+        <td class="loc">capture &middot; submit button</td>
+        <td class="bad">Capture</td>
+        <td class="good">Save to vault</td>
+      </tr>
+      <tr>
+        <td class="loc">capture &middot; success flash</td>
+        <td class="bad">(generic flash, no copy spec)</td>
+        <td class="good">Saved. The vault remembers.</td>
+      </tr>
+      <tr>
+        <td class="loc">capture &middot; stay-on-page checkbox</td>
+        <td class="bad">Stay on this page after saving</td>
+        <td class="good">Stay here after saving &mdash; keep capturing.</td>
+      </tr>
+      <tr>
+        <td class="loc">tasks &middot; page H1</td>
+        <td class="bad">Dashboard</td>
+        <td class="good">What needs your attention.</td>
+      </tr>
+      <tr>
+        <td class="loc">tasks &middot; empty state</td>
+        <td class="bad">All clear. Capture something.</td>
+        <td class="good">All clear. The map is quiet &mdash; capture something when you're ready.</td>
+      </tr>
+      <tr>
+        <td class="loc">capture &middot; entry-title placeholder</td>
+        <td class="bad">(no placeholder)</td>
+        <td class="good">What did you notice?</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<hr class="div">
+
+<!-- ════════════════════ PHASED PLAN ════════════════════ -->
+<section>
+  <div class="section-num">08 &middot; ROLLOUT</div>
+  <div class="section-head">
+    <h2 class="section">Three phases, each shippable on its own.</h2>
+    <p class="prose">Phase 1 alone gets the app 80% to the brand &mdash; tokens land everywhere and the wordmark/nav rebrand. Phase 2 is the workspace component-level patches. Phase 3 adds the brand's ambient layers and the celestial loader.</p>
+  </div>
+
+  <div class="phases">
+    <div class="phase">
+      <div class="num">PHASE 01</div>
+      <h3>Tokens + identity</h3>
+      <div class="est">~1 day &middot; visible everywhere</div>
+      <ul>
+        <li><b>Vendor the ʻIkeOS tokens</b> into <code>app/static/ikeos/</code> (tokens/ + base.css + styles.css entry).</li>
+        <li><b>Delete</b> the <code>:root</code> blocks from <code>style.css</code> and <code>.workspace-page</code> from <code>workspace.css</code>; import the ʻIkeOS entry once.</li>
+        <li><b>Rebrand the nav</b> &mdash; "ʻIkeOS" wordmark in DM Serif, constellation mark in front, sunset-orange whisker under the active link.</li>
+        <li><b>Swap every variable</b> per the migration table. No raw hexes anywhere in app CSS by the end.</li>
+        <li><b>Geist + Geist Mono + DM Serif Display</b> via the <code>@import</code> already in the system; system-ui retired.</li>
+      </ul>
+    </div>
+    <div class="phase">
+      <div class="num">PHASE 02</div>
+      <h3>Component patches</h3>
+      <div class="est">~1 day &middot; workspace + tasks</div>
+      <ul>
+        <li><b>Session card</b> &mdash; halo on selected, <code>SemanticDot</code> on activity, plum-800 surface, lavender border.</li>
+        <li><b>Type badges</b> &mdash; note → knowledge-blue, idea → memory-purple, bug → insight-orange. Use <code>Badge</code> tokens.</li>
+        <li><b>Status badges</b> &mdash; collapse to <code>SemanticDot</code> + label (dim/halo states).</li>
+        <li><b>Tasks H1</b> &mdash; DM Serif Display, with eyebrow + mono subtitle. Section heads become real eyebrows.</li>
+        <li><b>Capture form</b> &mdash; type as semantic chips, eyebrow labels, lavender focus halo on inputs, ⌘↵ shortcut help.</li>
+      </ul>
+    </div>
+    <div class="phase">
+      <div class="num">PHASE 03</div>
+      <h3>Ambient + voice</h3>
+      <div class="est">~½ day &middot; texture and polish</div>
+      <ul>
+        <li><b>Constellation field</b> behind workspace + tasks bodies at 30% opacity, seeded so it doesn't reshuffle on every render.</li>
+        <li><b>LoadingMark</b> replaces the "Loading…" empty-state and any future spinner. The constellation as loader is one of the brand's strongest moves.</li>
+        <li><b>Voice patches</b> &mdash; the eleven copy edits in section 07.</li>
+        <li><b>Reduced-motion</b> &mdash; gate the field's drift on <code>prefers-reduced-motion</code>.</li>
+        <li><b>Favicon + app icon</b> &mdash; use <code>logo-ikeos-mark</code> and <code>logo-ikeos-appicon-dark</code> from <code>assets/</code>.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<hr class="div">
+
+<!-- ════════════════════ KEEP DOING ════════════════════ -->
+<section>
+  <div class="section-num">09 &middot; KEEP DOING</div>
+  <div class="section-head">
+    <h2 class="section">Things to <em>not</em> change.</h2>
+    <p class="prose">A short list, because most reviews skip this and turn into rewrites.</p>
+  </div>
+
+  <table class="audit">
+    <tbody>
+      <tr>
+        <td class="num">✓</td>
+        <td class="what">Three-column layout</td>
+        <td colspan="3" style="color: var(--text-secondary);">Sessions / Detail / Capture is the right architecture. The system has nothing better to suggest.</td>
+      </tr>
+      <tr>
+        <td class="num">✓</td>
+        <td class="what">Command-first panel</td>
+        <td colspan="3" style="color: var(--text-secondary);">Putting the cmd input above the live output, not below it, is correct and the recent design spec already got this right.</td>
+      </tr>
+      <tr>
+        <td class="num">✓</td>
+        <td class="what">URL-state for selected session</td>
+        <td colspan="3" style="color: var(--text-secondary);">Refresh returns you to your context &mdash; this is exactly the kind of quiet care the brand asks for. Don't lose it.</td>
+      </tr>
+      <tr>
+        <td class="num">✓</td>
+        <td class="what">Activity verbs (thinking, working)</td>
+        <td colspan="3" style="color: var(--text-secondary);">The choice to surface what the agent is doing in lowercase verbs &mdash; "thinking", "working" &mdash; is already on-brand. Lock the colours, keep the verbs.</td>
+      </tr>
+      <tr>
+        <td class="num">✓</td>
+        <td class="what">EasyMDE for body</td>
+        <td colspan="3" style="color: var(--text-secondary);">No reason to swap. Just override its toolbar/CodeMirror colours to the ʻIkeOS tokens (the current overrides already do most of this).</td>
+      </tr>
+      <tr>
+        <td class="num">✓</td>
+        <td class="what">Lucide is not yet in use, and that's fine</td>
+        <td colspan="3" style="color: var(--text-secondary);">The system specifies Lucide @ 1.5px stroke. The app currently uses no icons. Add them <em>only</em> where they earn their keep &mdash; nav, command-send button. Don't sprinkle.</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ════════════════════ FOOTER ════════════════════ -->
+<footer style="margin-top: 120px; padding-top: 32px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: baseline;">
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <span class="okina" style="font-size: 28px; transform: none;">ʻ</span>
+    <span style="font-family: var(--font-display); font-size: 18px; color: var(--ike-lunar);">IkeOS Design System</span>
+    <span style="color: var(--text-muted); font-family: var(--font-mono); font-size: 11px;">&middot; interface review &middot; v1</span>
+  </div>
+  <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-tertiary);">"Understanding emerges from connection."</div>
+</footer>
+
+</div><!-- /.page -->
+
+</body>
+</html>
