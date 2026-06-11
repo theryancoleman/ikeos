@@ -4,7 +4,7 @@
 {% block content %}
 <div class="entry-detail">
   <div class="entry-meta">
-    <a href="{{ url_for('browse.project', name=project) }}">← {{ project }}</a>
+    <a href="{{ url_for('browse.project', name=project) }}" class="entry-meta-back">← {{ project }}</a>
     <span class="badge type-{{ entry.type }}">{{ entry.type }}</span>
     <form method="post"
           action="{{ url_for('browse.update_status', name=project, slug=entry.slug) }}"
@@ -20,10 +20,22 @@
 
   <h1>{{ entry.title }}</h1>
 
-  {% if entry.type == 'bug' %}
-    <p><strong>Severity:</strong> <span class="badge severity-{{ entry.severity }}">{{ entry.severity }}</span></p>
+  {% if entry.type == 'bug' and entry.severity %}
+    <div class="entry-attr">
+      <span class="entry-attr-label">Severity</span>
+      <span class="badge severity-{{ entry.severity }}">{{ entry.severity }}</span>
+    </div>
   {% elif entry.type == 'idea' %}
-    <p><strong>Priority:</strong> {{ entry.priority }} &nbsp; <strong>Effort:</strong> {{ entry.effort }}</p>
+    <div class="entry-attr">
+      {% if entry.priority %}
+        <span class="entry-attr-label">Priority</span>
+        <span class="badge priority-{{ entry.priority }}">{{ entry.priority }}</span>
+      {% endif %}
+      {% if entry.effort %}
+        <span class="entry-attr-label" style="margin-left:0.75rem">Effort</span>
+        <span class="badge status-deferred">{{ entry.effort }}</span>
+      {% endif %}
+    </div>
   {% endif %}
 
   <div class="entry-body" id="entry-body"></div>

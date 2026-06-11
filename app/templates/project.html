@@ -7,9 +7,9 @@
   <div class="project-header-actions">
     <a href="{{ url_for('capture.capture_form', project=name) }}" class="btn">+ New item</a>
     {% if show_all %}
-      <a href="{{ url_for('browse.project', name=name) }}">Show active only</a>
+      <a href="{{ url_for('browse.project', name=name) }}" class="btn btn-secondary">Active only</a>
     {% else %}
-      <a href="{{ url_for('browse.project', name=name, show_all='true') }}">Show all</a>
+      <a href="{{ url_for('browse.project', name=name, show_all='true') }}" class="btn btn-secondary">Show all</a>
     {% endif %}
   </div>
 </div>
@@ -47,6 +47,6 @@
 {% endfor %}
 
 {% if not bugs and not ideas and not notes %}
-  <p class="empty">No active entries for this project. <a href="{{ url_for('browse.project', name=name, show_all='true') }}">Show all</a> or <a href="{{ url_for('capture.capture_form') }}">add one</a>.</p>
+  <p class="empty">Nothing active here. <a href="{{ url_for('browse.project', name=name, show_all='true') }}">Show all entries</a> or <a href="{{ url_for('capture.capture_form') }}">capture one</a>.</p>
 {% endif %}
 {% endblock %}
