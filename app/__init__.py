@@ -14,6 +14,15 @@ def create_app():
     app.register_blueprint(browse_bp)
     app.register_blueprint(agents_bp)
 
+    @app.context_processor
+    def inject_config_version():
+        try:
+            with open("/claude-config/VERSION") as f:
+                version = f.read().strip()
+        except OSError:
+            version = None
+        return {"config_version": version}
+
     @app.route("/health")
     def health():
         return "ok", 200

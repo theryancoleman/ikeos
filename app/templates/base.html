@@ -13,6 +13,7 @@
     <a href="{{ url_for('browse.tasks') }}"  class="nav-link">Tasks</a>
     <a href="{{ url_for('agents.agents') }}" class="nav-link">Sessions</a>
     <a href="{{ url_for('capture.capture_form') }}" class="nav-link">Capture</a>
+    {% if config_version %}<span class="nav-version">{{ config_version }}</span>{% endif %}
   </nav>
 
   <main>

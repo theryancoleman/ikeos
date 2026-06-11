@@ -37,6 +37,7 @@ nav {
 .nav-brand { font-weight: 700; color: var(--accent); text-decoration: none; font-size: 1.1rem; }
 .nav-link { color: var(--text); text-decoration: none; }
 .nav-link:hover { color: var(--accent); }
+.nav-version { margin-left: auto; font-size: 0.75rem; color: var(--text-muted); font-family: monospace; }
 
 main { max-width: 900px; margin: 2rem auto; padding: 0 1.5rem; }
 

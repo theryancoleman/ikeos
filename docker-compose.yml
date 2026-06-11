@@ -8,6 +8,7 @@ services:
       - "5009:5009"
     volumes:
       - C:\Server\obsidian-vault:/vault:rw
+      - C:\Users\ServerAdmin\.claude\VERSION:/claude-config/VERSION:ro
     networks:
       - traefik_network
     labels:
