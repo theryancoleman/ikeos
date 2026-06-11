@@ -1,20 +1,24 @@
-/* ── Tokens ─────────────────────────────────────────────────────────────── */
+/* ʻIkeOS — Workspace (Sessions) view */
+
 .workspace-page {
-  --bg-card:    #1a1a1a;
-  --bg-panel:   #141414;
-  --bg-pane:    #000;
-  --text:       #f0f0f0;
-  --text-muted: #aaaaaa;
-  --border:     #2e2e2e;
-  --accent:     #7c6af7;
-  --success:    #4ade80;
-  --warn:       #fb923c;
-  --danger:     #f87171;
-  --thinking:   #a78bfa;
-  --working:    #38bdf8;
+  --bg-card:    #1B1130;
+  --bg-panel:   #0B061A;
+  --bg-pane:    #120A1F;
+  --text:       #F8F7FC;
+  --text-muted: #8B82A4;
+  --border:     rgba(180, 151, 255, 0.20);
+  --accent:     #7C3AED;
+  --accent-hi:  #5B21B6;
+  --success:    #2DD4BF;
+  --warn:       #FACC15;
+  --danger:     #F87171;
+  --thinking:   #B497FF;
+  --working:    #3B82F6;
+
+  --glow-accent: 0 0 24px rgba(124, 58, 237, 0.35);
 }
 
-/* ── Full-bleed body override ────────────────────────────────────────────── */
+/* ── Full-bleed body override ── */
 body:has(.workspace-page) {
   height: 100vh;
   overflow: hidden;
@@ -32,7 +36,7 @@ body:has(.workspace-page) main {
   flex-direction: column;
 }
 
-/* ── Grid layout ─────────────────────────────────────────────────────────── */
+/* ── Grid layout ── */
 .workspace-page {
   display: grid;
   grid-template-columns: 260px 1fr;
@@ -44,7 +48,7 @@ body:has(.workspace-page) main {
   grid-template-columns: 260px 1fr 280px;
 }
 
-/* ── Column base ─────────────────────────────────────────────────────────── */
+/* ── Column base ── */
 .sessions-col,
 .detail-col,
 .capture-col {
@@ -57,7 +61,7 @@ body:has(.workspace-page) main {
 .detail-col  { border-right: none; background: var(--bg-panel); }
 .capture-col { border-right: none; border-left: 1px solid var(--border); background: var(--bg-panel); }
 
-/* ── Column headers ──────────────────────────────────────────────────────── */
+/* ── Column headers ── */
 .col-header {
   display: flex;
   align-items: center;
@@ -68,14 +72,14 @@ body:has(.workspace-page) main {
 }
 .col-header h2 {
   margin: 0;
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 500;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.22em;
 }
 
-/* ── Card grid ───────────────────────────────────────────────────────────── */
+/* ── Card grid ── */
 .card-grid {
   padding: 0.75rem;
   display: flex;
@@ -85,22 +89,22 @@ body:has(.workspace-page) main {
   flex: 1;
 }
 
-/* ── Session card ────────────────────────────────────────────────────────── */
+/* ── Session card ── */
 .session-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-top: 3px solid var(--border);
-  border-radius: 8px;
+  border-top: 2px solid var(--border);
+  border-radius: 14px;
   overflow: hidden;
   cursor: pointer;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
-.session-card:hover          { border-color: #444; }
-.session-card.selected       { box-shadow: 0 0 0 2px var(--accent); border-color: var(--accent); }
+.session-card:hover          { border-color: rgba(180, 151, 255, 0.36); }
+.session-card.selected       { box-shadow: var(--glow-accent); border-color: var(--accent); }
 .session-card.session-active { border-top-color: var(--success); }
 
 .card-body    { padding: 0.75rem; }
-.card-name    { font-size: 0.9rem; font-weight: 600; color: var(--text); margin: 0 0 0.15rem; }
+.card-name    { font-size: 0.875rem; font-weight: 600; color: var(--text); margin: 0 0 0.15rem; }
 .card-project { font-size: 0.7rem; color: var(--text-muted); margin: 0 0 0.5rem; }
 .card-meta    { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
 
@@ -108,11 +112,11 @@ body:has(.workspace-page) main {
 .status-active  { color: var(--success); }
 .status-stopped { color: var(--text-muted); }
 
-.activity-pill          { font-size: 0.65rem; padding: 0.1rem 0.35rem; border-radius: 999px; border: 1px solid currentColor; line-height: 1.4; }
-.activity-thinking      { color: var(--thinking); }
-.activity-working       { color: var(--working); }
+.activity-pill     { font-size: 0.65rem; padding: 0.1rem 0.35rem; border-radius: 999px; border: 1px solid currentColor; line-height: 1.4; }
+.activity-thinking { color: var(--thinking); }
+.activity-working  { color: var(--working); }
 
-.card-age { font-size: 0.7rem; color: var(--text-muted); white-space: nowrap; }
+.card-age { font-size: 0.7rem; color: var(--text-muted); white-space: nowrap; font-family: "Geist Mono", monospace; }
 
 .card-footer {
   padding: 0.4rem 0.6rem;
@@ -123,7 +127,7 @@ body:has(.workspace-page) main {
   flex-wrap: wrap;
 }
 
-/* ── Pill buttons ────────────────────────────────────────────────────────── */
+/* ── Pill buttons ── */
 .pill {
   display: inline-flex;
   align-items: center;
@@ -135,18 +139,20 @@ body:has(.workspace-page) main {
   cursor: pointer;
   font-size: 0.72rem;
   color: var(--text-muted);
-  transition: opacity 0.1s;
+  transition: opacity 0.1s, box-shadow 0.2s;
   white-space: nowrap;
   line-height: 1.4;
+  font-family: "Geist", ui-sans-serif, system-ui, sans-serif;
 }
-.pill:hover             { opacity: 0.72; }
+.pill:hover             { opacity: 0.80; }
 .pill-primary           { color: var(--accent); }
 .pill-primary-filled    { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+.pill-primary-filled:hover { box-shadow: var(--glow-accent); opacity: 1; background: var(--accent-hi); }
 .pill-danger            { color: var(--danger); }
 .pill-ghost             { border: none; }
 .pill-on                { color: var(--success); border-color: var(--success); }
 
-/* ── Detail column internals ─────────────────────────────────────────────── */
+/* ── Detail column internals ── */
 .panel-placeholder {
   flex: 1;
   display: flex;
@@ -175,7 +181,7 @@ body:has(.workspace-page) main {
   background: var(--bg-panel);
   z-index: 1;
 }
-.panel-title    { font-size: 0.95rem; font-weight: 600; color: var(--text); margin: 0 0 0.15rem; }
+.panel-title    { font-size: 0.925rem; font-weight: 600; color: var(--text); margin: 0 0 0.15rem; }
 .panel-subtitle { font-size: 0.72rem; color: var(--text-muted); }
 .panel-close    { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.25rem; padding: 0 0.25rem; line-height: 1; flex-shrink: 0; }
 .panel-close:hover { color: var(--text); }
@@ -188,11 +194,11 @@ body:has(.workspace-page) main {
   flex: 1;
 }
 
-/* ── Pane output ─────────────────────────────────────────────────────────── */
+/* ── Pane output ── */
 .pane-label {
-  font-size: 0.68rem;
+  font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.22em;
   color: var(--text-muted);
   display: flex;
   align-items: center;
@@ -210,10 +216,10 @@ body:has(.workspace-page) main {
 
 .pane-output {
   background: var(--bg-pane);
-  border: 1px solid #1e1e1e;
-  border-radius: 4px;
+  border: 1px solid rgba(180, 151, 255, 0.12);
+  border-radius: 10px;
   padding: 0.6rem;
-  font-family: 'Consolas', 'Monaco', 'Lucida Console', monospace;
+  font-family: "Geist Mono", "Consolas", monospace;
   font-size: 0.7rem;
   line-height: 1.5;
   color: var(--success);
@@ -225,11 +231,11 @@ body:has(.workspace-page) main {
 }
 .pane-output.pane-stopped { color: var(--text-muted); font-style: italic; }
 
-/* ── Panel sections ──────────────────────────────────────────────────────── */
+/* ── Panel sections ── */
 .panel-section-label {
-  font-size: 0.68rem;
+  font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.22em;
   color: var(--text-muted);
   margin-bottom: 0.4rem;
 }
@@ -246,22 +252,24 @@ body:has(.workspace-page) main {
   text-align: center;
 }
 
-/* ── Command row ─────────────────────────────────────────────────────────── */
+/* ── Command row ── */
 .cmd-row { display: flex; gap: 0.5rem; }
 .cmd-row input {
   flex: 1;
-  background: #111;
+  background: var(--bg-pane);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 10px;
   color: var(--text);
   padding: 0.4rem 0.65rem;
   font-size: 0.8rem;
   min-width: 0;
+  font-family: "Geist", ui-sans-serif, system-ui, sans-serif;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
-.cmd-row input:focus        { outline: none; border-color: var(--accent); }
-.cmd-row input::placeholder { color: #4a4a4a; }
+.cmd-row input:focus        { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(124,58,237,0.20); }
+.cmd-row input::placeholder { color: rgba(180,151,255,0.30); }
 
-/* ── Capture column internals ────────────────────────────────────────────── */
+/* ── Capture column internals ── */
 .capture-form-body {
   padding: 0.875rem 1rem;
   display: flex;
@@ -272,27 +280,28 @@ body:has(.workspace-page) main {
 }
 .capture-form-body .field { display: flex; flex-direction: column; gap: 0.25rem; }
 .capture-form-body label  {
-  font-size: 0.68rem;
+  font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.22em;
   color: var(--text-muted);
 }
 .capture-form-body select,
 .capture-form-body input,
 .capture-form-body textarea {
-  background: #111;
+  background: var(--bg-pane);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 10px;
   color: var(--text);
   padding: 0.35rem 0.6rem;
   font-size: 0.8rem;
-  font-family: inherit;
+  font-family: "Geist", ui-sans-serif, system-ui, sans-serif;
   resize: vertical;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 .capture-form-body select:focus,
 .capture-form-body input:focus,
-.capture-form-body textarea:focus { outline: none; border-color: var(--accent); }
-.capture-form-body select option  { background: #1a1a1a; }
+.capture-form-body textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(124,58,237,0.20); }
+.capture-form-body select option  { background: #1B1130; }
 
 .capture-footer {
   display: flex;
@@ -304,12 +313,13 @@ body:has(.workspace-page) main {
 .capture-msg       { font-size: 0.75rem; color: var(--success); flex: 1; min-width: 0; }
 .capture-msg.error { color: var(--danger); }
 
-/* ── New session modal ───────────────────────────────────────────────────── */
+/* ── New session modal ── */
 .modal-overlay {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.72);
+  background: rgba(11, 6, 26, 0.80);
+  backdrop-filter: blur(8px);
   z-index: 100;
   align-items: center;
   justify-content: center;
@@ -317,21 +327,36 @@ body:has(.workspace-page) main {
 .modal-overlay.open { display: flex; }
 .modal {
   background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  border: 1px solid rgba(180, 151, 255, 0.20);
+  border-radius: 14px;
   padding: 1.5rem;
   width: 420px;
   max-width: 90vw;
+  box-shadow: 0 0 60px rgba(124, 58, 237, 0.15);
 }
-.modal h2              { margin: 0 0 1.25rem; font-size: 1rem; color: var(--text); }
+.modal h2              { margin: 0 0 1.25rem; font-size: 1rem; font-weight: 600; color: var(--text); }
 .modal .field          { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 0.75rem; }
-.modal label           { font-size: 0.75rem; color: var(--text-muted); }
+.modal label           { font-size: 11px; text-transform: uppercase; letter-spacing: 0.22em; color: var(--text-muted); }
 .modal input,
-.modal select          { background: #111; border: 1px solid var(--border); border-radius: 6px; color: var(--text); padding: 0.45rem 0.75rem; font-size: 0.85rem; }
+.modal select          {
+  background: var(--bg-pane);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  padding: 0.45rem 0.75rem;
+  font-size: 0.85rem;
+  font-family: "Geist", ui-sans-serif, system-ui, sans-serif;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
 .modal input:focus,
-.modal select:focus    { outline: none; border-color: var(--accent); }
-.modal select option   { background: #1a1a1a; }
+.modal select:focus    { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(124,58,237,0.20); }
+.modal select option   { background: #1B1130; }
 .modal-footer          { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.25rem; }
 
-/* ── Empty state ─────────────────────────────────────────────────────────── */
-.empty-state { text-align: center; color: var(--text-muted); padding: 3rem 1rem; font-size: 0.85rem; }
+/* ── Empty state ── */
+.empty-state {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 3rem 1rem;
+  font-size: 0.85rem;
+}
