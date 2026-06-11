@@ -3,20 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}ʻIkeOS{% endblock %}</title>
+  <title>{% block title %}ʻIkeOS{% endblock %} — ʻIkeOS</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo-ikeos-appicon-dark.png') }}">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo-ikeos-mark.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/logo-ikeos-appicon-dark.png') }}">
 </head>
 <body>
-  <nav>
-    <a href="{{ url_for('agents.home') }}" class="nav-brand">
-      <img src="{{ url_for('static', filename='logo-ikeos-mark.png') }}" alt="ʻIkeOS mark">
-      <span class="nav-brand-text">ʻIkeOS</span>
+  <nav class="ike-nav">
+    <a href="{{ url_for('agents.home') }}" class="nav-brand" aria-label="ʻIkeOS home">
+      <img src="{{ url_for('static', filename='img/logo-ikeos-mark.png') }}"
+           alt="" class="nav-mark" width="22" height="22">
+      <span class="nav-wordmark"><span class="okina">ʻ</span>IkeOS</span>
     </a>
-    <a href="{{ url_for('agents.home') }}"   class="nav-link">Home</a>
-    <a href="{{ url_for('browse.tasks') }}"  class="nav-link">Tasks</a>
-    <a href="{{ url_for('agents.agents') }}" class="nav-link">Sessions</a>
-    <a href="{{ url_for('capture.capture_form') }}" class="nav-link">Capture</a>
+    <a href="{{ url_for('agents.home') }}"   class="nav-link {% if request.endpoint == 'agents.home' %}is-active{% endif %}">Home</a>
+    <a href="{{ url_for('browse.tasks') }}"  class="nav-link {% if request.endpoint == 'browse.tasks' %}is-active{% endif %}">Tasks</a>
+    <a href="{{ url_for('agents.agents') }}" class="nav-link {% if request.endpoint == 'agents.agents' %}is-active{% endif %}">Sessions</a>
+    <a href="{{ url_for('capture.capture_form') }}" class="nav-link {% if request.endpoint == 'capture.capture_form' %}is-active{% endif %}">Capture</a>
     {% if config_version %}<span class="nav-version">{{ config_version }}</span>{% endif %}
   </nav>
 

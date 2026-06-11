@@ -1,0 +1,49 @@
+/* ʻIkeOS — Spacing, radius, shadow, layout */
+
+:root {
+  /* Spacing — 4px base step, named for use, not pixel value */
+  --space-0:   0;
+  --space-1:   2px;
+  --space-2:   4px;
+  --space-3:   8px;
+  --space-4:   12px;
+  --space-5:   16px;
+  --space-6:   20px;
+  --space-7:   24px;
+  --space-8:   32px;
+  --space-9:   40px;
+  --space-10:  48px;
+  --space-11:  64px;
+  --space-12:  80px;
+  --space-13:  96px;
+  --space-14:  128px;
+
+  /* Radius — soft but never bubbly. The brand reads geometric/scientific. */
+  --radius-xs:  4px;
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  14px;
+  --radius-xl:  20px;
+  --radius-2xl: 28px;
+  --radius-pill: 999px;
+
+  /* Border widths */
+  --border-1: 1px; /* @kind spacing */
+  --border-2: 2px; /* @kind spacing */
+
+  /* Layout containers */
+  --container-prose:    680px; /* @kind spacing */
+  --container-narrow:   880px; /* @kind spacing */
+  --container-default:  1120px; /* @kind spacing */
+  --container-wide:     1280px; /* @kind spacing */
+  --container-full:     1440px; /* @kind spacing */
+
+  /* Z layers */
+  --z-base:     0; /* @kind other */
+  --z-raised:   10; /* @kind other */
+  --z-sticky:   100; /* @kind other */
+  --z-overlay:  500; /* @kind other */
+  --z-modal:    1000; /* @kind other */
+  --z-toast:    1100; /* @kind other */
+  --z-tooltip:  1200; /* @kind other */
+}

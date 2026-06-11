@@ -67,6 +67,7 @@ function cardFooter(s) {
 function renderCard(s) {
   const activeClass = s.status === 'active' ? ' session-active' : '';
   const selected    = s.id === selectedId ? ' selected' : '';
+  const dotClass    = s.status === 'active' ? 'is-active' : 'is-stopped';
   const statusHtml  = s.status === 'active'
     ? `<span class="status-badge status-active"><span class="status-dot"></span>active ${activityChip(s)}</span>`
     : `<span class="status-badge status-stopped"><span class="status-dot"></span>stopped</span>`;
@@ -74,7 +75,7 @@ function renderCard(s) {
     <div class="session-card${activeClass}${selected}"
          data-id="${esc(s.id)}" onclick="openPanel('${esc(s.id)}')">
       <div class="card-body">
-        <div class="card-name">${esc(s.name)}</div>
+        <div class="card-name"><span class="session-dot ${dotClass}"></span>${esc(s.name)}</div>
         <div class="card-project">${esc(s.project)}</div>
         <div class="card-meta">
           ${statusHtml}
@@ -89,8 +90,10 @@ function renderCard(s) {
 function updateGrid(newSessions) {
   sessions = [...newSessions].sort((a, b) => (b.status === 'active') - (a.status === 'active'));
   const grid = document.getElementById('card-grid');
+  const countEl = document.getElementById('session-count');
+  if (countEl) countEl.textContent = '/ ' + String(sessions.length).padStart(2, '0');
   if (!sessions.length) {
-    grid.innerHTML = '<div class="empty-state">No sessions yet. Click + New to start one.</div>';
+    grid.innerHTML = '<div class="empty-state">No sessions yet. Click ＋ New Session to start one.</div>';
     return;
   }
   grid.innerHTML = sessions.map(renderCard).join('');
@@ -260,13 +263,13 @@ async function submitCapture() {
     if (resp.ok) {
       document.getElementById('cap-title').value = '';
       document.getElementById('cap-body').value  = '';
-      showCaptureMsg('Saved ✓', false);
+      showCaptureMsg('Saved. The vault remembers.', false);
       setTimeout(() => { if (msgEl) msgEl.textContent = ''; }, 3000);
     } else {
-      showCaptureMsg(data.error || 'Error saving', true);
+      showCaptureMsg(data.error || 'Couldn\'t save — try again in a moment.', true);
     }
   } catch (e) {
-    showCaptureMsg('Network error', true);
+    showCaptureMsg('Couldn\'t save — try again in a moment.', true);
   }
 }
 

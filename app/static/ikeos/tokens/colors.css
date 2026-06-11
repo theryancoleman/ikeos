@@ -1,0 +1,118 @@
+/* ʻIkeOS — Color tokens
+   Semantic colour meaning:
+     Purple = Memory     Blue = Knowledge   Green = Discovery
+     Orange = Insight    Gold = Understanding
+*/
+
+:root {
+  /* ── Primary brand ─────────────────────────────────── */
+  --ike-deep-plum:        #120A1F;  /* background foundation */
+  --ike-vibrant-purple:   #7C3AED;  /* primary brand colour */
+  --ike-sunset-orange:    #FF7849;  /* primary accent */
+  --ike-lunar-white:      #F8F7FC;  /* light surfaces */
+
+  /* ── Extended intelligence palette ─────────────────── */
+  --ike-knowledge-blue:   #3B82F6;
+  --ike-discovery-green:  #2DD4BF;
+  --ike-understanding-gold:#FACC15;
+  --ike-solar-amber:      #FFB547;
+  --ike-soft-lavender:    #B497FF;
+
+  /* ── Neutral scale (Ink → Lunar) ───────────────────── */
+  --ike-ink:              #0B1020;
+  --ike-slate:            #4B5563;
+  --ike-dusk-gray:        #9CA3AF;
+  --ike-stone:            #E5E7EB;
+  --ike-lunar:            #F8F7FC;
+  --ike-white:            #FFFFFF;
+
+  /* Plum tints — dark surface variants */
+  --ike-plum-900:         #120A1F;
+  --ike-plum-800:         #1B1130;
+  --ike-plum-700:         #261845;
+  --ike-plum-600:         #322060;
+  --ike-plum-500:         #4A2E8C;
+
+  /* Purple tints */
+  --ike-purple-100:       #EDE4FF;
+  --ike-purple-200:       #D6C2FF;
+  --ike-purple-400:       #A07BFF;
+  --ike-purple-600:       #7C3AED;
+  --ike-purple-700:       #5B21B6;
+  --ike-purple-900:       #3B1480;
+
+  /* Orange tints */
+  --ike-orange-100:       #FFE3D7;
+  --ike-orange-400:       #FF9B75;
+  --ike-orange-600:       #FF7849;
+  --ike-orange-700:       #D55A2E;
+
+  /* ── Signature gradients ───────────────────────────── */
+  --ike-grad-aurora:   linear-gradient(135deg, #7C3AED 0%, #FF7849 100%); /* @kind color */
+  --ike-grad-ocean:    linear-gradient(135deg, #3B82F6 0%, #2DD4BF 100%); /* @kind color */
+  --ike-grad-twilight: linear-gradient(135deg, #B497FF 0%, #FF7849 100%); /* @kind color */
+  --ike-grad-cosmos:   radial-gradient(ellipse at 30% 20%, #261845 0%, #120A1F 70%); /* @kind color */
+
+  /* ── Semantic aliases — DARK mode is the default ─── */
+  --bg-canvas:        var(--ike-deep-plum);
+  --bg-surface:       var(--ike-plum-800);
+  --bg-raised:        var(--ike-plum-700);
+  --bg-inset:         #0B061A;
+  --bg-overlay:       rgba(11, 6, 26, 0.72);
+
+  --text-primary:     var(--ike-lunar);
+  --text-secondary:   #C8C0DA;
+  --text-tertiary:    #8B82A4;
+  --text-muted:       #5E5675;
+  --text-inverse:     var(--ike-plum-900);
+  --text-on-brand:    #FFFFFF;
+
+  --border-subtle:    rgba(180, 151, 255, 0.12);
+  --border-default:   rgba(180, 151, 255, 0.20);
+  --border-strong:    rgba(180, 151, 255, 0.36);
+  --border-focus:     var(--ike-vibrant-purple);
+
+  --brand-primary:    var(--ike-vibrant-purple);
+  --brand-accent:     var(--ike-sunset-orange);
+
+  /* Semantic — meaning-bearing palette */
+  --sem-memory:        var(--ike-vibrant-purple);
+  --sem-knowledge:     var(--ike-knowledge-blue);
+  --sem-discovery:     var(--ike-discovery-green);
+  --sem-insight:       var(--ike-sunset-orange);
+  --sem-understanding: var(--ike-understanding-gold);
+
+  /* Status */
+  --status-success:   var(--ike-discovery-green);
+  --status-warn:      var(--ike-understanding-gold);
+  --status-error:     #F87171;
+  --status-info:      var(--ike-knowledge-blue);
+
+  /* Constellation node colors (data-viz) */
+  --node-1: var(--ike-vibrant-purple);
+  --node-2: var(--ike-sunset-orange);
+  --node-3: var(--ike-knowledge-blue);
+  --node-4: var(--ike-discovery-green);
+  --node-5: var(--ike-understanding-gold);
+  --node-6: var(--ike-soft-lavender);
+}
+
+/* ── Light surface scope ──────────────────────────────
+   Apply `data-theme="light"` to any subtree to invert. */
+[data-theme="light"] {
+  --bg-canvas:        var(--ike-lunar);
+  --bg-surface:       #FFFFFF;
+  --bg-raised:        #FFFFFF;
+  --bg-inset:         #F2EFF8;
+  --bg-overlay:       rgba(18, 10, 31, 0.45);
+
+  --text-primary:     var(--ike-plum-900);
+  --text-secondary:   #3F3552;
+  --text-tertiary:    #6B6385;
+  --text-muted:       #9B94AE;
+  --text-inverse:     var(--ike-lunar);
+
+  --border-subtle:    rgba(18, 10, 31, 0.06);
+  --border-default:   rgba(18, 10, 31, 0.10);
+  --border-strong:    rgba(18, 10, 31, 0.18);
+}

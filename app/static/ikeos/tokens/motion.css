@@ -1,0 +1,29 @@
+/* ʻIkeOS — Motion
+   "Discovering patterns." Celestial mechanics, not snappy app physics.
+   Long, gentle durations; no bounce. */
+
+:root {
+  /* Durations — feel: a planet finding its orbit */
+  --dur-instant: 80ms; /* @kind other */
+  --dur-quick:   180ms; /* @kind other */
+  --dur-base:    280ms; /* @kind other */
+  --dur-slow:    520ms; /* @kind other */
+  --dur-glacial: 900ms; /* @kind other */
+  --dur-orbit:   18s; /* @kind other */
+  --dur-drift:   40s; /* @kind other */
+
+  /* Easings — calm curves, no overshoot */
+  --ease-out:        cubic-bezier(0.16, 0.84, 0.30, 1.00); /* @kind other */
+  --ease-in-out:     cubic-bezier(0.65, 0.00, 0.35, 1.00); /* @kind other */
+  --ease-orbital:    cubic-bezier(0.45, 0.05, 0.55, 0.95); /* @kind other */
+  --ease-emerge:     cubic-bezier(0.22, 1.00, 0.36, 1.00); /* @kind other */
+  --ease-linear:     linear; /* @kind other */
+}
+
+/* Respect reduced motion globally for ambient animation */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-orbit: 0s; /* @kind other */
+    --dur-drift: 0s; /* @kind other */
+  }
+}

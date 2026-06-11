@@ -1,0 +1,78 @@
+/* ʻIkeOS — Typography
+   Wordmark + display serif: DM Serif Display Bold (Google Fonts, free).
+   UI / Digital: Söhne (paid). Substituted with Geist — closest open grotesque.
+   Editorial / long-form: Manrope (as shown in the official brand card).
+   Mono: Geist Mono.
+   FLAGGED to user: Söhne is licensed. Replace @import + family name with the
+   licensed Söhne webfont when available.
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&family=Manrope:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  /* Families */
+  --font-display:   "DM Serif Display", Georgia, ui-serif, "Times New Roman", serif;
+  --font-sans:      "Geist", "Söhne", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-editorial: "Manrope", "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-mono:      "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* Weights */
+  --fw-light:     300;                /* @kind other */
+  --fw-regular:   400;                /* @kind other */
+  --fw-medium:    500;                /* @kind other */
+  --fw-semibold:  600;                /* @kind other */
+  --fw-bold:      700;                /* @kind other */
+
+  /* Type scale — tuned for calm, navigator feel.
+     Display sizes lean roomy; body holds at 16px. */
+  --fs-display-2xl: 88px;
+  --lh-display-2xl: 0.96;             /* @kind other */
+  --ls-display-2xl: -0.035em;
+  --fs-display-xl:  64px;
+  --lh-display-xl:  1.02;             /* @kind other */
+  --ls-display-xl:  -0.030em;
+  --fs-display-lg:  48px;
+  --lh-display-lg:  1.06;             /* @kind other */
+  --ls-display-lg:  -0.026em;
+  --fs-display-md:  36px;
+  --lh-display-md:  1.12;             /* @kind other */
+  --ls-display-md:  -0.022em;
+
+  --fs-h1:          32px;
+  --lh-h1:          1.18;             /* @kind other */
+  --ls-h1:          -0.018em;
+  --fs-h2:          24px;
+  --lh-h2:          1.24;             /* @kind other */
+  --ls-h2:          -0.014em;
+  --fs-h3:          20px;
+  --lh-h3:          1.30;             /* @kind other */
+  --ls-h3:          -0.010em;
+  --fs-h4:          18px;
+  --lh-h4:          1.34;             /* @kind other */
+  --ls-h4:          -0.006em;
+
+  --fs-body-lg:     18px;
+  --lh-body-lg:     1.55;             /* @kind other */
+  --fs-body:        16px;
+  --lh-body:        1.55;             /* @kind other */
+  --fs-body-sm:     14px;
+  --lh-body-sm:     1.50;             /* @kind other */
+  --fs-caption:     12px;
+  --lh-caption:     1.45;             /* @kind other */
+  --ls-caption:     0.02em;
+
+  /* Eyebrows / overlines — used heavily on the brand */
+  --fs-eyebrow:     11px;
+  --ls-eyebrow:     0.22em;
+  --fw-eyebrow:     var(--fw-medium); /* @kind other */
+
+  /* Code / mono */
+  --fs-code:        13px;
+  --lh-code:        1.55;             /* @kind other */
+
+  /* Semantic */
+  --text-display:   var(--font-display);  /* @kind font */
+  --text-ui:        var(--font-sans);     /* @kind font */
+  --text-prose:     var(--font-editorial);/* @kind font */
+  --text-code:      var(--font-mono);     /* @kind font */
+}

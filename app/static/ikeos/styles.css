@@ -1,0 +1,10 @@
+/* ʻIkeOS Design System — root entry.
+   This file is intentionally a manifest of @import lines.
+   Consumers link this one file and inherit every token + font face. */
+
+@import "./tokens/colors.css";
+@import "./tokens/typography.css";
+@import "./tokens/spacing.css";
+@import "./tokens/elevation.css";
+@import "./tokens/motion.css";
+@import "./tokens/base.css";

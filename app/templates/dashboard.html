@@ -1,11 +1,19 @@
 {% extends "base.html" %}
-{% block title %}Dashboard{% endblock %}
+{% block title %}Tasks{% endblock %}
 
 {% block content %}
-<h1>Knowledge Map</h1>
+<div class="ike-constellation-field" style="padding: 2rem 1.5rem; min-height: calc(100vh - 60px);">
+
+<header class="page-header">
+  <span class="ike-eyebrow">Tasks</span>
+  <h1>What needs your attention.</h1>
+  <p class="page-subtitle">
+    {{ projects | length }} project{{ 's' if projects | length != 1 }} · {{ in_flight | length }} in flight · {{ needs_triage | length }} awaiting triage
+  </p>
+</header>
 
 <section>
-  <h2>Projects</h2>
+  <div class="ike-eyebrow">Projects <span class="eyebrow-count">/ {{ projects | length }}</span></div>
   {% if projects %}
     <div class="project-grid">
       {% for p in projects %}
@@ -40,7 +48,7 @@
 
 {% if in_flight %}
 <section>
-  <h2>In flight</h2>
+  <div class="ike-eyebrow">In flight <span class="eyebrow-count">/ {{ in_flight | length }}</span></div>
   <ul class="entry-group">
     {% for e in in_flight %}
     <li class="entry-row">
@@ -56,7 +64,7 @@
 
 {% if needs_triage %}
 <section>
-  <h2>Needs triage ({{ needs_triage | length }})</h2>
+  <div class="ike-eyebrow">Needs triage <span class="eyebrow-count">/ {{ needs_triage | length }}</span></div>
   <ul class="entry-group">
     {% for e in needs_triage %}
     <li class="entry-row">
@@ -71,6 +79,8 @@
 {% endif %}
 
 {% if not in_flight and not needs_triage %}
-  <p class="empty" style="margin-top:2rem">All clear. <a href="{{ url_for('capture.capture_form') }}">Begin where you are.</a></p>
+  <p class="empty" style="margin-top:2rem">All clear. The map is quiet — <a href="{{ url_for('capture.capture_form') }}">capture something when you're ready.</a></p>
 {% endif %}
+
+</div><!-- .ike-constellation-field -->
 {% endblock %}

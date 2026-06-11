@@ -63,7 +63,7 @@ def capture_submit():
         data["steps"] = request.form.get("steps", "")
 
     write_entry(data)
-    flash("Entry saved.")
+    flash("Saved. The vault remembers.")
 
     if request.form.get("stay") == "1":
         return redirect(url_for("capture.capture_form", project=project if entry_type != "decision" else ""))

@@ -1,0 +1,82 @@
+/* ʻIkeOS — Base styles
+   Minimal reset + brand-aware defaults. Dark canvas by default. */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--text-primary);
+  background: var(--bg-canvas);
+  font-feature-settings: "ss01", "cv11";
+}
+
+/* Headings — display family, tight leading, negative tracking */
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-weight: var(--fw-semibold);
+  color: var(--text-primary);
+}
+
+h1 { font-size: var(--fs-h1); line-height: var(--lh-h1); letter-spacing: var(--ls-h1); }
+h2 { font-size: var(--fs-h2); line-height: var(--lh-h2); letter-spacing: var(--ls-h2); }
+h3 { font-size: var(--fs-h3); line-height: var(--lh-h3); letter-spacing: var(--ls-h3); }
+h4 { font-size: var(--fs-h4); line-height: var(--lh-h4); letter-spacing: var(--ls-h4); }
+
+p { margin: 0; }
+
+a {
+  color: var(--ike-soft-lavender);
+  text-decoration: none;
+  text-underline-offset: 3px;
+  transition: color var(--dur-quick) var(--ease-out);
+}
+a:hover { color: var(--ike-vibrant-purple); text-decoration: underline; }
+
+button { font-family: inherit; }
+code, pre, kbd, samp { font-family: var(--font-mono); font-size: var(--fs-code); }
+
+/* Eyebrow — used heavily in the brand */
+.ike-eyebrow {
+  font-size: var(--fs-eyebrow);
+  letter-spacing: var(--ls-eyebrow);
+  font-weight: var(--fw-medium);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+/* Editorial prose — long-form */
+.ike-prose {
+  font-family: var(--font-editorial);
+  font-size: var(--fs-body-lg);
+  line-height: 1.65;
+  color: var(--text-secondary);
+  max-width: var(--container-prose);
+}
+
+/* Selection */
+::selection { background: rgba(124, 58, 237, 0.40); color: var(--ike-lunar); }
+
+/* Scrollbar — subtle on dark */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+/* Focus ring — accessibility */
+:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-focus);
+  border-radius: var(--radius-sm);
+}

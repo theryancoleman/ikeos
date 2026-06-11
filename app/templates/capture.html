@@ -1,13 +1,17 @@
 {% extends "base.html" %}
-{% block title %}New entry{% endblock %}
+{% block title %}Capture{% endblock %}
 
 {% block content %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.css">
-<h1>Capture</h1>
+
+<header class="page-header">
+  <span class="ike-eyebrow">Capture</span>
+  <h1>Capture something.</h1>
+</header>
 
 <form method="post" action="{{ url_for('capture.capture_submit') }}">
   <div class="field">
-    <label for="project">Project</label>
+    <label class="ike-eyebrow" for="project">Project</label>
     <select id="project" name="project" required onchange="updateProject(this.value)">
       {% for p in projects %}
         <option value="{{ p.slug }}" {% if p.slug == selected_project %}selected{% endif %}>{{ p.name }}</option>
@@ -17,33 +21,36 @@
   </div>
 
   <div id="future-project-field" class="field hidden">
-    <label for="future_project_name">Future project name</label>
+    <label class="ike-eyebrow" for="future_project_name">Future project name</label>
     <input id="future_project_name" name="future_project_name" type="text" placeholder="e.g. my-new-app">
   </div>
 
   <div class="field">
-    <label for="type">Type</label>
-    <select id="type" name="type" required onchange="updateFields(this.value)">
-      <option value="note">Note</option>
-      <option value="idea">Idea</option>
-      <option value="bug">Bug</option>
-    </select>
+    <label class="ike-eyebrow" for="type-note">Type</label>
+    <div class="type-chips" role="radiogroup">
+      <input type="radio" name="type" id="type-note" value="note" checked>
+      <label class="type-chip type-chip-note" for="type-note">Note</label>
+      <input type="radio" name="type" id="type-idea" value="idea">
+      <label class="type-chip type-chip-idea" for="type-idea">Idea</label>
+      <input type="radio" name="type" id="type-bug" value="bug">
+      <label class="type-chip type-chip-bug" for="type-bug">Bug</label>
+    </div>
   </div>
 
   <div class="field">
-    <label for="title">Title</label>
+    <label class="ike-eyebrow" for="title">Title</label>
     <input id="title" name="title" type="text" required>
   </div>
 
   <div class="field">
-    <label for="body">Description</label>
+    <label class="ike-eyebrow" for="body">Description</label>
     <textarea id="body" name="body" rows="5"></textarea>
   </div>
 
   <!-- Idea fields -->
   <div id="idea-fields" class="conditional hidden">
     <div class="field">
-      <label for="priority">Priority</label>
+      <label class="ike-eyebrow" for="priority">Priority</label>
       <select id="priority" name="priority">
         <option value="low">Low</option>
         <option value="medium" selected>Medium</option>
@@ -51,7 +58,7 @@
       </select>
     </div>
     <div class="field">
-      <label for="effort">Effort</label>
+      <label class="ike-eyebrow" for="effort">Effort</label>
       <select id="effort" name="effort">
         <option value="small">Small</option>
         <option value="medium" selected>Medium</option>
@@ -63,7 +70,7 @@
   <!-- Bug fields -->
   <div id="bug-fields" class="conditional hidden">
     <div class="field">
-      <label for="severity">Severity</label>
+      <label class="ike-eyebrow" for="severity">Severity</label>
       <select id="severity" name="severity">
         <option value="low">Low</option>
         <option value="medium" selected>Medium</option>
@@ -72,13 +79,13 @@
       </select>
     </div>
     <div class="field">
-      <label for="steps">Steps to reproduce</label>
+      <label class="ike-eyebrow" for="steps">Steps to reproduce</label>
       <textarea id="steps" name="steps" rows="4"></textarea>
     </div>
   </div>
 
   <div class="field">
-    <label>Domain <span class="field-optional">(optional — select all that apply)</span></label>
+    <label class="ike-eyebrow">Domain <span class="field-optional">(optional — select all that apply)</span></label>
     <div class="domain-checkboxes">
       <label class="checkbox-label"><input type="checkbox" name="domains" value="auth"> auth</label>
       <label class="checkbox-label"><input type="checkbox" name="domains" value="payments"> payments</label>
@@ -94,11 +101,14 @@
 
   <div class="field stay-field">
     <label class="checkbox-label">
-      <input type="checkbox" name="stay" value="1"> Stay on this page after saving
+      <input type="checkbox" name="stay" value="1"> Stay here after saving — keep capturing.
     </label>
   </div>
 
-  <button type="submit">Save</button>
+  <div class="capture-footer">
+    <span class="capture-help"><kbd>⌘</kbd>+<kbd>↵</kbd> to save</span>
+    <button type="submit" class="ike-btn-primary">Save to vault</button>
+  </div>
 </form>
 
 <script>
@@ -119,6 +129,16 @@ function updateProject(value) {
     input.required = false;
   }
 }
+
+document.querySelectorAll('input[name="type"]').forEach(el => {
+  el.addEventListener('change', e => updateFields(e.target.value));
+});
+
+document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+    document.querySelector('form')?.requestSubmit();
+  }
+});
 
 (function () {
   const stayBox = document.querySelector('input[name="stay"]');

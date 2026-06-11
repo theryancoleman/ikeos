@@ -18,7 +18,10 @@
     <span class="entry-date">{{ entry.created[:10] if entry.created else '' }}</span>
   </div>
 
-  <h1>{{ entry.title }}</h1>
+  <header class="page-header">
+    <span class="ike-eyebrow">{{ entry.type | capitalize }}</span>
+    <h1>{{ entry.title }}</h1>
+  </header>
 
   {% if entry.type == 'bug' and entry.severity %}
     <div class="entry-attr">

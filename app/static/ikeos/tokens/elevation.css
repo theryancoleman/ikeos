@@ -1,0 +1,33 @@
+/* ʻIkeOS — Elevation: shadows + glows
+   The brand sits on dark plum. Inner glows + soft halos read like
+   stars on water, not material drop-shadows. We provide both. */
+
+:root {
+  /* Soft material shadows for light surfaces */
+  --shadow-xs:  0 1px 2px rgba(18, 10, 31, 0.06);
+  --shadow-sm:  0 2px 6px rgba(18, 10, 31, 0.08), 0 1px 2px rgba(18, 10, 31, 0.04);
+  --shadow-md:  0 6px 16px rgba(18, 10, 31, 0.10), 0 2px 4px rgba(18, 10, 31, 0.04);
+  --shadow-lg:  0 16px 36px rgba(18, 10, 31, 0.16), 0 4px 8px rgba(18, 10, 31, 0.06);
+  --shadow-xl:  0 32px 64px rgba(18, 10, 31, 0.22), 0 8px 16px rgba(18, 10, 31, 0.08);
+
+  /* Celestial halos — for buttons, focused nodes, beacons */
+  --glow-purple-sm: 0 0 0 4px rgba(124, 58, 237, 0.18);
+  --glow-purple-md: 0 0 24px rgba(124, 58, 237, 0.35);
+  --glow-purple-lg: 0 0 60px rgba(124, 58, 237, 0.45), 0 0 18px rgba(124, 58, 237, 0.55);
+
+  --glow-orange-md: 0 0 24px rgba(255, 120, 73, 0.40);
+  --glow-orange-lg: 0 0 60px rgba(255, 120, 73, 0.45), 0 0 18px rgba(255, 120, 73, 0.55);
+
+  --glow-blue-md:   0 0 24px rgba(59, 130, 246, 0.40);
+  --glow-green-md:  0 0 24px rgba(45, 212, 191, 0.45);
+  --glow-gold-md:   0 0 24px rgba(250, 204, 21, 0.45);
+
+  /* Inset for inputs on dark surfaces */
+  --inset-sunk: inset 0 1px 0 rgba(0,0,0,0.30), inset 0 0 0 1px var(--border-default);
+
+  /* Card rim — subtle inner lift to feel like a lens, not paper */
+  --rim-card:   inset 0 1px 0 rgba(255,255,255,0.04), 0 1px 0 rgba(0,0,0,0.40); /* @kind shadow */
+
+  /* Focus ring — accessible, brand-aware */
+  --ring-focus: 0 0 0 2px var(--bg-canvas), 0 0 0 4px var(--ike-vibrant-purple);
+}
