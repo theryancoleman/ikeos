@@ -122,3 +122,35 @@ def patch_entries():
         return jsonify({"error": "Entry not found or invalid status"}), 404
 
     return jsonify({"message": "Status updated"}), 200
+
+
+@bp.route("/capture/json", methods=["POST"])
+def capture_json():
+    req = request.get_json(silent=True) or {}
+    entry_type = req.get("type", "")
+    project = req.get("project", "")
+    title = req.get("title", "")
+
+    if not title:
+        return jsonify({"error": "title is required"}), 400
+    if entry_type not in ("note", "idea", "bug"):
+        return jsonify({"error": "type must be note, idea, or bug"}), 400
+    if not project:
+        return jsonify({"error": "project is required"}), 400
+
+    data = {
+        "type": entry_type,
+        "project": project,
+        "title": title,
+        "body": req.get("body", ""),
+        "domains": [],
+    }
+    if entry_type == "idea":
+        data["priority"] = req.get("priority", "medium")
+        data["effort"] = req.get("effort", "medium")
+    elif entry_type == "bug":
+        data["severity"] = req.get("severity", "medium")
+        data["steps"] = req.get("steps", "")
+
+    write_entry(data)
+    return jsonify({"ok": True}), 200

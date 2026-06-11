@@ -491,3 +491,60 @@ def test_patch_entries_decision_valid_statuses(client, tmp_path):
             headers={"X-Capture-Token": "test-token-secret"}
         )
     assert response.status_code == 400  # Invalid status for decision lifecycle
+
+
+def test_capture_json_note(client, mocker):
+    mock_write = mocker.patch("app.routes.capture.write_entry")
+    resp = client.post(
+        "/capture/json",
+        json={"type": "note", "project": "bcr-waivers", "title": "Test note"},
+    )
+    assert resp.status_code == 200
+    assert resp.get_json()["ok"] is True
+    call_data = mock_write.call_args[0][0]
+    assert call_data["type"] == "note"
+    assert call_data["project"] == "bcr-waivers"
+    assert call_data["title"] == "Test note"
+
+
+def test_capture_json_missing_title_returns_400(client):
+    resp = client.post(
+        "/capture/json",
+        json={"type": "note", "project": "bcr-waivers"},
+    )
+    assert resp.status_code == 400
+    assert "error" in resp.get_json()
+
+
+def test_capture_json_missing_project_returns_400(client):
+    resp = client.post(
+        "/capture/json",
+        json={"type": "note", "title": "Test"},
+    )
+    assert resp.status_code == 400
+
+
+def test_capture_json_invalid_type_returns_400(client):
+    resp = client.post(
+        "/capture/json",
+        json={"type": "decision", "project": "bcr-waivers", "title": "Test"},
+    )
+    assert resp.status_code == 400
+
+
+def test_capture_json_idea_includes_priority_effort(client, mocker):
+    mock_write = mocker.patch("app.routes.capture.write_entry")
+    resp = client.post(
+        "/capture/json",
+        json={
+            "type": "idea",
+            "project": "bcr-waivers",
+            "title": "Test idea",
+            "priority": "high",
+            "effort": "low",
+        },
+    )
+    assert resp.status_code == 200
+    call_data = mock_write.call_args[0][0]
+    assert call_data["priority"] == "high"
+    assert call_data["effort"] == "low"
