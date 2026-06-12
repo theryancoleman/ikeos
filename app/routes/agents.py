@@ -130,3 +130,30 @@ def rename_session(session_id):
 def session_pane(session_id):
     data, status = _proxy("GET", f"/sessions/{session_id}/pane")
     return jsonify(data), status
+
+
+@bp.route("/status")
+def status_page():
+    try:
+        data, _ = _proxy("GET", "/infrastructure")
+    except Exception:
+        data = {"containers": [], "machines": []}
+    return render_template("infrastructure.html", infra=data)
+
+
+@bp.route("/infrastructure/containers/<name>/restart", methods=["POST"])
+def infra_restart_container(name):
+    data, status = _proxy("POST", f"/infrastructure/containers/{name}/restart")
+    return jsonify(data), status
+
+
+@bp.route("/infrastructure/containers/<name>/stop", methods=["POST"])
+def infra_stop_container(name):
+    data, status = _proxy("POST", f"/infrastructure/containers/{name}/stop")
+    return jsonify(data), status
+
+
+@bp.route("/infrastructure/containers/<name>/start", methods=["POST"])
+def infra_start_container(name):
+    data, status = _proxy("POST", f"/infrastructure/containers/{name}/start")
+    return jsonify(data), status

@@ -118,3 +118,39 @@ def test_rename_session_proxy(client, mocker):
     resp = client.post("/agents/sessions/abc123/rename", json={"name": "new-name"})
     assert resp.status_code == 200
     assert resp.get_json()["name"] == "new-name"
+
+
+MOCK_INFRA = {
+    "containers": [
+        {"Names": "traefik", "Image": "traefik:v2.10", "Status": "Up 2 days",
+         "State": "running", "Ports": "0.0.0.0:80->80/tcp"},
+    ],
+    "machines": [
+        {"name": "home-server", "host": "192.168.1.77", "reachable": True},
+        {"name": "cottage", "host": "100.74.204.42", "reachable": False},
+    ],
+}
+
+
+def test_infrastructure_page_renders(client, mocker):
+    mocker.patch("app.routes.agents.requests.request",
+                 return_value=_mock_response(MOCK_INFRA))
+    resp = client.get("/status")
+    assert resp.status_code == 200
+    assert b"traefik" in resp.data
+    assert b"home-server" in resp.data
+
+
+def test_infrastructure_page_handles_manager_down(client, mocker):
+    mocker.patch("app.routes.agents.requests.request",
+                 side_effect=Exception("connection refused"))
+    resp = client.get("/status")
+    assert resp.status_code == 200  # renders empty
+
+
+def test_container_restart_proxy(client, mocker):
+    mocker.patch("app.routes.agents.requests.request",
+                 return_value=_mock_response({"ok": True}))
+    resp = client.post("/infrastructure/containers/traefik/restart")
+    assert resp.status_code == 200
+    assert resp.get_json()["ok"] is True

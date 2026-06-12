@@ -693,3 +693,85 @@ body:has(.workspace-page) main {
 .sessions-footer {
   padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
 }
+
+/* ── Infrastructure Status page ── */
+.infra-page {
+  max-width: 1100px;
+  padding: 2rem 2.5rem;
+}
+
+.infra-section {
+  margin-bottom: 2.5rem;
+}
+
+.machine-cards {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
+}
+
+.machine-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.25rem;
+  min-width: 220px;
+  box-shadow: var(--rim-card);
+}
+
+.machine-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dot-up   { background: var(--sem-discovery); box-shadow: 0 0 8px rgba(45, 212, 191, 0.70); animation: ike-pulse 2.2s ease-in-out infinite; }
+.dot-down { background: var(--text-muted); }
+
+.machine-info { flex: 1; }
+.machine-name { font-weight: var(--fw-semibold); font-size: var(--fs-body-sm); color: var(--text-primary); }
+.machine-host { font-size: 11px; color: var(--text-tertiary); font-family: var(--font-mono); margin-top: 2px; }
+
+.machine-status { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+.status-up   { color: var(--sem-discovery); }
+.status-down { color: var(--text-muted); }
+
+.container-table-wrap { overflow-x: auto; margin-top: 0.75rem; }
+
+.container-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-body-sm);
+}
+.container-table th {
+  text-align: left;
+  font-size: var(--fs-eyebrow);
+  font-weight: var(--fw-medium);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-eyebrow);
+  color: var(--text-tertiary);
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+  white-space: nowrap;
+}
+.container-table td {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+  vertical-align: middle;
+  color: var(--text-secondary);
+}
+.ct-name   { color: var(--text-primary); font-weight: var(--fw-medium); white-space: nowrap; }
+.ct-image  { font-family: var(--font-mono); font-size: 11px; color: var(--text-tertiary); }
+.ct-ports  { font-family: var(--font-mono); font-size: 11px; max-width: 220px; word-break: break-all; }
+.ct-actions { white-space: nowrap; }
+.ct-actions .pill { margin-right: 0.3rem; }
+
+.container-state { font-size: 11px; font-weight: 500; }
+.state-running { color: var(--sem-discovery); }
+.state-exited  { color: var(--text-muted); }
+.state-paused  { color: var(--sem-understanding); }
+.state-created { color: var(--text-tertiary); }

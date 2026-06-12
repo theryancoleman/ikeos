@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Status{% endblock %}
+
+{% block content %}
+<div class="infra-page ike-constellation-field">
+
+  <header class="page-header">
+    <span class="ike-eyebrow">Infrastructure</span>
+    <h1>Status</h1>
+    <p class="page-subtitle">
+      {{ infra.machines | length }} machine{{ 's' if infra.machines | length != 1 }} ·
+      {{ infra.containers | length }} container{{ 's' if infra.containers | length != 1 }}
+    </p>
+  </header>
+
+  <!-- Machines -->
+  {% if infra.machines %}
+  <section class="infra-section">
+    <div class="ike-eyebrow">Machines <span class="eyebrow-count">/ {{ infra.machines | length }}</span></div>
+    <div class="machine-cards">
+      {% for m in infra.machines %}
+      <div class="machine-card">
+        <div class="machine-dot {% if m.reachable %}dot-up{% else %}dot-down{% endif %}"></div>
+        <div class="machine-info">
+          <div class="machine-name">{{ m.name }}</div>
+          <div class="machine-host">{{ m.host }}</div>
+        </div>
+        <span class="machine-status {% if m.reachable %}status-up{% else %}status-down{% endif %}">
+          {{ 'up' if m.reachable else 'down' }}
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- Docker Containers -->
+  <section class="infra-section">
+    <div class="ike-eyebrow">Docker Containers <span class="eyebrow-count">/ {{ infra.containers | length }}</span></div>
+    {% if infra.containers %}
+    <div class="container-table-wrap">
+      <table class="container-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Image</th>
+            <th>Status</th>
+            <th>Ports</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="container-tbody">
+          {% for c in infra.containers %}
+          <tr data-name="{{ c.Names | replace('/', '') }}">
+            <td class="ct-name">{{ c.Names | replace('/', '') }}</td>
+            <td class="ct-image">{{ c.Image }}</td>
+            <td class="ct-status">
+              <span class="container-state state-{{ c.State }}">{{ c.Status }}</span>
+            </td>
+            <td class="ct-ports">{{ c.Ports or '—' }}</td>
+            <td class="ct-actions">
+              {% if c.State == 'running' %}
+              <button class="pill" onclick="containerAction('{{ c.Names | replace('/', '') }}', 'restart')">Restart</button>
+              <button class="pill pill-danger" onclick="containerAction('{{ c.Names | replace('/', '') }}', 'stop')">Stop</button>
+              {% else %}
+              <button class="pill pill-primary-filled" onclick="containerAction('{{ c.Names | replace('/', '') }}', 'start')">Start</button>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="empty">No containers found — is the session manager running?</p>
+    {% endif %}
+  </section>
+
+</div><!-- .infra-page -->
+
+<script>
+async function containerAction(name, action) {
+  const btn = event.target;
+  btn.disabled = true;
+  btn.textContent = '…';
+  try {
+    await fetch(`/infrastructure/containers/${encodeURIComponent(name)}/${action}`, { method: 'POST' });
+    setTimeout(() => location.reload(), 1200);
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = action.charAt(0).toUpperCase() + action.slice(1);
+  }
+}
+</script>
+{% endblock %}
