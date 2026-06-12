@@ -168,6 +168,7 @@ function renderPanelActions(s) {
               onclick="toggleRc('${esc(s.id)}')">Toggle RC (${s.remote_control  ? 'on' : 'off'})</button>
       <button class="pill ${s.autonomous_mode ? 'pill-on' : ''}"
               onclick="toggleAuto('${esc(s.id)}')">Toggle Auto (${s.autonomous_mode ? 'on' : 'off'})</button>
+      <button class="pill" onclick="openRenameInput('${esc(s.id)}')">Rename</button>
       <button class="pill" onclick="sendCmd('${esc(s.id)}','/clear')">Clear context</button>
       <button class="pill" onclick="sendCmd('${esc(s.id)}','/compact')">Compact</button>
       <button class="pill" onclick="resetSession('${esc(s.id)}')">Reset session</button>
@@ -217,6 +218,34 @@ function closePanel() {
   pushSessionToUrl(null);
   const sel = document.getElementById('cap-project');
   if (sel && sel.options.length) sel.selectedIndex = 0;
+}
+
+function openRenameInput(id) {
+  const s = sessions.find(x => x.id === id);
+  if (!s) return;
+  const el = document.getElementById('rename-row');
+  if (!el) return;
+  document.getElementById('rename-input').value = s.name;
+  el.style.display = 'flex';
+  document.getElementById('rename-input').focus();
+}
+
+function closeRenameInput() {
+  const el = document.getElementById('rename-row');
+  if (el) el.style.display = 'none';
+}
+
+async function submitRename() {
+  const input = document.getElementById('rename-input');
+  const name  = input.value.trim();
+  if (!name || !selectedId) return;
+  await api('POST', '/sessions/' + selectedId + '/rename', { name });
+  closeRenameInput();
+  await pollSessions();
+  const updated = sessions.find(s => s.id === selectedId);
+  if (updated) {
+    document.getElementById('panel-title').textContent = updated.name;
+  }
 }
 
 // ── Actions ─────────────────────────────────────────────────────────────────

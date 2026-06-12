@@ -109,3 +109,12 @@ def test_agents_page_no_capture_column(client, mocker):
     resp = client.get("/agents")
     assert resp.status_code == 200
     assert b"cap-project" not in resp.data
+
+
+def test_rename_session_proxy(client, mocker):
+    updated = {**MOCK_SESSION, "name": "new-name"}
+    mocker.patch("app.routes.agents.requests.request",
+                 return_value=_mock_response(updated))
+    resp = client.post("/agents/sessions/abc123/rename", json={"name": "new-name"})
+    assert resp.status_code == 200
+    assert resp.get_json()["name"] == "new-name"

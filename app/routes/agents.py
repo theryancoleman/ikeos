@@ -119,6 +119,13 @@ def send_command(session_id):
     return jsonify(data), status
 
 
+@bp.route("/agents/sessions/<session_id>/rename", methods=["POST"])
+def rename_session(session_id):
+    data, status = _proxy("POST", f"/sessions/{session_id}/rename",
+                          json=request.get_json())
+    return jsonify(data), status
+
+
 @bp.route("/agents/sessions/<session_id>/pane")
 def session_pane(session_id):
     data, status = _proxy("GET", f"/sessions/{session_id}/pane")

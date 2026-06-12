@@ -61,6 +61,12 @@
       <div>
         <div class="panel-section-label">Actions</div>
         <div class="panel-actions" id="panel-actions"></div>
+        <div id="rename-row" class="cmd-row" style="display:none;margin-top:0.5rem">
+          <input type="text" id="rename-input" placeholder="New session name…"
+                 onkeydown="if(event.key==='Enter') submitRename(); if(event.key==='Escape') closeRenameInput()">
+          <button class="pill pill-primary" onclick="submitRename()">Save</button>
+          <button class="pill" onclick="closeRenameInput()">Cancel</button>
+        </div>
       </div>
     </div>
   </div>
