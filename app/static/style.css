@@ -629,6 +629,52 @@ button[type="submit"] { margin-top: var(--space-3); }
   .ike-loading-orbit { animation: none; }
 }
 
+/* ── Infrastructure page ─────────────────────────────────────────────────── */
+.infra-page {
+  max-width: 1100px;
+  padding: 2rem 2.5rem;
+}
+
+.infra-section {
+  margin-bottom: 2.5rem;
+}
+
+.machine-cards {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
+}
+
+.machine-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.25rem;
+  min-width: 220px;
+  box-shadow: var(--rim-card);
+}
+
+.machine-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dot-up   { background: var(--sem-discovery); box-shadow: 0 0 8px rgba(45, 212, 191, 0.70); animation: ike-pulse 2.2s ease-in-out infinite; }
+.dot-down { background: var(--text-muted); }
+
+.machine-info { flex: 1; }
+.machine-name { font-weight: var(--fw-semibold); font-size: var(--fs-body-sm); color: var(--text-primary); }
+.machine-host { font-size: 11px; color: var(--text-tertiary); font-family: var(--font-mono); margin-top: 2px; }
+
+.machine-status { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+.status-up   { color: var(--sem-discovery); }
+.status-down { color: var(--text-muted); }
+
 /* ── Mobile nav (hamburger) ──────────────────────────────────────────────── */
 .nav-hamburger {
   display: none;
@@ -741,8 +787,6 @@ button[type="submit"] { margin-top: var(--space-3); }
   .capture-footer .ike-btn-primary,
   .capture-footer button[type="submit"] { width: 100%; justify-content: center; }
 
-  /* Page header action row (if any) */
-  .page-header-actions { flex-wrap: wrap; gap: var(--space-2); }
 }
 
 @media (max-width: 480px) {
