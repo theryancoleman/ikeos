@@ -258,6 +258,30 @@ body:has(.workspace-page) main {
   background: rgba(59, 130, 246, 0.08);
 }
 
+.card-meta-left  { display: flex; align-items: center; gap: 0.4rem; }
+.card-meta-right { display: flex; align-items: center; gap: 0.4rem; }
+
+.health-badge {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 1px 0.4rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid currentColor;
+  line-height: 1.5;
+}
+.health-fresh  { color: #4ade80; background: rgba(74, 222, 128, 0.08); }
+.health-aging  { color: #f59e0b; background: rgba(245, 158, 11, 0.08); }
+.health-heavy  { color: #fca5a5; background: rgba(248, 113, 113, 0.10); }
+
+.card-msgs {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  font-family: var(--font-mono);
+}
+
 .card-age {
   font-size: 11px;
   color: var(--text-muted);

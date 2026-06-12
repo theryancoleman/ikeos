@@ -45,6 +45,16 @@ function activityChip(s) {
   return `<span class="activity-chip ${cls}">${s.activity}</span>`;
 }
 
+function healthBadge(s) {
+  if (s.status !== 'active' || !s.health) return '';
+  return `<span class="health-badge health-${esc(s.health)}">${esc(s.health)}</span>`;
+}
+
+function msgCount(s) {
+  if (!s.message_count) return '';
+  return `<span class="card-msgs">${s.message_count} msg${s.message_count === 1 ? '' : 's'}</span>`;
+}
+
 function cardFooter(s) {
   if (s.status === 'active') {
     return `
@@ -80,8 +90,8 @@ function renderCard(s) {
         <div class="card-name"><span class="session-dot ${dotClass}"></span>${esc(s.name)}</div>
         <div class="card-project">${esc(s.project)}</div>
         <div class="card-meta">
-          ${statusHtml}
-          <span class="card-age">${fmtAge(s.started_at)}</span>
+          <div class="card-meta-left">${statusHtml}${healthBadge(s)}</div>
+          <div class="card-meta-right">${msgCount(s)}<span class="card-age">${fmtAge(s.started_at)}</span></div>
         </div>
       </div>
       <div class="card-footer">${cardFooter(s)}</div>
