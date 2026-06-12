@@ -14,14 +14,14 @@
 }
 
 /* ── Full-bleed body ── */
-body:has(.workspace-page) {
+body.workspace-body {
   height: 100vh;        /* fallback for browsers without dvh */
   height: 100dvh;       /* dynamic viewport height — fixes iOS Safari address-bar bug */
   overflow: hidden;
   display: flex;
   flex-direction: column;
 }
-body:has(.workspace-page) main {
+body.workspace-body main {
   max-width: none;
   margin: 0;
   padding: 0;

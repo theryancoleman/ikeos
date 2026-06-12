@@ -1105,6 +1105,7 @@ code, pre, kbd, samp { font-family: var(--font-mono); font-size: var(--fs-code);
   display: flex;
   align-items: center;
   gap: 24px;
+  flex-shrink: 0;
 }
 .nav-brand {
   display: flex;

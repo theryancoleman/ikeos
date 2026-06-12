@@ -8,7 +8,7 @@
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo-ikeos-okina.png') }}">
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/logo-ikeos-appicon-dark.png') }}">
 </head>
-<body>
+<body{% block body_class %}{% endblock %}>
   <nav class="ike-nav">
     <a href="{{ url_for('agents.dashboard') }}" class="nav-brand" aria-label="ʻIkeOS home">
       <img src="{{ url_for('static', filename='img/logo-ikeos-okina.png') }}"
