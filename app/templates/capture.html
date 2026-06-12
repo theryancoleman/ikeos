@@ -2,7 +2,7 @@
 {% block title %}Capture{% endblock %}
 
 {% block content %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/easymde.min.css') }}">
 
 <header class="page-header">
   <span class="ike-eyebrow">Capture</span>
@@ -28,10 +28,10 @@
   <div class="field">
     <label class="ike-eyebrow" for="type-note">Type</label>
     <div class="type-chips" role="radiogroup">
-      <input type="radio" name="type" id="type-note" value="note" checked>
+      <input type="radio" name="type" id="type-note" value="note">
       <label class="type-chip type-chip-note" for="type-note">Note</label>
-      <input type="radio" name="type" id="type-idea" value="idea">
-      <label class="type-chip type-chip-idea" for="type-idea">Idea</label>
+      <input type="radio" name="type" id="type-idea" value="idea" checked>
+      <label class="type-chip type-chip-idea" for="type-idea">Feature Request</label>
       <input type="radio" name="type" id="type-bug" value="bug">
       <label class="type-chip type-chip-bug" for="type-bug">Bug</label>
     </div>
@@ -133,6 +133,7 @@ function updateProject(value) {
 document.querySelectorAll('input[name="type"]').forEach(el => {
   el.addEventListener('change', e => updateFields(e.target.value));
 });
+updateFields('idea');
 
 document.addEventListener('keydown', e => {
   if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
@@ -154,7 +155,7 @@ document.addEventListener('keydown', e => {
 })();
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.js"></script>
+<script src="{{ url_for('static', filename='vendor/easymde.min.js') }}"></script>
 <script>
   const easyMDE = new EasyMDE({
     element: document.getElementById("body"),
