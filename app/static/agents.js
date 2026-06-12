@@ -202,6 +202,7 @@ function openPanel(id) {
   document.getElementById('pane-output').textContent = '…';
   document.getElementById('pane-output').classList.remove('pane-stopped');
   document.getElementById('detail-col').classList.add('open');
+  document.querySelector('.workspace-page')?.classList.add('panel-open');
   document.querySelectorAll('.session-card')
     .forEach(el => el.classList.toggle('selected', el.dataset.id === id));
   stopPanePolling();
@@ -215,6 +216,7 @@ function closePanel() {
   selectedId = null;
   stopPanePolling();
   document.getElementById('detail-col').classList.remove('open');
+  document.querySelector('.workspace-page')?.classList.remove('panel-open');
   document.querySelectorAll('.session-card').forEach(el => el.classList.remove('selected'));
   pushSessionToUrl(null);
   const sel = document.getElementById('cap-project');

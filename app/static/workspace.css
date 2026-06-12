@@ -441,6 +441,25 @@ body:has(.workspace-page) main {
   letter-spacing: -0.01em;
 }
 .panel-subtitle { font-size: 11px; color: var(--text-tertiary); letter-spacing: 0.06em; }
+.panel-back-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0;
+  cursor: pointer;
+  margin-bottom: 0.3rem;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-sans);
+  transition: color var(--dur-quick) var(--ease-out);
+}
+.panel-back-btn:hover { color: var(--text-secondary); }
+
 .panel-close {
   background: none;
   border: none;
@@ -678,14 +697,32 @@ body:has(.workspace-page) main {
   .capture-col { display: none; }
 }
 
-/* Small phones (≤ 640px): single column, sessions list only */
-@media (max-width: 640px) {
+/* Mobile (≤ 768px): single column — sessions list or detail panel, never both */
+@media (max-width: 768px) {
   .workspace-page,
   .workspace-page.workspace-3col {
     grid-template-columns: 1fr;
   }
+
   .detail-col { display: none; }
   .sessions-col { border-right: none; }
+
+  /* When a session is open: show detail fullscreen, hide sessions list */
+  .workspace-page.panel-open .sessions-col { display: none; }
+  .workspace-page.panel-open .detail-col   { display: flex; }
+
+  /* Back button visible on mobile */
+  .panel-back-btn { display: inline-flex; }
+
+  /* Compact page header */
+  .workspace-page-header { padding: 0.5rem 1rem; }
+  .workspace-page-header h1 { font-size: 22px; }
+
+  /* Reserve space on card right for absolute-positioned activity chip */
+  .card-body { padding-right: 3.5rem; }
+
+  /* Let meta row wrap on very narrow screens */
+  .card-meta { flex-wrap: wrap; }
 }
 
 /* Safe-area padding for notched iPhones/iPads — env() resolves to 0px on
