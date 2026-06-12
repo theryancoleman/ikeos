@@ -1,9 +1,30 @@
 import os
 import re
+import time
 from datetime import datetime
 from pathlib import Path
 
 import frontmatter
+
+# ── In-process cache ────────────────────────────────────────────────────────
+# The vault lives on a Windows bind mount; cross-filesystem I/O in WSL2 is
+# slow (~20× vs native Linux). Cache the two hot reads and invalidate on write.
+
+_TTL = 60.0  # seconds
+
+_projects_cache: list | None = None
+_projects_cache_ts: float = 0.0
+
+_entries_cache: list | None = None
+_entries_cache_ts: float = 0.0
+
+
+def _invalidate_cache() -> None:
+    global _projects_cache, _projects_cache_ts, _entries_cache, _entries_cache_ts
+    _projects_cache = None
+    _projects_cache_ts = 0.0
+    _entries_cache = None
+    _entries_cache_ts = 0.0
 
 VAULT_PATH = Path(os.environ.get("VAULT_PATH", "/vault"))
 
@@ -36,6 +57,10 @@ def get_projects() -> list[str]:
 
 
 def get_projects_with_meta() -> list[dict]:
+    global _projects_cache, _projects_cache_ts
+    now = time.monotonic()
+    if _projects_cache is not None and (now - _projects_cache_ts) < _TTL:
+        return _projects_cache
     projects_dir = VAULT_PATH / "projects"
     if not projects_dir.exists():
         return []
@@ -46,6 +71,8 @@ def get_projects_with_meta() -> list[dict]:
         meta = _read_project_meta(d.name)
         if not meta["hidden"]:
             projects.append({"slug": d.name, "name": meta["name"]})
+    _projects_cache = projects
+    _projects_cache_ts = now
     return projects
 
 
@@ -122,14 +149,14 @@ def write_entry(data: dict) -> str:
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(frontmatter.dumps(post))
 
+    _invalidate_cache()
     return slug
 
 
-def read_entries(project: str = None, status_filter: list = None) -> list[dict]:
-    projects = [project] if project else get_projects()
+def _read_all_entries() -> list[dict]:
+    """Read and parse every entry file in the vault. Result is cached by callers."""
     entries = []
-
-    for proj in projects:
+    for proj in get_projects():
         proj_dir = VAULT_PATH / "projects" / proj
         for folder in ("bugs", "ideas", "notes"):
             type_dir = proj_dir / folder
@@ -146,11 +173,44 @@ def read_entries(project: str = None, status_filter: list = None) -> list[dict]:
                     entries.append(entry)
                 except Exception:
                     continue
+    entries.sort(key=lambda e: e.get("created", ""), reverse=True)
+    return entries
+
+
+def read_entries(project: str = None, status_filter: list = None) -> list[dict]:
+    global _entries_cache, _entries_cache_ts
+    now = time.monotonic()
+
+    if project is None:
+        # Hot path: full scan — serve from cache when fresh
+        if _entries_cache is None or (now - _entries_cache_ts) >= _TTL:
+            _entries_cache = _read_all_entries()
+            _entries_cache_ts = now
+        entries = _entries_cache
+    else:
+        # Per-project reads are cheaper; don't cache separately
+        proj_dir = VAULT_PATH / "projects" / project
+        entries = []
+        for folder in ("bugs", "ideas", "notes"):
+            type_dir = proj_dir / folder
+            if not type_dir.exists():
+                continue
+            for filepath in type_dir.glob("*.md"):
+                try:
+                    post = frontmatter.load(filepath)
+                    entry = dict(post.metadata)
+                    if hasattr(entry.get("created"), "isoformat"):
+                        entry["created"] = entry["created"].isoformat(timespec="seconds")
+                    entry["body"] = post.content
+                    entry["slug"] = filepath.stem
+                    entries.append(entry)
+                except Exception:
+                    continue
+        entries.sort(key=lambda e: e.get("created", ""), reverse=True)
 
     if status_filter:
         entries = [e for e in entries if e.get("status") in status_filter]
 
-    entries.sort(key=lambda e: e.get("created", ""), reverse=True)
     return entries
 
 
@@ -184,6 +244,7 @@ def update_entry_status(project: str, slug: str, new_status: str) -> bool:
             post.metadata["tags"] = tags
             with open(filepath, "w", encoding="utf-8") as f:
                 f.write(frontmatter.dumps(post))
+            _invalidate_cache()
             return True
     return False
 
@@ -232,6 +293,7 @@ def update_entry_status_generic(entry_type: str, project: str | None, filename: 
             f.write(frontmatter.dumps(post))
         temp_filepath.replace(filepath)
 
+        _invalidate_cache()
         return True
     except Exception:
         return False
