@@ -1,3 +1,4 @@
+import re
 import requests
 from datetime import datetime
 from flask import Blueprint, render_template, jsonify, request
@@ -5,6 +6,8 @@ from flask import Blueprint, render_template, jsonify, request
 bp = Blueprint("agents", __name__)
 
 SESSION_MANAGER_URL = "http://host.docker.internal:5010"
+
+_CONTAINER_NAME_RE = re.compile(r'^[a-zA-Z0-9][a-zA-Z0-9_.\-]+$')
 
 
 def _proxy(method: str, path: str, **kwargs):
@@ -143,17 +146,23 @@ def status_page():
 
 @bp.route("/infrastructure/containers/<name>/restart", methods=["POST"])
 def infra_restart_container(name):
+    if not _CONTAINER_NAME_RE.match(name):
+        return jsonify({"error": "invalid container name"}), 400
     data, status = _proxy("POST", f"/infrastructure/containers/{name}/restart")
     return jsonify(data), status
 
 
 @bp.route("/infrastructure/containers/<name>/stop", methods=["POST"])
 def infra_stop_container(name):
+    if not _CONTAINER_NAME_RE.match(name):
+        return jsonify({"error": "invalid container name"}), 400
     data, status = _proxy("POST", f"/infrastructure/containers/{name}/stop")
     return jsonify(data), status
 
 
 @bp.route("/infrastructure/containers/<name>/start", methods=["POST"])
 def infra_start_container(name):
+    if not _CONTAINER_NAME_RE.match(name):
+        return jsonify({"error": "invalid container name"}), 400
     data, status = _proxy("POST", f"/infrastructure/containers/{name}/start")
     return jsonify(data), status

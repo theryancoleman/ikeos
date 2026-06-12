@@ -60,10 +60,10 @@
             <td class="ct-ports">{{ c.Ports or '—' }}</td>
             <td class="ct-actions">
               {% if c.State == 'running' %}
-              <button class="pill" onclick="containerAction('{{ c.Names | replace('/', '') }}', 'restart')">Restart</button>
-              <button class="pill pill-danger" onclick="containerAction('{{ c.Names | replace('/', '') }}', 'stop')">Stop</button>
+              <button class="pill" onclick="containerAction(event, '{{ c.Names | replace('/', '') }}', 'restart')">Restart</button>
+              <button class="pill pill-danger" onclick="containerAction(event, '{{ c.Names | replace('/', '') }}', 'stop')">Stop</button>
               {% else %}
-              <button class="pill pill-primary-filled" onclick="containerAction('{{ c.Names | replace('/', '') }}', 'start')">Start</button>
+              <button class="pill pill-primary-filled" onclick="containerAction(event, '{{ c.Names | replace('/', '') }}', 'start')">Start</button>
               {% endif %}
             </td>
           </tr>
@@ -79,12 +79,17 @@
 </div><!-- .infra-page -->
 
 <script>
-async function containerAction(name, action) {
-  const btn = event.target;
+async function containerAction(evt, name, action) {
+  const btn = evt.target;
   btn.disabled = true;
   btn.textContent = '…';
   try {
-    await fetch(`/infrastructure/containers/${encodeURIComponent(name)}/${action}`, { method: 'POST' });
+    const resp = await fetch(`/infrastructure/containers/${encodeURIComponent(name)}/${action}`, { method: 'POST' });
+    if (!resp.ok) {
+      btn.disabled = false;
+      btn.textContent = action.charAt(0).toUpperCase() + action.slice(1);
+      return;
+    }
     setTimeout(() => location.reload(), 1200);
   } catch (e) {
     btn.disabled = false;
