@@ -719,6 +719,7 @@ button[type="submit"] { margin-top: var(--space-3); }
   .ike-nav {
     position: relative;
     flex-wrap: wrap;
+    z-index: 10; /* beats .ike-constellation-field > * (z-index:1) so dropdown paints above content */
   }
 
   .ike-nav.nav-open .nav-links {
