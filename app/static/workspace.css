@@ -15,7 +15,8 @@
 
 /* ── Full-bleed body ── */
 body:has(.workspace-page) {
-  height: 100vh;
+  height: 100vh;        /* fallback for browsers without dvh */
+  height: 100dvh;       /* dynamic viewport height — fixes iOS Safari address-bar bug */
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -658,4 +659,29 @@ body:has(.workspace-page) main {
   font-size: 1rem;
   color: rgba(180,151,255,0.25);
   letter-spacing: 0.5em;
+}
+
+/* ── Responsive breakpoints ── */
+
+/* iPad portrait (≤ 900px): hide capture column, keep 2-col */
+@media (max-width: 900px) {
+  .workspace-page.workspace-3col {
+    grid-template-columns: 272px 1fr;
+  }
+  .capture-col { display: none; }
+}
+
+/* Small phones (≤ 640px): single column, sessions list only */
+@media (max-width: 640px) {
+  .workspace-page,
+  .workspace-page.workspace-3col {
+    grid-template-columns: 1fr;
+  }
+  .detail-col { display: none; }
+  .sessions-col { border-right: none; }
+}
+
+/* Safe-area padding for notched iPhones / iPads with home indicator */
+.sessions-footer {
+  padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
 }
