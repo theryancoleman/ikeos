@@ -127,6 +127,7 @@ body:has(.workspace-page) main {
   overflow: hidden;
   cursor: pointer;
   position: relative;
+  flex-shrink: 0; /* cards hold natural height; card-grid scrolls when overflow */
   transition: border-color var(--dur-quick) var(--ease-out),
               box-shadow var(--dur-base) var(--ease-out);
 }
