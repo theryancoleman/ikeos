@@ -79,9 +79,6 @@ function renderCard(s) {
   const selected    = s.id === selectedId ? ' selected' : '';
   const dotClass    = s.status === 'active' ? 'is-active' : 'is-stopped';
   const chip        = activityChip(s);
-  const statusHtml  = s.status === 'active'
-    ? `<span class="status-badge status-active"><span class="status-dot"></span>active</span>`
-    : `<span class="status-badge status-stopped"><span class="status-dot"></span>stopped</span>`;
   return `
     <div class="session-card${activeClass}${selected}"
          data-id="${esc(s.id)}" onclick="openPanel('${esc(s.id)}')">
@@ -90,7 +87,7 @@ function renderCard(s) {
         <div class="card-name"><span class="session-dot ${dotClass}"></span>${esc(s.name)}</div>
         <div class="card-project">${esc(s.project)}</div>
         <div class="card-meta">
-          <div class="card-meta-left">${statusHtml}${healthBadge(s)}</div>
+          <div class="card-meta-left">${healthBadge(s)}</div>
           <div class="card-meta-right">${msgCount(s)}<span class="card-age">${fmtAge(s.started_at)}</span></div>
         </div>
       </div>
