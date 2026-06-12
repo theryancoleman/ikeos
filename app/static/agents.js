@@ -55,10 +55,13 @@ function msgCount(s) {
   if (s.message_count) {
     parts.push(`<span class="card-msgs">${s.message_count} msg${s.message_count === 1 ? '' : 's'}</span>`);
   }
-  if (s.context_pct != null) {
-    parts.push(`<span class="card-ctx">${s.context_pct}%</span>`);
-  } else if (s.tokens_remaining) {
-    parts.push(`<span class="card-ctx">${esc(s.tokens_remaining)} left</span>`);
+  if (s.status === 'active') {
+    // != null (not truthy) so that 0% context is still shown
+    if (s.context_pct != null) {
+      parts.push(`<span class="card-ctx">${s.context_pct}%</span>`);
+    } else if (s.tokens_remaining) {
+      parts.push(`<span class="card-ctx">${esc(s.tokens_remaining)} left</span>`);
+    }
   }
   return parts.join('');
 }
