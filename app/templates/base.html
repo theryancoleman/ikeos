@@ -15,9 +15,9 @@
            alt="" class="nav-mark" width="24" height="24">
       <span class="nav-wordmark"><span class="okina">ʻ</span>IkeOS</span>
     </a>
-    <button class="nav-hamburger" aria-label="Toggle navigation" aria-expanded="false"
+    <button class="nav-hamburger" aria-label="Toggle navigation" aria-controls="nav-links-menu" aria-expanded="false"
             onclick="this.setAttribute('aria-expanded', document.querySelector('.ike-nav').classList.toggle('nav-open'));this.textContent = document.querySelector('.ike-nav').classList.contains('nav-open') ? '✕' : '☰'">☰</button>
-    <div class="nav-links">
+    <div class="nav-links" id="nav-links-menu">
       <a href="{{ url_for('agents.dashboard') }}" class="nav-link {% if request.endpoint == 'agents.dashboard' %}is-active{% endif %}">Dashboard</a>
       <a href="{{ url_for('browse.tasks') }}"     class="nav-link {% if request.endpoint == 'browse.tasks' %}is-active{% endif %}">Tasks</a>
       <a href="{{ url_for('agents.agents') }}"    class="nav-link {% if request.endpoint == 'agents.agents' %}is-active{% endif %}">Sessions</a>
