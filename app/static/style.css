@@ -694,3 +694,58 @@ button[type="submit"] { margin-top: var(--space-3); }
 
   .nav-link.is-active::after { display: none; } /* underline indicator doesn't work vertically */
 }
+
+/* ── Mobile layout + checkbox touch fix ─────────────────────────────────── */
+
+/* Touch-action fix: prevents 300ms tap delay on iOS and registers taps correctly */
+.checkbox-label { touch-action: manipulation; }
+
+@media (max-width: 768px) {
+  /* Reduce main content padding on narrow screens */
+  main { padding: 1rem 1.25rem; }
+
+  /* Single-column dashboard */
+  .dashboard-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+
+  /* Smaller page header */
+  .page-header h1 { font-size: 26px; }
+  .page-header { margin-bottom: var(--space-6); }
+
+  /* Infrastructure page padding */
+  .infra-page { padding: 1rem 1.25rem; }
+
+  /* Machine cards: allow full-width on small screens */
+  .machine-card { min-width: 0; flex: 1 1 100%; }
+
+  /* Container table: allow horizontal scroll (already has overflow-x:auto wrapper) */
+  .container-table th,
+  .container-table td { padding: var(--space-2) var(--space-3); font-size: 12px; }
+
+  /* Checkbox touch targets — increase pill size to meet 44px min */
+  .checkbox-label {
+    padding: var(--space-3) var(--space-4);
+    font-size: 14px;
+    min-height: 44px;
+  }
+
+  /* Domain checkboxes: 2 per row on mobile instead of free-wrap */
+  .domain-checkboxes { gap: var(--space-2); }
+  .domain-checkboxes .checkbox-label { flex: 1 1 calc(50% - var(--space-2)); }
+
+  /* Capture footer: stack vertically */
+  .capture-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+  .capture-footer .ike-btn-primary,
+  .capture-footer button[type="submit"] { width: 100%; justify-content: center; }
+
+  /* Page header action row (if any) */
+  .page-header-actions { flex-wrap: wrap; gap: var(--space-2); }
+}
+
+@media (max-width: 480px) {
+  /* Very small phones: domain checkboxes full width */
+  .domain-checkboxes .checkbox-label { flex: 1 1 100%; }
+}
