@@ -5,6 +5,7 @@ from flask import Flask
 def create_app():
     app = Flask(__name__, template_folder="templates", static_folder="static")
     app.secret_key = os.environ["FLASK_SECRET_KEY"]
+    app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 3600  # 1 hour; eliminates no-cache round-trips on every page switch
 
     from app.routes.capture import bp as capture_bp
     from app.routes.browse import bp as browse_bp
