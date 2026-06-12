@@ -51,8 +51,16 @@ function healthBadge(s) {
 }
 
 function msgCount(s) {
-  if (!s.message_count) return '';
-  return `<span class="card-msgs">${s.message_count} msg${s.message_count === 1 ? '' : 's'}</span>`;
+  const parts = [];
+  if (s.message_count) {
+    parts.push(`<span class="card-msgs">${s.message_count} msg${s.message_count === 1 ? '' : 's'}</span>`);
+  }
+  if (s.context_pct != null) {
+    parts.push(`<span class="card-ctx">${s.context_pct}%</span>`);
+  } else if (s.tokens_remaining) {
+    parts.push(`<span class="card-ctx">${esc(s.tokens_remaining)} left</span>`);
+  }
+  return parts.join('');
 }
 
 function cardFooter(s) {
