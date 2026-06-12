@@ -9,6 +9,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+RUN python3 scripts/bundle_css.py
+
 RUN chown -R appuser:appuser /app
 USER appuser
 

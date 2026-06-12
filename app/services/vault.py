@@ -10,7 +10,7 @@ import frontmatter
 # The vault lives on a Windows bind mount; cross-filesystem I/O in WSL2 is
 # slow (~20× vs native Linux). Cache the two hot reads and invalidate on write.
 
-_TTL = 60.0  # seconds
+_TTL = 600.0  # 10 minutes; vault changes are rare and writes invalidate immediately
 
 _projects_cache: list | None = None
 _projects_cache_ts: float = 0.0

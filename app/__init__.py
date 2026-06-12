@@ -1,5 +1,15 @@
 import os
+import threading
 from flask import Flask
+
+
+def _warm_cache():
+    from app.services.vault import get_projects_with_meta, read_entries
+    try:
+        get_projects_with_meta()
+        read_entries()
+    except Exception:
+        pass
 
 
 def create_app():
@@ -27,5 +37,7 @@ def create_app():
     @app.route("/health")
     def health():
         return "ok", 200
+
+    threading.Thread(target=_warm_cache, daemon=True).start()
 
     return app
