@@ -154,3 +154,12 @@ def test_container_restart_proxy(client, mocker):
     resp = client.post("/infrastructure/containers/traefik/restart")
     assert resp.status_code == 200
     assert resp.get_json()["ok"] is True
+
+
+def test_nav_has_hamburger_button(client, mocker):
+    mocker.patch("app.routes.agents.requests.request",
+                 return_value=_mock_response([MOCK_SESSION]))
+    resp = client.get("/agents")
+    assert resp.status_code == 200
+    assert b"nav-hamburger" in resp.data
+    assert b"nav-links" in resp.data
