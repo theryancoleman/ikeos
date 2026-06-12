@@ -4,8 +4,10 @@ from flask import Flask
 
 
 def _warm_cache():
-    from app.services.vault import get_projects_with_meta, read_entries
+    from app.services.vault import get_projects_with_meta, read_entries, VAULT_PATH
     try:
+        if not VAULT_PATH.exists():
+            return
         get_projects_with_meta()
         read_entries()
     except Exception:

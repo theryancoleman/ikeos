@@ -308,24 +308,16 @@ button[type="submit"] { margin-top: var(--space-3); }
 
 /* ── Domain checkboxes ───────────────────────────────────────────────────── */
 .field-optional { color: var(--text-muted); font-size: var(--fs-caption); font-weight: 400; }
-.domain-checkboxes { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
-.checkbox-label {
+.domain-checkboxes { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-2); }
+.domain-check {
   display: flex;
   align-items: center;
   gap: var(--space-2);
   font-size: 13px;
   cursor: pointer;
-  background: var(--bg-inset);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  padding: var(--space-2) var(--space-3);
-  user-select: none;
   color: var(--text-secondary);
-  transition: border-color var(--dur-quick) var(--ease-out),
-              background var(--dur-quick) var(--ease-out);
 }
-.checkbox-label:hover { border-color: var(--brand-primary); background: rgba(124,58,237,0.06); }
-.checkbox-label input[type="checkbox"] { width: auto; accent-color: var(--brand-primary); }
+.domain-check input[type="checkbox"] { accent-color: var(--brand-primary); width: 15px; height: 15px; cursor: pointer; }
 .stay-field { margin-top: var(--space-3); }
 
 /* ── Project grid ────────────────────────────────────────────────────────── */
@@ -742,10 +734,7 @@ button[type="submit"] { margin-top: var(--space-3); }
   .nav-link.is-active::after { display: none; } /* underline indicator doesn't work vertically */
 }
 
-/* ── Mobile layout + checkbox touch fix ─────────────────────────────────── */
-
-/* Touch-action fix: prevents 300ms tap delay on iOS and registers taps correctly */
-.checkbox-label { touch-action: manipulation; }
+/* ── Mobile layout ───────────────────────────────────────────────────────── */
 
 @media (max-width: 768px) {
   /* Reduce main content padding on narrow screens */
@@ -768,16 +757,9 @@ button[type="submit"] { margin-top: var(--space-3); }
   .container-table th,
   .container-table td { padding: var(--space-2) var(--space-3); font-size: 12px; }
 
-  /* Checkbox touch targets — increase pill size to meet 44px min */
-  .checkbox-label {
-    padding: var(--space-3) var(--space-4);
-    font-size: 14px;
-    min-height: 44px;
-  }
-
-  /* Domain checkboxes: 2 per row on mobile instead of free-wrap */
-  .domain-checkboxes { gap: var(--space-2); }
-  .domain-checkboxes .checkbox-label { flex: 1 1 calc(50% - var(--space-2)); }
+  /* Domain checkboxes: 2 per row on mobile */
+  .domain-checkboxes { gap: var(--space-3); }
+  .domain-check { font-size: 14px; }
 
   /* Capture footer: stack vertically */
   .capture-footer {
@@ -790,7 +772,3 @@ button[type="submit"] { margin-top: var(--space-3); }
 
 }
 
-@media (max-width: 480px) {
-  /* Very small phones: domain checkboxes full width */
-  .domain-checkboxes .checkbox-label { flex: 1 1 100%; }
-}
