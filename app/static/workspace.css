@@ -681,7 +681,8 @@ body:has(.workspace-page) main {
   .sessions-col { border-right: none; }
 }
 
-/* Safe-area padding for notched iPhones / iPads with home indicator */
+/* Safe-area padding for notched iPhones/iPads — env() resolves to 0px on
+   desktop so the calc produces the same 0.75rem as the base rule. */
 .sessions-footer {
   padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
 }
