@@ -211,6 +211,7 @@ function openPanel(id) {
 }
 
 function closePanel() {
+  closeRenameInput();
   selectedId = null;
   stopPanePolling();
   document.getElementById('detail-col').classList.remove('open');
@@ -239,7 +240,12 @@ async function submitRename() {
   const input = document.getElementById('rename-input');
   const name  = input.value.trim();
   if (!name || !selectedId) return;
-  await api('POST', '/sessions/' + selectedId + '/rename', { name });
+  const resp = await api('POST', '/sessions/' + selectedId + '/rename', { name });
+  if (!resp.ok) {
+    const el = document.getElementById('rename-input');
+    if (el) el.style.outline = '1px solid var(--status-error)';
+    return;
+  }
   closeRenameInput();
   await pollSessions();
   const updated = sessions.find(s => s.id === selectedId);
