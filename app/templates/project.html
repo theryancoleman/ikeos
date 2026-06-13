@@ -14,6 +14,17 @@
   </div>
 </div>
 
+{% if components %}
+<div class="component-pills">
+  <a href="{{ url_for('browse.project', name=name) }}"
+     class="component-pill {% if not active_component %}active{% endif %}">All</a>
+  {% for c in components %}
+  <a href="{{ url_for('browse.project', name=name, component=c) }}"
+     class="component-pill {% if active_component == c %}active{% endif %}">{{ c }}</a>
+  {% endfor %}
+</div>
+{% endif %}
+
 {% for section_label, section_entries in [('Bugs', bugs), ('Ideas', ideas), ('Notes', notes)] %}
   {% if section_entries %}
     <div class="ike-eyebrow">{{ section_label }} <span class="eyebrow-count">/ {{ section_entries | length }}</span></div>

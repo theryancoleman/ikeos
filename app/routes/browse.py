@@ -4,6 +4,7 @@ from app.services.vault import (
     update_entry_status, write_project_meta,
     get_vault_graph,
 )
+from app.services.umbrella import get_components
 
 bp = Blueprint("browse", __name__)
 
@@ -42,8 +43,9 @@ def tasks():
 @bp.route("/projects/<name>")
 def project(name):
     show_all = request.args.get("show_all") == "true"
+    component_filter = request.args.get("component", "").strip() or None
     status_filter = None if show_all else ACTIVE_STATUSES
-    entries = read_entries(project=name, status_filter=status_filter)
+    entries = read_entries(project=name, status_filter=status_filter, component=component_filter)
 
     bugs = [e for e in entries if e.get("type") == "bug"]
     ideas = [e for e in entries if e.get("type") == "idea"]
@@ -53,6 +55,7 @@ def project(name):
     project_meta = next((p for p in all_projects if p["slug"] == name), None)
     display_name = project_meta["name"] if project_meta else name
     visible_projects = [p for p in all_projects if not p["hidden"]]
+    components = get_components(name)
 
     return render_template(
         "project.html",
@@ -63,6 +66,8 @@ def project(name):
         notes=notes,
         show_all=show_all,
         projects=visible_projects,
+        components=components,
+        active_component=component_filter,
     )
 
 

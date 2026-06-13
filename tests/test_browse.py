@@ -210,3 +210,59 @@ def test_api_graph_returns_json(graph_client):
     assert len(data["nodes"]) == 1
     assert data["nodes"][0]["id"] == "2026-01-01-test-note"
     assert data["nodes"][0]["project"] == "proj-a"
+
+
+def test_project_page_filters_by_component(client, tmp_path, monkeypatch):
+    """?component= param filters entries to that component only."""
+    import yaml
+    from unittest.mock import patch
+
+    reg = tmp_path / "reg.yaml"
+    reg.write_text(yaml.dump({"ikeos": {"name": "IkeOS", "components": ["voice-bridge", "display"]}}))
+
+    import app.services.umbrella as u
+    import app.services.vault as v
+    monkeypatch.setattr(v, "VAULT_PATH", tmp_path)
+    v._invalidate_cache()
+    (tmp_path / "projects" / "ikeos").mkdir(parents=True)
+
+    bugs_dir = tmp_path / "projects" / "ikeos" / "bugs"
+    bugs_dir.mkdir(parents=True)
+    (bugs_dir / "2026-06-13-bug-a.md").write_text(
+        "---\ntype: bug\ntitle: VB Bug\nproject: ikeos\ncomponent: voice-bridge\n"
+        "status: new\ncreated: 2026-06-13T10:00:00\ntags: [bug]\n---\n## Description\nA\n"
+    )
+    (bugs_dir / "2026-06-13-bug-b.md").write_text(
+        "---\ntype: bug\ntitle: Display Bug\nproject: ikeos\ncomponent: display\n"
+        "status: new\ncreated: 2026-06-13T11:00:00\ntags: [bug]\n---\n## Description\nB\n"
+    )
+
+    with patch("app.services.umbrella._REGISTRY_PATH", reg):
+        u._registry = None
+        resp = client.get("/projects/ikeos?component=voice-bridge")
+
+    assert resp.status_code == 200
+    assert b"VB Bug" in resp.data
+    assert b"Display Bug" not in resp.data
+
+
+def test_project_page_shows_component_pills_for_umbrella(client, tmp_path, monkeypatch):
+    """Project page renders component pill links when components are defined."""
+    import yaml
+    from unittest.mock import patch
+
+    reg = tmp_path / "reg.yaml"
+    reg.write_text(yaml.dump({"ikeos": {"name": "IkeOS", "components": ["voice-bridge"]}}))
+
+    import app.services.umbrella as u
+    import app.services.vault as v
+    monkeypatch.setattr(v, "VAULT_PATH", tmp_path)
+    v._invalidate_cache()
+    (tmp_path / "projects" / "ikeos").mkdir(parents=True)
+
+    with patch("app.services.umbrella._REGISTRY_PATH", reg):
+        u._registry = None
+        resp = client.get("/projects/ikeos")
+
+    assert resp.status_code == 200
+    assert b"voice-bridge" in resp.data
