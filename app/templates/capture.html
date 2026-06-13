@@ -11,7 +11,7 @@
 
 <form method="post" action="{{ url_for('capture.capture_submit') }}">
   <div class="field">
-    <label class="ike-eyebrow" for="project">Project</label>
+    <label class="ike-eyebrow" for="project">Umbrella</label>
     <select id="project" name="project" required onchange="updateProject(this.value)">
       {% for p in projects %}
         <option value="{{ p.slug }}" {% if p.slug == selected_project %}selected{% endif %} data-components="{{ p.components | join(',') }}">{{ p.name }}</option>
@@ -23,6 +23,13 @@
   <div id="future-project-field" class="field hidden">
     <label class="ike-eyebrow" for="future_project_name">Future project name</label>
     <input id="future_project_name" name="future_project_name" type="text" placeholder="e.g. my-new-app">
+  </div>
+
+  <div id="component-field" class="field hidden">
+    <label class="ike-eyebrow" for="component">Component <span class="field-optional">(optional)</span></label>
+    <select id="component" name="component">
+      <option value="">— No specific component —</option>
+    </select>
   </div>
 
   <div class="field">
@@ -118,22 +125,46 @@ function updateFields(type) {
   if (type === 'idea') document.getElementById('idea-fields').classList.remove('hidden');
   if (type === 'bug') document.getElementById('bug-fields').classList.remove('hidden');
 }
+
 function updateProject(value) {
-  const field = document.getElementById('future-project-field');
-  const input = document.getElementById('future_project_name');
+  const futureField = document.getElementById('future-project-field');
+  const futureInput = document.getElementById('future_project_name');
+  const componentField = document.getElementById('component-field');
+  const componentSelect = document.getElementById('component');
+
   if (value === '__future__') {
-    field.classList.remove('hidden');
-    input.required = true;
-  } else {
-    field.classList.add('hidden');
-    input.required = false;
+    futureField.classList.remove('hidden');
+    futureInput.required = true;
+    componentField.classList.add('hidden');
+    return;
   }
+  futureField.classList.add('hidden');
+  futureInput.required = false;
+
+  const selected = document.querySelector(`#project option[value="${value}"]`);
+  const components = selected ? (selected.dataset.components || '') : '';
+  const list = components ? components.split(',').filter(Boolean) : [];
+
+  componentSelect.innerHTML = '<option value="">— No specific component —</option>';
+  list.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c;
+    opt.textContent = c;
+    componentSelect.appendChild(opt);
+  });
+  componentField.classList.toggle('hidden', list.length === 0);
 }
 
 document.querySelectorAll('input[name="type"]').forEach(el => {
   el.addEventListener('change', e => updateFields(e.target.value));
 });
 updateFields('idea');
+
+// Init component picker for pre-selected project
+(function() {
+  const sel = document.getElementById('project');
+  if (sel && sel.value) updateProject(sel.value);
+})();
 
 document.addEventListener('keydown', e => {
   if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
