@@ -80,7 +80,7 @@ def get_projects_with_meta(include_hidden: bool = False) -> list[dict]:
         _projects_cache = cached
         _projects_cache_ts = now
     if include_hidden:
-        return cached
+        return list(cached)
     return [p for p in cached if not p["hidden"]]
 
 
