@@ -227,3 +227,96 @@ def test_get_projects_with_meta_includes_hidden_when_requested(tmp_path):
     assert len(visible_only) == 1
     assert visible_only[0]["slug"] == "visible"
     assert len(all_projects) == 2
+
+
+# ── get_vault_graph ──────────────────────────────────────────────────────────
+
+def _make_entry(path, slug, type_, status, project, body="", urgency=None):
+    """Helper: write a minimal vault entry file."""
+    tags = [type_, project, f"status/{status}"]
+    if urgency:
+        tags.append(f"urgency/{urgency}")
+    path.mkdir(parents=True, exist_ok=True)
+    (path / f"{slug}.md").write_text(
+        f"---\ntype: {type_}\ntitle: {slug}\nproject: {project}\n"
+        f"status: {status}\ncreated: 2026-01-01T10:00:00\n"
+        f"updated: 2026-01-01T10:00:00\ntags: {tags}\n---\n"
+        f"## Description\n{body}\n"
+    )
+
+
+def test_get_vault_graph_returns_structure(tmp_path):
+    bugs = tmp_path / "projects" / "proj-a" / "bugs"
+    _make_entry(bugs, "2026-01-01-bug-one", "bug", "open", "proj-a")
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        from app.services.vault import get_vault_graph, _invalidate_cache
+        _invalidate_cache()
+        result = get_vault_graph()
+    assert set(result.keys()) == {"nodes", "links", "health"}
+    assert set(result["health"].keys()) == {"untriaged", "stale", "broken_links"}
+    assert len(result["nodes"]) == 1
+    node = result["nodes"][0]
+    assert node["id"] == "2026-01-01-bug-one"
+    assert node["type"] == "bug"
+    assert node["project"] == "proj-a"
+
+
+def test_get_vault_graph_detects_wikilinks(tmp_path):
+    bugs = tmp_path / "projects" / "proj-a" / "bugs"
+    notes = tmp_path / "projects" / "proj-a" / "notes"
+    _make_entry(bugs, "2026-01-01-bug-a", "bug", "open", "proj-a",
+                body="See [[2026-01-01-note-b]]")
+    _make_entry(notes, "2026-01-01-note-b", "note", "open", "proj-a")
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        from app.services.vault import get_vault_graph, _invalidate_cache
+        _invalidate_cache()
+        result = get_vault_graph()
+    assert len(result["links"]) == 1
+    assert result["links"][0]["source"] == "2026-01-01-bug-a"
+    assert result["links"][0]["target"] == "2026-01-01-note-b"
+
+
+def test_get_vault_graph_detects_broken_links(tmp_path):
+    notes = tmp_path / "projects" / "proj-a" / "notes"
+    _make_entry(notes, "2026-01-01-note-x", "note", "open", "proj-a",
+                body="See [[nonexistent-slug]]")
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        from app.services.vault import get_vault_graph, _invalidate_cache
+        _invalidate_cache()
+        result = get_vault_graph()
+    broken = result["health"]["broken_links"]
+    assert len(broken) == 1
+    assert broken[0]["broken_ref"] == "nonexistent-slug"
+    assert broken[0]["source_slug"] == "2026-01-01-note-x"
+    assert len(result["links"]) == 0
+
+
+def test_get_vault_graph_detects_untriaged(tmp_path):
+    notes = tmp_path / "projects" / "proj-a" / "notes"
+    _make_entry(notes, "2026-01-01-untriaged", "note", "new", "proj-a")
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        from app.services.vault import get_vault_graph, _invalidate_cache
+        _invalidate_cache()
+        result = get_vault_graph()
+    untriaged = result["health"]["untriaged"]
+    assert len(untriaged) == 1
+    assert untriaged[0]["slug"] == "2026-01-01-untriaged"
+
+
+def test_get_vault_graph_detects_stale(tmp_path):
+    notes = tmp_path / "projects" / "proj-a" / "notes"
+    notes.mkdir(parents=True, exist_ok=True)
+    # updated 500 days ago — definitely stale
+    (notes / "2026-01-01-old.md").write_text(
+        "---\ntype: note\ntitle: Old Note\nproject: proj-a\n"
+        "status: open\ncreated: 2024-08-15T10:00:00\n"
+        "updated: 2024-08-15T10:00:00\ntags: [documentation]\n---\n"
+        "## Description\nContent\n"
+    )
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        from app.services.vault import get_vault_graph, _invalidate_cache
+        _invalidate_cache()
+        result = get_vault_graph()
+    stale = result["health"]["stale"]
+    assert len(stale) == 1
+    assert stale[0]["days_stale"] >= 30

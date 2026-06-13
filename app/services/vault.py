@@ -97,6 +97,105 @@ def write_project_meta(slug: str, name: str, description: str, hidden: bool) -> 
     return True
 
 
+_WIKILINK_RE = re.compile(r'\[\[([^\]|]+)')
+_STALE_DAYS = 30
+
+
+def _get_urgency(entry: dict) -> str:
+    """Extract urgency level from tags, falling back to severity/priority fields."""
+    for tag in entry.get("tags", []):
+        if tag.startswith("urgency/"):
+            return tag.split("/", 1)[1]
+    sev = entry.get("severity") or entry.get("priority")
+    if sev in ("critical", "high", "medium", "low"):
+        return sev
+    return "medium"
+
+
+def get_vault_graph() -> dict:
+    """Return nodes, wikilink edges, and health metrics for all vault entries."""
+    entries = read_entries()
+    slug_set = {e["slug"] for e in entries}
+
+    nodes = []
+    links = []
+    untriaged = []
+    stale = []
+    broken_links = []
+
+    now = datetime.now()
+
+    for entry in entries:
+        slug = entry["slug"]
+
+        nodes.append({
+            "id": slug,
+            "title": entry.get("title", slug),
+            "type": entry.get("type", "note"),
+            "status": entry.get("status", "new"),
+            "project": entry.get("project", ""),
+            "urgency": _get_urgency(entry),
+        })
+
+        # Health: untriaged
+        if entry.get("status") == "new":
+            untriaged.append({
+                "slug": slug,
+                "title": entry.get("title", slug),
+                "project": entry.get("project", ""),
+                "type": entry.get("type", "note"),
+            })
+
+        # Health: stale (open/in-progress, not updated in ≥30 days)
+        if entry.get("status") in ("open", "in-progress"):
+            ref_date_raw = entry.get("updated") or entry.get("created", "")
+            try:
+                if isinstance(ref_date_raw, datetime):
+                    ref_date = ref_date_raw
+                else:
+                    ref_date = datetime.fromisoformat(ref_date_raw)
+                days_stale = (now - ref_date).days
+                if days_stale >= _STALE_DAYS:
+                    stale.append({
+                        "slug": slug,
+                        "title": entry.get("title", slug),
+                        "project": entry.get("project", ""),
+                        "type": entry.get("type", "note"),
+                        "status": entry.get("status", ""),
+                        "days_stale": days_stale,
+                    })
+            except (ValueError, TypeError):
+                pass
+
+        # Wikilinks: resolve [[ref]] in body
+        body = entry.get("body", "")
+        for ref in _WIKILINK_RE.findall(body):
+            ref = ref.strip()
+            if not ref:
+                continue
+            if ref == slug:
+                continue
+            if ref in slug_set:
+                links.append({"source": slug, "target": ref})
+            else:
+                broken_links.append({
+                    "source_slug": slug,
+                    "source_title": entry.get("title", slug),
+                    "source_project": entry.get("project", ""),
+                    "broken_ref": ref,
+                })
+
+    return {
+        "nodes": nodes,
+        "links": links,
+        "health": {
+            "untriaged": untriaged,
+            "stale": stale,
+            "broken_links": broken_links,
+        },
+    }
+
+
 def _slugify(title: str) -> str:
     slug = title.lower()
     slug = re.sub(r"[^\w\s-]", "", slug)
