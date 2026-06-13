@@ -33,7 +33,7 @@
     document.getElementById('badge-broken').textContent = broken.length;
 
     function entryItem(e, sub) {
-      return '<li class="health-item"><a href="' + entryUrl(e) + '">' +
+      return '<li class="health-item"><a href="/projects/' + e.project + '/' + e.slug + '">' +
         escHtml(e.title) + '</a>' +
         (sub ? '<span class="health-sub">' + escHtml(sub) + '</span>' : '') +
         '</li>';
@@ -118,7 +118,7 @@
     var clusterX = {}, clusterY = {};
     projects.forEach(function (p, i) {
       clusterX[p] = W * (0.1 + 0.8 * ((i % cols + 0.5) / cols));
-      clusterY[p] = H * (0.1 + 0.8 * (Math.floor(i / cols + 0.5) / rows));
+      clusterY[p] = H * (0.1 + 0.8 * ((Math.floor(i / cols) + 0.5) / rows));
     });
 
     simulation = d3.forceSimulation(nodeData)
@@ -163,7 +163,7 @@
         tooltip.style.display = 'block';
         tooltip.innerHTML =
           '<strong>' + escHtml(d.title) + '</strong><br>' +
-          escHtml(d.project) + ' · ' + d.type + ' · ' + d.status;
+          escHtml(d.project) + ' · ' + escHtml(d.type) + ' · ' + escHtml(d.status);
       })
       .on('mousemove', function (event) {
         var rect = wrap.getBoundingClientRect();
