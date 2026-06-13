@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
+from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, jsonify
 from app.services.vault import (
     get_projects_with_meta, read_entries, read_entry,
     update_entry_status, _read_project_meta, write_project_meta,
@@ -99,3 +99,20 @@ def update_project_settings(slug):
     else:
         flash(f"Could not save settings for '{slug}'.")
     return redirect(url_for("browse.settings"))
+
+
+@bp.route("/graph")
+def graph():
+    from app.services.vault import get_vault_graph
+    data = get_vault_graph()
+    return render_template(
+        "graph.html",
+        node_count=len(data["nodes"]),
+        project_count=len({n["project"] for n in data["nodes"]}),
+    )
+
+
+@bp.route("/api/graph")
+def api_graph():
+    from app.services.vault import get_vault_graph
+    return jsonify(get_vault_graph())

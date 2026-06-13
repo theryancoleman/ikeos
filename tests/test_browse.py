@@ -163,3 +163,49 @@ def test_update_project_settings_hidden_toggle(settings_client):
         _invalidate_cache()
         meta = _read_project_meta("alpha")
     assert meta["hidden"] is True
+
+
+# ── Graph routes ──────────────────────────────────────────────────────────────
+
+@pytest.fixture
+def graph_vault(tmp_path):
+    notes_dir = tmp_path / "projects" / "proj-a" / "notes"
+    notes_dir.mkdir(parents=True)
+    (notes_dir / "2026-01-01-test-note.md").write_text(
+        "---\ntype: note\ntitle: Test Note\nproject: proj-a\n"
+        "status: open\ncreated: 2026-01-01T10:00:00\n"
+        "updated: 2026-01-01T10:00:00\ntags: [documentation]\n---\n"
+        "## Description\nContent\n"
+    )
+    return tmp_path
+
+
+@pytest.fixture
+def graph_client(graph_vault):
+    from app.services.vault import _invalidate_cache
+    _invalidate_cache()
+    os.environ["FLASK_SECRET_KEY"] = "test-secret-key"
+    app = create_app()
+    app.config["TESTING"] = True
+    with patch("app.services.vault.VAULT_PATH", graph_vault):
+        with app.test_client() as client:
+            yield client
+
+
+def test_graph_page_renders(graph_client):
+    response = graph_client.get("/graph")
+    assert response.status_code == 200
+
+
+def test_api_graph_returns_json(graph_client):
+    from app.services.vault import _invalidate_cache
+    _invalidate_cache()
+    response = graph_client.get("/api/graph")
+    assert response.status_code == 200
+    data = response.get_json()
+    assert "nodes" in data
+    assert "links" in data
+    assert "health" in data
+    assert len(data["nodes"]) == 1
+    assert data["nodes"][0]["id"] == "2026-01-01-test-note"
+    assert data["nodes"][0]["project"] == "proj-a"
