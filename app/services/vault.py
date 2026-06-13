@@ -20,13 +20,19 @@ _projects_cache_ts: float = 0.0
 _entries_cache: list | None = None
 _entries_cache_ts: float = 0.0
 
+_hub_pages_cache: list | None = None
+_hub_pages_cache_ts: float = 0.0
+
 
 def _invalidate_cache() -> None:
     global _projects_cache, _projects_cache_ts, _entries_cache, _entries_cache_ts
+    global _hub_pages_cache, _hub_pages_cache_ts
     _projects_cache = None
     _projects_cache_ts = 0.0
     _entries_cache = None
     _entries_cache_ts = 0.0
+    _hub_pages_cache = None
+    _hub_pages_cache_ts = 0.0
 
 VAULT_PATH = Path(os.environ.get("VAULT_PATH", "/vault"))
 
@@ -117,9 +123,16 @@ def _get_urgency(entry: dict) -> str:
 def _read_hub_pages() -> list[dict]:
     """Read hub pages and component stubs (<proj>/components/*.md).
     Hub pages are discovered by type:hub frontmatter (filename = display name)."""
+    global _hub_pages_cache, _hub_pages_cache_ts
+    now = time.monotonic()
+    if _hub_pages_cache is not None and (now - _hub_pages_cache_ts) < _TTL:
+        return _hub_pages_cache
+
     pages = []
     projects_dir = VAULT_PATH / "projects"
     if not projects_dir.exists():
+        _hub_pages_cache = pages
+        _hub_pages_cache_ts = now
         return pages
     for proj_dir in projects_dir.iterdir():
         if not proj_dir.is_dir():
@@ -150,6 +163,8 @@ def _read_hub_pages() -> list[dict]:
                     pages.append(entry)
                 except Exception:
                     pass
+    _hub_pages_cache = pages
+    _hub_pages_cache_ts = now
     return pages
 
 
