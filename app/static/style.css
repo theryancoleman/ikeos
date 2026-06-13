@@ -398,6 +398,8 @@ button[type="submit"] { margin-top: var(--space-3); }
 .project-header { display: flex; align-items: center; gap: var(--space-5); margin-bottom: var(--space-3); flex-wrap: wrap; }
 .project-header h1 { margin: 0; }
 .project-header-actions { display: flex; align-items: center; gap: var(--space-3); margin-left: auto; }
+.page-header-actions { display: flex; align-items: center; gap: var(--space-5); }
+.page-header-actions h1 { margin: 0; flex: 1; }
 
 .entry-group { list-style: none; }
 .entry-row {
