@@ -34,7 +34,7 @@ def load_registry(registry_path: Path) -> dict:
 def collect_component_entries(vault_path: Path, component_slug: str) -> list[dict]:
     entries = []
     proj_dir = vault_path / "projects" / component_slug
-    for folder, type_ in [("bugs", "bug"), ("ideas", "idea"), ("notes", "note")]:
+    for type_, folder in TYPE_FOLDERS.items():
         type_dir = proj_dir / folder
         if not type_dir.exists():
             continue
@@ -71,17 +71,21 @@ def migrate_entry(
         tags.append(f"component/{component_slug}")
     post.metadata["tags"] = tags
 
-    wikilink = f"\n---\n[[{umbrella_slug}]]\n"
-    if wikilink.strip() not in post.content:
-        post.content = post.content.rstrip() + wikilink
+    wikilink_marker = f"[[{umbrella_slug}]]"
+    if wikilink_marker not in post.content:
+        post.content = post.content.rstrip() + f"\n\n{wikilink_marker}\n"
 
     action = "MOVE" if apply else "DRY-RUN"
     print(f"  [{action}] {src_path.relative_to(vault_path)} → {dest_path.relative_to(vault_path)}")
 
     if apply:
+        serialized = frontmatter.dumps(post)
         dest_dir.mkdir(parents=True, exist_ok=True)
+        if dest_path.exists():
+            print(f"  [SKIP] Collision: {dest_path.name} already exists in destination — skipping")
+            return
         with open(dest_path, "w", encoding="utf-8") as f:
-            f.write(frontmatter.dumps(post))
+            f.write(serialized)
         src_path.unlink()
 
 
@@ -97,7 +101,7 @@ def hide_component_project(vault_path: Path, component_slug: str, apply: bool) -
             with open(meta_file, "w", encoding="utf-8") as f:
                 f.write(frontmatter.dumps(post))
         else:
-            post = frontmatter.Post("", name=component_slug, hidden=True)
+            post = frontmatter.Post("", metadata={"name": component_slug, "hidden": True})
             with open(meta_file, "w", encoding="utf-8") as f:
                 f.write(frontmatter.dumps(post))
 
@@ -121,10 +125,13 @@ def create_hub_and_stubs(vault_path: Path, umbrella_slug: str, umbrella_meta: di
     action = "CREATE" if apply else "DRY-RUN"
     print(f"  [{action}] Hub page: {hub_path.relative_to(vault_path)}")
     if apply:
-        hub_path.parent.mkdir(parents=True, exist_ok=True)
-        post = frontmatter.Post(hub_content, **hub_meta)
-        with open(hub_path, "w", encoding="utf-8") as f:
-            f.write(frontmatter.dumps(post))
+        if hub_path.exists():
+            print(f"  [SKIP] Hub already exists: {hub_path.name}")
+        else:
+            hub_path.parent.mkdir(parents=True, exist_ok=True)
+            post = frontmatter.Post(hub_content, **hub_meta)
+            with open(hub_path, "w", encoding="utf-8") as f:
+                f.write(frontmatter.dumps(post))
 
     for component in components:
         stub_content = f"# {component}\n\n[[{umbrella_slug}]]\n"
@@ -137,10 +144,13 @@ def create_hub_and_stubs(vault_path: Path, umbrella_slug: str, umbrella_meta: di
         stub_path = vault_path / "projects" / umbrella_slug / "components" / f"{component}.md"
         print(f"  [{action}] Component stub: {stub_path.relative_to(vault_path)}")
         if apply:
-            stub_path.parent.mkdir(parents=True, exist_ok=True)
-            post = frontmatter.Post(stub_content, **stub_meta)
-            with open(stub_path, "w", encoding="utf-8") as f:
-                f.write(frontmatter.dumps(post))
+            if stub_path.exists():
+                print(f"  [SKIP] Stub already exists: {stub_path.name}")
+            else:
+                stub_path.parent.mkdir(parents=True, exist_ok=True)
+                post = frontmatter.Post(stub_content, **stub_meta)
+                with open(stub_path, "w", encoding="utf-8") as f:
+                    f.write(frontmatter.dumps(post))
 
 
 def main():
@@ -151,6 +161,9 @@ def main():
     args = parser.parse_args()
 
     vault_path = Path(args.vault)
+    if not vault_path.is_dir():
+        print(f"[ERROR] Vault path not found: {vault_path}")
+        sys.exit(1)
     registry = load_registry(Path(args.registry))
 
     mode = "APPLY" if args.apply else "DRY-RUN"
