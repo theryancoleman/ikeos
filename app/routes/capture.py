@@ -1,6 +1,7 @@
 import os
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from app.services.vault import get_projects_with_meta, write_entry, update_entry_status_generic
+from app.services.umbrella import get_components
 
 bp = Blueprint("capture", __name__)
 
@@ -30,6 +31,8 @@ def _reject_path_traversal(filename):
 @bp.route("/capture", methods=["GET"])
 def capture_form():
     projects = get_projects_with_meta()
+    for p in projects:
+        p["components"] = get_components(p["slug"])
     selected_project = request.args.get("project", "")
     return render_template("capture.html", projects=projects, selected_project=selected_project)
 
@@ -54,6 +57,9 @@ def capture_submit():
         if project == "__future__":
             project = request.form.get("future_project_name", "").strip() or "future"
         data["project"] = project
+        component = request.form.get("component", "").strip() or None
+        if component:
+            data["component"] = component
 
     if entry_type == "idea":
         data["priority"] = request.form.get("priority", "medium")
@@ -145,6 +151,9 @@ def capture_json():
         "body": req.get("body", ""),
         "domains": [],
     }
+    component = req.get("component", "").strip() or None
+    if component:
+        data["component"] = component
     if entry_type == "idea":
         data["priority"] = req.get("priority", "medium")
         data["effort"] = req.get("effort", "medium")

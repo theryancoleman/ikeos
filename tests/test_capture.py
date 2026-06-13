@@ -548,3 +548,85 @@ def test_capture_json_idea_includes_priority_effort(client, mocker):
     call_data = mock_write.call_args[0][0]
     assert call_data["priority"] == "high"
     assert call_data["effort"] == "low"
+
+
+# ============= Umbrella component tests =============
+
+def test_capture_form_includes_components_for_umbrella(client, tmp_path, monkeypatch):
+    """Form context includes component list for projects with components."""
+    import yaml
+    from pathlib import Path
+    from unittest.mock import patch
+
+    reg = tmp_path / "reg.yaml"
+    reg.write_text(yaml.dump({"ikeos": {"name": "IkeOS", "components": ["voice-bridge"]}}))
+
+    import app.services.umbrella as u
+    import app.services.vault as v
+    u._registry = None
+    monkeypatch.setattr(v, "VAULT_PATH", tmp_path)
+    v._invalidate_cache()
+    (tmp_path / "projects" / "ikeos").mkdir(parents=True)
+
+    with patch("app.services.umbrella._REGISTRY_PATH", reg):
+        u._registry = None
+        resp = client.get("/capture?project=ikeos")
+
+    assert resp.status_code == 200
+    assert b"voice-bridge" in resp.data
+
+
+def test_capture_submit_stores_component(client, tmp_path, monkeypatch):
+    """POST /capture with component stores component field in vault entry."""
+    import yaml
+    from pathlib import Path
+    from unittest.mock import patch
+    import frontmatter as fm_lib
+
+    reg = tmp_path / "reg.yaml"
+    reg.write_text(yaml.dump({"ikeos": {"name": "IkeOS", "components": ["voice-bridge"]}}))
+
+    import app.services.umbrella as u
+    import app.services.vault as v
+    monkeypatch.setattr(v, "VAULT_PATH", tmp_path)
+    v._invalidate_cache()
+    (tmp_path / "projects" / "ikeos").mkdir(parents=True)
+
+    with patch("app.services.umbrella._REGISTRY_PATH", reg):
+        u._registry = None
+        resp = client.post("/capture", data={
+            "type": "note",
+            "project": "ikeos",
+            "component": "voice-bridge",
+            "title": "Test note",
+            "body": "Body",
+        }, follow_redirects=True)
+
+    assert resp.status_code == 200
+    files = list((tmp_path / "projects" / "ikeos" / "notes").glob("*.md"))
+    assert len(files) == 1
+    post = fm_lib.load(files[0])
+    assert post.metadata.get("component") == "voice-bridge"
+
+
+def test_capture_json_stores_component(client, tmp_path, monkeypatch):
+    """POST /capture/json with component stores component field."""
+    import frontmatter as fm_lib
+    import app.services.vault as v
+    monkeypatch.setattr(v, "VAULT_PATH", tmp_path)
+    v._invalidate_cache()
+    (tmp_path / "projects" / "ikeos").mkdir(parents=True)
+
+    resp = client.post("/capture/json", json={
+        "type": "note",
+        "project": "ikeos",
+        "component": "voice-bridge",
+        "title": "JSON note",
+        "body": "Body",
+    })
+    assert resp.status_code == 200
+
+    files = list((tmp_path / "projects" / "ikeos" / "notes").glob("*.md"))
+    assert len(files) == 1
+    post = fm_lib.load(files[0])
+    assert post.metadata.get("component") == "voice-bridge"

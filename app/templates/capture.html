@@ -14,7 +14,7 @@
     <label class="ike-eyebrow" for="project">Project</label>
     <select id="project" name="project" required onchange="updateProject(this.value)">
       {% for p in projects %}
-        <option value="{{ p.slug }}" {% if p.slug == selected_project %}selected{% endif %}>{{ p.name }}</option>
+        <option value="{{ p.slug }}" {% if p.slug == selected_project %}selected{% endif %} data-components="{{ p.components | join(',') }}">{{ p.name }}</option>
       {% endfor %}
       <option value="__future__">— Future project —</option>
     </select>
