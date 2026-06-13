@@ -1,7 +1,7 @@
 import os
 import re
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import frontmatter
@@ -113,7 +113,7 @@ def _get_urgency(entry: dict) -> str:
 
 
 def get_vault_graph() -> dict:
-    """Return nodes, wikilink edges, and health metrics for all vault entries."""
+    """Return nodes, wikilink edges, and health metrics for all project entries (bugs, ideas, notes)."""
     entries = read_entries()
     slug_set = {e["slug"] for e in entries}
 
@@ -154,6 +154,8 @@ def get_vault_graph() -> dict:
                     ref_date = ref_date_raw
                 else:
                     ref_date = datetime.fromisoformat(ref_date_raw)
+                # Strip tzinfo so naive and aware datetimes compare without TypeError
+                ref_date = ref_date.replace(tzinfo=None) if ref_date.tzinfo else ref_date
                 days_stale = (now - ref_date).days
                 if days_stale >= _STALE_DAYS:
                     stale.append({

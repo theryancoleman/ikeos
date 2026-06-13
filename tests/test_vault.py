@@ -320,3 +320,32 @@ def test_get_vault_graph_detects_stale(tmp_path):
     stale = result["health"]["stale"]
     assert len(stale) == 1
     assert stale[0]["days_stale"] >= 30
+
+
+def test_get_vault_graph_node_urgency_from_tag(tmp_path):
+    bugs = tmp_path / "projects" / "proj-a" / "bugs"
+    _make_entry(bugs, "2026-01-01-high-bug", "bug", "open", "proj-a", urgency="high")
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        from app.services.vault import get_vault_graph, _invalidate_cache
+        _invalidate_cache()
+        result = get_vault_graph()
+    node = next(n for n in result["nodes"] if n["id"] == "2026-01-01-high-bug")
+    assert node["urgency"] == "high"
+
+
+def test_get_vault_graph_node_urgency_fallback_to_severity(tmp_path):
+    notes = tmp_path / "projects" / "proj-a" / "notes"
+    notes.mkdir(parents=True, exist_ok=True)
+    # Entry with severity field but no urgency/* tag
+    (notes / "2026-01-01-sev-note.md").write_text(
+        "---\ntype: note\ntitle: Severity Note\nproject: proj-a\n"
+        "status: open\nseverity: critical\ncreated: 2026-01-01T10:00:00\n"
+        "updated: 2026-01-01T10:00:00\ntags: [documentation]\n---\n"
+        "## Description\nContent\n"
+    )
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        from app.services.vault import get_vault_graph, _invalidate_cache
+        _invalidate_cache()
+        result = get_vault_graph()
+    node = next(n for n in result["nodes"] if n["id"] == "2026-01-01-sev-note")
+    assert node["urgency"] == "critical"
