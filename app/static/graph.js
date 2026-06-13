@@ -203,11 +203,18 @@
     var loadingEl = document.getElementById('graph-loading');
     try {
       var res = await fetch('/api/graph');
+      if (!res.ok) throw new Error('API error: ' + res.status);
       var data = await res.json();
       allNodes = data.nodes;
       allLinks = data.links;
 
       if (loadingEl) loadingEl.style.display = 'none';
+
+      var projectCount = new Set(allNodes.map(function (n) { return n.project; })).size;
+      var subtitle = document.getElementById('graph-subtitle');
+      if (subtitle) {
+        subtitle.textContent = allNodes.length + ' entries across ' + projectCount + ' projects — connections show wikilinks.';
+      }
 
       renderHealth(data.health);
       renderGraph();

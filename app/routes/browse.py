@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, jsonify
 from app.services.vault import (
     get_projects_with_meta, read_entries, read_entry,
-    update_entry_status, _read_project_meta, write_project_meta,
+    update_entry_status, write_project_meta,
     get_vault_graph,
 )
 
@@ -49,7 +49,10 @@ def project(name):
     ideas = [e for e in entries if e.get("type") == "idea"]
     notes = [e for e in entries if e.get("type") == "note"]
 
-    display_name = _read_project_meta(name)["name"]
+    all_projects = get_projects_with_meta(include_hidden=True)
+    project_meta = next((p for p in all_projects if p["slug"] == name), None)
+    display_name = project_meta["name"] if project_meta else name
+    visible_projects = [p for p in all_projects if not p["hidden"]]
 
     return render_template(
         "project.html",
@@ -59,7 +62,7 @@ def project(name):
         ideas=ideas,
         notes=notes,
         show_all=show_all,
-        projects=get_projects_with_meta(),
+        projects=visible_projects,
     )
 
 
@@ -104,12 +107,7 @@ def update_project_settings(slug):
 
 @bp.route("/graph")
 def graph():
-    data = get_vault_graph()
-    return render_template(
-        "graph.html",
-        node_count=len(data["nodes"]),
-        project_count=len({n["project"] for n in data["nodes"]}),
-    )
+    return render_template("graph.html")
 
 
 @bp.route("/api/graph")

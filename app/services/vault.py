@@ -123,7 +123,7 @@ def get_vault_graph() -> dict:
     stale = []
     broken_links = []
 
-    now = datetime.now()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
 
     for entry in entries:
         slug = entry["slug"]
@@ -303,33 +303,13 @@ def read_entries(project: str = None, status_filter: list = None) -> list[dict]:
     global _entries_cache, _entries_cache_ts
     now = time.monotonic()
 
-    if project is None:
-        # Hot path: full scan — serve from cache when fresh
-        if _entries_cache is None or (now - _entries_cache_ts) >= _TTL:
-            _entries_cache = _read_all_entries()
-            _entries_cache_ts = now
-        entries = _entries_cache
-    else:
-        # Per-project reads are cheaper; don't cache separately
-        proj_dir = VAULT_PATH / "projects" / project
-        entries = []
-        for folder in ("bugs", "ideas", "notes"):
-            type_dir = proj_dir / folder
-            if not type_dir.exists():
-                continue
-            for filepath in type_dir.glob("*.md"):
-                try:
-                    post = frontmatter.load(filepath)
-                    entry = dict(post.metadata)
-                    if hasattr(entry.get("created"), "isoformat"):
-                        entry["created"] = entry["created"].isoformat(timespec="seconds")
-                    entry["body"] = post.content
-                    entry["slug"] = filepath.stem
-                    entries.append(entry)
-                except Exception:
-                    continue
-        entries.sort(key=lambda e: e.get("created", ""), reverse=True)
+    if _entries_cache is None or (now - _entries_cache_ts) >= _TTL:
+        _entries_cache = _read_all_entries()
+        _entries_cache_ts = now
 
+    entries = _entries_cache
+    if project is not None:
+        entries = [e for e in entries if e.get("project") == project]
     if status_filter:
         entries = [e for e in entries if e.get("status") in status_filter]
 
