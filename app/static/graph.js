@@ -11,7 +11,12 @@
 
   function nodeRadius(d) { return URGENCY_RADIUS[d.urgency] || 7; }
   function nodeOpacity(d) { return STATUS_OPACITY[d.status] || 1; }
-  function entryUrl(d) { return '/projects/' + d.project + '/' + d.id; }
+  function entryUrl(d) {
+    if (!d.project) return null;
+    if (d.type === 'hub') return '/projects/' + d.project;
+    if (d.type === 'component') return null;
+    return '/projects/' + d.project + '/' + d.id;
+  }
 
   function escHtml(str) {
     return String(str)
@@ -158,7 +163,7 @@
       .attr('fill-opacity', nodeOpacity)
       .attr('stroke', '#111')
       .attr('stroke-width', 1)
-      .style('cursor', 'pointer')
+      .style('cursor', function (d) { return d.type === 'component' ? 'not-allowed' : 'pointer'; })
       .on('mouseover', function (event, d) {
         tooltip.style.display = 'block';
         tooltip.innerHTML =
@@ -171,14 +176,18 @@
         tooltip.style.top  = (event.clientY - rect.top  + 14) + 'px';
       })
       .on('mouseout', function () { tooltip.style.display = 'none'; })
-      .on('click', function (event, d) { window.location.href = entryUrl(d); })
+      .on('click', function (event, d) {
+        if (d._dragged) { d._dragged = false; return; }
+        var url = entryUrl(d); if (url) window.location.href = url;
+      })
       .call(
         d3.drag()
           .on('start', function (event, d) {
+            d._dragged = false;
             if (!event.active) simulation.alphaTarget(0.3).restart();
             d.fx = d.x; d.fy = d.y;
           })
-          .on('drag', function (event, d) { d.fx = event.x; d.fy = event.y; })
+          .on('drag', function (event, d) { d._dragged = true; d.fx = event.x; d.fy = event.y; })
           .on('end', function (event, d) {
             if (!event.active) simulation.alphaTarget(0);
             d.fx = null; d.fy = null;

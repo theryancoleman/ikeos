@@ -9,7 +9,10 @@
   <div class="dashboard-main">
     <header class="page-header">
       <span class="ike-eyebrow">Tasks</span>
-      <h1>Dashboard</h1>
+      <div class="page-header-row">
+        <h1>Dashboard</h1>
+        <a href="{{ url_for('capture.capture_form') }}" class="btn">+ New item</a>
+      </div>
       <p class="page-subtitle">
         {{ projects | length }} project{{ 's' if projects | length != 1 }} · {{ in_flight | length }} in flight · {{ needs_triage | length }} awaiting triage
       </p>

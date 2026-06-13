@@ -33,14 +33,11 @@
   </div>
 
   <div class="field">
-    <label class="ike-eyebrow" for="type-note">Type</label>
-    <div class="type-chips" role="radiogroup">
-      <input type="radio" name="type" id="type-note" value="note">
-      <label class="type-chip type-chip-note" for="type-note">Note</label>
-      <input type="radio" name="type" id="type-idea" value="idea" checked>
-      <label class="type-chip type-chip-idea" for="type-idea">Feature Request</label>
-      <input type="radio" name="type" id="type-bug" value="bug">
-      <label class="type-chip type-chip-bug" for="type-bug">Bug</label>
+    <label class="ike-eyebrow" id="type-group-label">Type</label>
+    <div class="type-radios" role="radiogroup" aria-labelledby="type-group-label">
+      <label class="type-radio-label"><input type="radio" name="type" id="type-note" value="note"> Note</label>
+      <label class="type-radio-label"><input type="radio" name="type" id="type-idea" value="idea" checked> Feature Request</label>
+      <label class="type-radio-label"><input type="radio" name="type" id="type-bug" value="bug"> Bug</label>
     </div>
   </div>
 

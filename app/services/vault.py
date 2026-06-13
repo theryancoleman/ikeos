@@ -1,3 +1,4 @@
+import logging
 import os
 import re
 import time
@@ -5,6 +6,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import frontmatter
+
+logger = logging.getLogger(__name__)
 
 from app.services.umbrella import get_umbrella_name
 
@@ -20,13 +23,19 @@ _projects_cache_ts: float = 0.0
 _entries_cache: list | None = None
 _entries_cache_ts: float = 0.0
 
+_hub_pages_cache: list | None = None
+_hub_pages_cache_ts: float = 0.0
+
 
 def _invalidate_cache() -> None:
     global _projects_cache, _projects_cache_ts, _entries_cache, _entries_cache_ts
+    global _hub_pages_cache, _hub_pages_cache_ts
     _projects_cache = None
     _projects_cache_ts = 0.0
     _entries_cache = None
     _entries_cache_ts = 0.0
+    _hub_pages_cache = None
+    _hub_pages_cache_ts = 0.0
 
 VAULT_PATH = Path(os.environ.get("VAULT_PATH", "/vault"))
 
@@ -117,9 +126,16 @@ def _get_urgency(entry: dict) -> str:
 def _read_hub_pages() -> list[dict]:
     """Read hub pages and component stubs (<proj>/components/*.md).
     Hub pages are discovered by type:hub frontmatter (filename = display name)."""
+    global _hub_pages_cache, _hub_pages_cache_ts
+    now = time.monotonic()
+    if _hub_pages_cache is not None and (now - _hub_pages_cache_ts) < _TTL:
+        return _hub_pages_cache
+
     pages = []
     projects_dir = VAULT_PATH / "projects"
     if not projects_dir.exists():
+        _hub_pages_cache = pages
+        _hub_pages_cache_ts = now
         return pages
     for proj_dir in projects_dir.iterdir():
         if not proj_dir.is_dir():
@@ -136,8 +152,8 @@ def _read_hub_pages() -> list[dict]:
                     entry["slug"] = candidate.stem  # e.g. "IkeOS", "Music Tools"
                     pages.append(entry)
                     break
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Failed to parse hub page %s: %s", candidate, e)
         # Component stubs
         stubs_dir = proj_dir / "components"
         if stubs_dir.exists():
@@ -148,8 +164,10 @@ def _read_hub_pages() -> list[dict]:
                     entry["body"] = post.content
                     entry["slug"] = stub_file.stem
                     pages.append(entry)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning("Failed to parse component stub %s: %s", stub_file, e)
+    _hub_pages_cache = pages
+    _hub_pages_cache_ts = now
     return pages
 
 

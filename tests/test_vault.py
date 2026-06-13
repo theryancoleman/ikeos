@@ -351,6 +351,31 @@ def test_get_vault_graph_node_urgency_fallback_to_severity(tmp_path):
     assert node["urgency"] == "critical"
 
 
+def test_read_hub_pages_caches_result_on_second_call(tmp_path):
+    proj_dir = tmp_path / "projects" / "myproject"
+    proj_dir.mkdir(parents=True)
+    hub_file = proj_dir / "MyProject.md"
+    hub_file.write_text(
+        "---\ntype: hub\ntitle: My Project\nproject: myproject\n---\n"
+    )
+
+    from app.services import vault as vault_mod
+
+    vault_mod._invalidate_cache()
+
+    with patch.object(vault_mod, "VAULT_PATH", tmp_path):
+        result1 = vault_mod._read_hub_pages()
+        ts_after_first = vault_mod._hub_pages_cache_ts
+        result2 = vault_mod._read_hub_pages()
+        ts_after_second = vault_mod._hub_pages_cache_ts
+
+    assert len(result1) == 1
+    assert result1[0]["title"] == "My Project"
+    assert result1 == result2
+    assert ts_after_first == ts_after_second  # cache was hit, timestamp unchanged
+    assert vault_mod._hub_pages_cache is not None
+
+
 # ── component / umbrella ─────────────────────────────────────────────────────
 
 def test_write_entry_with_component_sets_component_tag(vault):
