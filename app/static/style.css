@@ -780,11 +780,6 @@ button[type="submit"] { margin-top: var(--space-3); }
   padding: 2rem 2.5rem;
 }
 
-.settings-page .page-subtitle {
-  font-size: 0.85rem;
-  color: #999;
-  margin-top: 0.4rem;
-}
 
 .settings-table-wrap {
   overflow-x: auto;
