@@ -297,7 +297,8 @@ button[type="submit"] { margin-top: var(--space-3); }
   cursor: pointer;
   color: var(--text-secondary);
 }
-.type-radio-label input[type="radio"] { accent-color: var(--brand-primary); width: 15px; height: 15px; cursor: pointer; }
+.type-radio-label input[type="radio"],
+.domain-check input[type="checkbox"] { accent-color: var(--brand-primary); width: 15px; height: 15px; cursor: pointer; }
 
 /* ── Domain checkboxes ───────────────────────────────────────────────────── */
 .field-optional { color: var(--text-muted); font-size: var(--fs-caption); font-weight: 400; }
@@ -310,7 +311,6 @@ button[type="submit"] { margin-top: var(--space-3); }
   cursor: pointer;
   color: var(--text-secondary);
 }
-.domain-check input[type="checkbox"] { accent-color: var(--brand-primary); width: 15px; height: 15px; cursor: pointer; }
 .stay-field { margin-top: var(--space-3); }
 
 /* ── Project grid ────────────────────────────────────────────────────────── */
