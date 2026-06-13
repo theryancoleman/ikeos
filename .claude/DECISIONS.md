@@ -43,3 +43,7 @@ Added a JSON endpoint so the capture column in the workspace can submit without 
 ## 2026-06-11: Nav structure — Dashboard / Tasks / Sessions / Capture
 
 `/dashboard` is a new route (`agents.dashboard`) serving `workspace.html` with `three_col=True`. This separates "Dashboard" (three-col: Sessions + Detail + Capture) from "Sessions" (`/agents`, two-col). Each nav item has a distinct endpoint so `request.endpoint` highlights exactly one item per page. Loading screen redirects to `/dashboard`, not `/tasks`. Brand logo also links to `/dashboard`.
+
+## 2026-06-13: Per-project vault reads use global in-memory cache
+
+`read_entries(project=name)` previously bypassed the cache and did fresh file I/O on every project page load (slow on WSL2 Windows bind-mount). Changed to always populate the global `_entries_cache` on miss and filter in-memory for per-project requests. Trade-off: a cold-cache miss now scans all 174+ entries (~1.1s) instead of just one project's files, but the cache is shared across all reads so subsequent requests within the 10-minute TTL are instant. Writes still call `_invalidate_cache()`. Project page also consolidated from two cache lookups (`_read_project_meta` + `get_projects_with_meta`) to a single `get_projects_with_meta(include_hidden=True)` call.
