@@ -408,3 +408,82 @@ def test_read_entries_filters_by_component(vault):
         entries = read_entries(project="ikeos", component="voice-bridge")
     assert len(entries) == 1
     assert entries[0]["title"] == "Bug A"
+
+
+# ── hub pages and graph integration ─────────────────────────────────────────
+
+def test_write_hub_page_creates_file(vault):
+    with patch("app.services.vault.VAULT_PATH", vault):
+        from app.services.vault import write_hub_page
+        write_hub_page("ikeos", "IkeOS", ["voice-bridge", "display"])
+    hub = vault / "projects" / "ikeos" / "ikeos.md"
+    assert hub.exists()
+    post = fm.load(hub)
+    assert post.metadata["type"] == "hub"
+    assert post.metadata["project"] == "ikeos"
+    assert "[[voice-bridge]]" in post.content
+    assert "[[display]]" in post.content
+
+
+def test_write_hub_page_no_components(vault):
+    with patch("app.services.vault.VAULT_PATH", vault):
+        from app.services.vault import write_hub_page
+        write_hub_page("wayvr", "Wayvr", [])
+    hub = vault / "projects" / "wayvr" / "wayvr.md"
+    assert hub.exists()
+
+
+def test_write_component_stub_creates_file(vault):
+    (vault / "projects" / "ikeos").mkdir(parents=True)
+    with patch("app.services.vault.VAULT_PATH", vault):
+        from app.services.vault import write_component_stub
+        write_component_stub("ikeos", "voice-bridge")
+    stub = vault / "projects" / "ikeos" / "components" / "voice-bridge.md"
+    assert stub.exists()
+    post = fm.load(stub)
+    assert post.metadata["type"] == "component"
+    assert "[[ikeos]]" in post.content
+
+
+def test_get_vault_graph_includes_hub_nodes(tmp_path):
+    (tmp_path / "projects" / "ikeos").mkdir(parents=True)
+    hub = tmp_path / "projects" / "ikeos" / "ikeos.md"
+    hub.write_text(
+        "---\ntype: hub\nproject: ikeos\ntitle: IkeOS\ntags: [hub]\n---\n"
+        "Components: [[voice-bridge]]\n"
+    )
+    # Also write a stub so the wikilink resolves
+    (tmp_path / "projects" / "ikeos" / "components").mkdir()
+    stub = tmp_path / "projects" / "ikeos" / "components" / "voice-bridge.md"
+    stub.write_text(
+        "---\ntype: component\nproject: ikeos\ntitle: voice-bridge\ntags: [component]\n---\n"
+        "[[ikeos]]\n"
+    )
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        from app.services.vault import get_vault_graph, _invalidate_cache
+        _invalidate_cache()
+        result = get_vault_graph()
+    node_ids = {n["id"] for n in result["nodes"]}
+    assert "ikeos" in node_ids
+    assert "voice-bridge" in node_ids
+
+
+def test_get_vault_graph_wikilink_resolves_to_hub(tmp_path):
+    # Entry with [[ikeos]] wikilink should create a link to the hub node
+    (tmp_path / "projects" / "ikeos" / "bugs").mkdir(parents=True)
+    (tmp_path / "projects" / "ikeos" / "bugs" / "2026-06-13-crash.md").write_text(
+        "---\ntype: bug\ntitle: Crash\nproject: ikeos\ncomponent: voice-bridge\n"
+        "status: new\ncreated: 2026-06-13T10:00:00\ntags: [bug]\n---\n"
+        "## Description\nBroke.\n\n---\n[[ikeos]]\n"
+    )
+    (tmp_path / "projects" / "ikeos").mkdir(exist_ok=True)
+    (tmp_path / "projects" / "ikeos" / "ikeos.md").write_text(
+        "---\ntype: hub\nproject: ikeos\ntitle: IkeOS\ntags: [hub]\n---\nHub page.\n"
+    )
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        from app.services.vault import get_vault_graph, _invalidate_cache
+        _invalidate_cache()
+        result = get_vault_graph()
+    link_targets = {lnk["target"] for lnk in result["links"]}
+    assert "ikeos" in link_targets
+    assert not any(bl["broken_ref"] == "ikeos" for bl in result["health"]["broken_links"])

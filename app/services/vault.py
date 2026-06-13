@@ -112,10 +112,48 @@ def _get_urgency(entry: dict) -> str:
     return "medium"
 
 
+def _read_hub_pages() -> list[dict]:
+    """Read hub pages (<proj>/<proj>.md) and component stubs (<proj>/components/*.md)."""
+    pages = []
+    projects_dir = VAULT_PATH / "projects"
+    if not projects_dir.exists():
+        return pages
+    for proj_dir in projects_dir.iterdir():
+        if not proj_dir.is_dir():
+            continue
+        slug = proj_dir.name
+        # Hub page
+        hub_file = proj_dir / f"{slug}.md"
+        if hub_file.exists():
+            try:
+                post = frontmatter.load(hub_file)
+                entry = dict(post.metadata)
+                entry["body"] = post.content
+                entry["slug"] = slug
+                pages.append(entry)
+            except Exception:
+                pass
+        # Component stubs
+        stubs_dir = proj_dir / "components"
+        if stubs_dir.exists():
+            for stub_file in stubs_dir.glob("*.md"):
+                try:
+                    post = frontmatter.load(stub_file)
+                    entry = dict(post.metadata)
+                    entry["body"] = post.content
+                    entry["slug"] = stub_file.stem
+                    pages.append(entry)
+                except Exception:
+                    pass
+    return pages
+
+
 def get_vault_graph() -> dict:
-    """Return nodes, wikilink edges, and health metrics for all project entries (bugs, ideas, notes)."""
+    """Return nodes, wikilink edges, and health metrics for all project entries (bugs, ideas, notes) plus hub/component pages."""
     entries = read_entries()
-    slug_set = {e["slug"] for e in entries}
+    hub_pages = _read_hub_pages()
+    all_items = entries + hub_pages
+    slug_set = {e["slug"] for e in all_items}
 
     nodes = []
     links = []
@@ -125,57 +163,52 @@ def get_vault_graph() -> dict:
 
     now = datetime.now(timezone.utc).replace(tzinfo=None)
 
-    for entry in entries:
+    for entry in all_items:
         slug = entry["slug"]
 
         nodes.append({
             "id": slug,
             "title": entry.get("title", slug),
             "type": entry.get("type", "note"),
-            "status": entry.get("status", "new"),
+            "status": entry.get("status", ""),
             "project": entry.get("project", ""),
             "urgency": _get_urgency(entry),
         })
 
-        # Health: untriaged
-        if entry.get("status") == "new":
-            untriaged.append({
-                "slug": slug,
-                "title": entry.get("title", slug),
-                "project": entry.get("project", ""),
-                "type": entry.get("type", "note"),
-            })
+        # Health checks apply only to non-hub entries
+        if entry.get("type") not in ("hub", "component"):
+            if entry.get("status") == "new":
+                untriaged.append({
+                    "slug": slug,
+                    "title": entry.get("title", slug),
+                    "project": entry.get("project", ""),
+                    "type": entry.get("type", "note"),
+                })
+            if entry.get("status") in ("open", "in-progress"):
+                ref_date_raw = entry.get("updated") or entry.get("created", "")
+                try:
+                    if isinstance(ref_date_raw, datetime):
+                        ref_date = ref_date_raw
+                    else:
+                        ref_date = datetime.fromisoformat(ref_date_raw)
+                    ref_date = ref_date.replace(tzinfo=None) if ref_date.tzinfo else ref_date
+                    days_stale = (now - ref_date).days
+                    if days_stale >= _STALE_DAYS:
+                        stale.append({
+                            "slug": slug,
+                            "title": entry.get("title", slug),
+                            "project": entry.get("project", ""),
+                            "type": entry.get("type", "note"),
+                            "status": entry.get("status", ""),
+                            "days_stale": days_stale,
+                        })
+                except (ValueError, TypeError):
+                    pass
 
-        # Health: stale (open/in-progress, not updated in ≥30 days)
-        if entry.get("status") in ("open", "in-progress"):
-            ref_date_raw = entry.get("updated") or entry.get("created", "")
-            try:
-                if isinstance(ref_date_raw, datetime):
-                    ref_date = ref_date_raw
-                else:
-                    ref_date = datetime.fromisoformat(ref_date_raw)
-                # Strip tzinfo so naive and aware datetimes compare without TypeError
-                ref_date = ref_date.replace(tzinfo=None) if ref_date.tzinfo else ref_date
-                days_stale = (now - ref_date).days
-                if days_stale >= _STALE_DAYS:
-                    stale.append({
-                        "slug": slug,
-                        "title": entry.get("title", slug),
-                        "project": entry.get("project", ""),
-                        "type": entry.get("type", "note"),
-                        "status": entry.get("status", ""),
-                        "days_stale": days_stale,
-                    })
-            except (ValueError, TypeError):
-                pass
-
-        # Wikilinks: resolve [[ref]] in body
         body = entry.get("body", "")
         for ref in _WIKILINK_RE.findall(body):
             ref = ref.strip()
-            if not ref:
-                continue
-            if ref == slug:
+            if not ref or ref == slug:
                 continue
             if ref in slug_set:
                 links.append({"source": slug, "target": ref})
@@ -204,6 +237,48 @@ def _slugify(title: str) -> str:
     slug = re.sub(r"[\s_]+", "-", slug)
     slug = re.sub(r"-+", "-", slug).strip("-")
     return slug[:50]
+
+
+def write_hub_page(umbrella_slug: str, umbrella_name: str, components: list[str]) -> None:
+    """Create or overwrite the hub page for an umbrella project."""
+    proj_dir = VAULT_PATH / "projects" / umbrella_slug
+    proj_dir.mkdir(parents=True, exist_ok=True)
+
+    component_links = " · ".join(f"[[{c}]]" for c in components) if components else ""
+    content = f"# {umbrella_name}\n\n"
+    if component_links:
+        content += f"**Components:** {component_links}\n\n"
+
+    metadata = {
+        "type": "hub",
+        "title": umbrella_name,
+        "project": umbrella_slug,
+        "tags": ["hub", f"project/{umbrella_slug}"],
+    }
+    post = frontmatter.Post(content, **metadata)
+    filepath = proj_dir / f"{umbrella_slug}.md"
+    with open(filepath, "w", encoding="utf-8") as f:
+        f.write(frontmatter.dumps(post))
+    _invalidate_cache()
+
+
+def write_component_stub(umbrella_slug: str, component_slug: str) -> None:
+    """Create or overwrite a component stub page under an umbrella."""
+    stubs_dir = VAULT_PATH / "projects" / umbrella_slug / "components"
+    stubs_dir.mkdir(parents=True, exist_ok=True)
+
+    content = f"# {component_slug}\n\n[[{umbrella_slug}]]\n"
+    metadata = {
+        "type": "component",
+        "title": component_slug,
+        "project": umbrella_slug,
+        "tags": ["component", f"umbrella/{umbrella_slug}"],
+    }
+    post = frontmatter.Post(content, **metadata)
+    filepath = stubs_dir / f"{component_slug}.md"
+    with open(filepath, "w", encoding="utf-8") as f:
+        f.write(frontmatter.dumps(post))
+    _invalidate_cache()
 
 
 def write_entry(data: dict) -> str:
