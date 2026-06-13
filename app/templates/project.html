@@ -16,11 +16,11 @@
 
 {% if components %}
 <div class="component-pills">
-  <a href="{{ url_for('browse.project', name=name) }}"
-     class="component-pill {% if not active_component %}active{% endif %}">All</a>
+  <a href="{{ url_for('browse.project', name=name, show_all='true' if show_all else none) }}"
+     class="pill {% if not active_component %}pill-primary-filled{% endif %}">All</a>
   {% for c in components %}
-  <a href="{{ url_for('browse.project', name=name, component=c) }}"
-     class="component-pill {% if active_component == c %}active{% endif %}">{{ c }}</a>
+  <a href="{{ url_for('browse.project', name=name, component=c, show_all='true' if show_all else none) }}"
+     class="pill {% if active_component == c %}pill-primary-filled{% endif %}">{{ c }}</a>
   {% endfor %}
 </div>
 {% endif %}
