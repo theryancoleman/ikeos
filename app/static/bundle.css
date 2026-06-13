@@ -1380,25 +1380,17 @@ button[type="submit"] { margin-top: var(--space-3); }
   margin-top: var(--space-3);
 }
 
-/* ── Type chip group (Phase 2) ───────────────────────────────────────────── */
-.type-chips { display: flex; gap: var(--space-3); flex-wrap: wrap; }
-.type-chips input[type="radio"] { position: absolute; opacity: 0; pointer-events: none; }
-.type-chip {
-  padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-pill);
-  border: 1px solid currentColor;
+/* ── Type radio group ────────────────────────────────────────────────────── */
+.type-radios { display: flex; gap: var(--space-5); flex-wrap: wrap; }
+.type-radio-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   font-size: var(--fs-body-sm);
   cursor: pointer;
-  background: transparent;
-  user-select: none;
-  transition: background var(--dur-quick) var(--ease-out);
-  display: inline-block;
+  color: var(--text-secondary);
 }
-.type-chip-note { color: var(--sem-knowledge); }
-.type-chip-idea { color: var(--ike-soft-lavender); }
-.type-chip-bug  { color: var(--sem-insight); }
-.type-chips input:checked + .type-chip { background: color-mix(in srgb, currentColor 14%, transparent); }
-.type-chips input:focus-visible + .type-chip { box-shadow: var(--ring-focus); }
+.type-radio-label input[type="radio"] { accent-color: var(--brand-primary); width: 15px; height: 15px; cursor: pointer; }
 
 /* ── Domain checkboxes ───────────────────────────────────────────────────── */
 .field-optional { color: var(--text-muted); font-size: var(--fs-caption); font-weight: 400; }
