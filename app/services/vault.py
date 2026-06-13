@@ -6,6 +6,8 @@ from pathlib import Path
 
 import frontmatter
 
+from app.services.umbrella import get_umbrella_name
+
 # ── In-process cache ────────────────────────────────────────────────────────
 # The vault lives on a Windows bind mount; cross-filesystem I/O in WSL2 is
 # slow (~20× vs native Linux). Cache the two hot reads and invalidate on write.
@@ -113,7 +115,8 @@ def _get_urgency(entry: dict) -> str:
 
 
 def _read_hub_pages() -> list[dict]:
-    """Read hub pages (<proj>/<proj>.md) and component stubs (<proj>/components/*.md)."""
+    """Read hub pages and component stubs (<proj>/components/*.md).
+    Hub pages are discovered by type:hub frontmatter (filename = display name)."""
     pages = []
     projects_dir = VAULT_PATH / "projects"
     if not projects_dir.exists():
@@ -121,16 +124,18 @@ def _read_hub_pages() -> list[dict]:
     for proj_dir in projects_dir.iterdir():
         if not proj_dir.is_dir():
             continue
-        slug = proj_dir.name
-        # Hub page
-        hub_file = proj_dir / f"{slug}.md"
-        if hub_file.exists():
+        # Hub page — scan top-level .md files for type:hub (file is named after display name)
+        for candidate in proj_dir.glob("*.md"):
+            if candidate.name == "project.md":
+                continue
             try:
-                post = frontmatter.load(hub_file)
-                entry = dict(post.metadata)
-                entry["body"] = post.content
-                entry["slug"] = slug
-                pages.append(entry)
+                post = frontmatter.load(candidate)
+                if post.metadata.get("type") == "hub":
+                    entry = dict(post.metadata)
+                    entry["body"] = post.content
+                    entry["slug"] = candidate.stem  # e.g. "IkeOS", "Music Tools"
+                    pages.append(entry)
+                    break
             except Exception:
                 pass
         # Component stubs
@@ -256,7 +261,7 @@ def write_hub_page(umbrella_slug: str, umbrella_name: str, components: list[str]
         "tags": ["hub", f"project/{umbrella_slug}"],
     }
     post = frontmatter.Post(content, **metadata)
-    filepath = proj_dir / f"{umbrella_slug}.md"
+    filepath = proj_dir / f"{umbrella_name}.md"
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(frontmatter.dumps(post))
     _invalidate_cache()
@@ -267,7 +272,7 @@ def write_component_stub(umbrella_slug: str, component_slug: str) -> None:
     stubs_dir = VAULT_PATH / "projects" / umbrella_slug / "components"
     stubs_dir.mkdir(parents=True, exist_ok=True)
 
-    content = f"# {component_slug}\n\n[[{umbrella_slug}]]\n"
+    content = f"# {component_slug}\n\n[[{get_umbrella_name(umbrella_slug)}]]\n"
     metadata = {
         "type": "component",
         "title": component_slug,
@@ -345,7 +350,7 @@ def write_entry(data: dict) -> str:
         if entry_type == "bug" and data.get("steps"):
             content += f"\n## Steps to reproduce\n{data['steps']}\n"
         if component:
-            content += f"\n---\n[[{project}]]\n"
+            content += f"\n---\n[[{get_umbrella_name(project)}]]\n"
 
     post = frontmatter.Post(content, **metadata)
 

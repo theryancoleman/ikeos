@@ -43,7 +43,7 @@ def test_migrate_entry_writes_to_umbrella_folder(tmp_path):
     src = bugs / "2026-06-01-test-bug.md"
 
     from scripts.migrate_to_umbrella import migrate_entry
-    migrate_entry(tmp_path, src, "bug", "claude-code", "claude-config", apply=True)
+    migrate_entry(tmp_path, src, "bug", "claude-code", "claude-config", "Claude Config", apply=True)
 
     dest = tmp_path / "projects" / "claude-config" / "bugs" / "2026-06-01-test-bug.md"
     assert dest.exists()
@@ -53,7 +53,7 @@ def test_migrate_entry_writes_to_umbrella_folder(tmp_path):
     assert post.metadata["project"] == "claude-config"
     assert post.metadata["component"] == "claude-code"
     assert "component/claude-code" in post.metadata["tags"]
-    assert "[[claude-config]]" in post.content
+    assert "[[Claude Config]]" in post.content
 
 
 def test_migrate_entry_dry_run_does_not_move(tmp_path):
@@ -62,7 +62,7 @@ def test_migrate_entry_dry_run_does_not_move(tmp_path):
     src = bugs / "2026-06-01-test-bug.md"
 
     from scripts.migrate_to_umbrella import migrate_entry
-    migrate_entry(tmp_path, src, "bug", "claude-code", "claude-config", apply=False)
+    migrate_entry(tmp_path, src, "bug", "claude-code", "claude-config", "Claude Config", apply=False)
 
     assert src.exists()
     dest = tmp_path / "projects" / "claude-config" / "bugs" / "2026-06-01-test-bug.md"
@@ -86,7 +86,8 @@ def test_create_hub_and_stubs_creates_files(tmp_path):
     umbrella_meta = {"name": "Claude Config", "components": ["claude-code"]}
     create_hub_and_stubs(tmp_path, "claude-config", umbrella_meta, apply=True)
 
-    hub = tmp_path / "projects" / "claude-config" / "claude-config.md"
+    # Hub file named after display name
+    hub = tmp_path / "projects" / "claude-config" / "Claude Config.md"
     assert hub.exists()
     post = fm.load(hub)
     assert post.metadata["type"] == "hub"
@@ -97,7 +98,7 @@ def test_create_hub_and_stubs_creates_files(tmp_path):
     assert stub.exists()
     post = fm.load(stub)
     assert post.metadata["type"] == "component"
-    assert "[[claude-config]]" in post.content
+    assert "[[Claude Config]]" in post.content
 
 
 def test_create_hub_and_stubs_skips_existing(tmp_path):
@@ -106,7 +107,7 @@ def test_create_hub_and_stubs_skips_existing(tmp_path):
 
     # First call creates files
     create_hub_and_stubs(tmp_path, "claude-config", umbrella_meta, apply=True)
-    hub = tmp_path / "projects" / "claude-config" / "claude-config.md"
+    hub = tmp_path / "projects" / "claude-config" / "Claude Config.md"
     original_text = hub.read_text()
 
     # Second call should NOT overwrite
@@ -121,7 +122,7 @@ def test_migrate_entry_wikilink_idempotent(tmp_path):
     src = bugs / "2026-06-01-test-bug.md"
 
     # First migration
-    migrate_entry(tmp_path, src, "bug", "claude-code", "claude-config", apply=True)
+    migrate_entry(tmp_path, src, "bug", "claude-code", "claude-config", "Claude Config", apply=True)
 
     dest = tmp_path / "projects" / "claude-config" / "bugs" / "2026-06-01-test-bug.md"
     assert dest.exists()
@@ -132,7 +133,7 @@ def test_migrate_entry_wikilink_idempotent(tmp_path):
     shutil.copy(dest, src)
 
     # Re-run: collision guard should skip
-    migrate_entry(tmp_path, src, "bug", "claude-code", "claude-config", apply=True)
+    migrate_entry(tmp_path, src, "bug", "claude-code", "claude-config", "Claude Config", apply=True)
     # dest still exists (was skipped), no duplicate wikilink
     post = fm.load(dest)
-    assert post.content.count("[[claude-config]]") == 1
+    assert post.content.count("[[Claude Config]]") == 1

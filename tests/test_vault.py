@@ -377,7 +377,7 @@ def test_write_entry_with_component_appends_wikilink(vault):
         })
     files = list((vault / "projects" / "ikeos" / "notes").glob("*.md"))
     post = fm.load(files[0])
-    assert "[[ikeos]]" in post.content
+    assert "[[IkeOS]]" in post.content
 
 
 def test_write_entry_without_component_no_wikilink(vault):
@@ -416,7 +416,7 @@ def test_write_hub_page_creates_file(vault):
     with patch("app.services.vault.VAULT_PATH", vault):
         from app.services.vault import write_hub_page
         write_hub_page("ikeos", "IkeOS", ["voice-bridge", "display"])
-    hub = vault / "projects" / "ikeos" / "ikeos.md"
+    hub = vault / "projects" / "ikeos" / "IkeOS.md"
     assert hub.exists()
     post = fm.load(hub)
     assert post.metadata["type"] == "hub"
@@ -429,7 +429,7 @@ def test_write_hub_page_no_components(vault):
     with patch("app.services.vault.VAULT_PATH", vault):
         from app.services.vault import write_hub_page
         write_hub_page("wayvr", "Wayvr", [])
-    hub = vault / "projects" / "wayvr" / "wayvr.md"
+    hub = vault / "projects" / "wayvr" / "Wayvr.md"
     assert hub.exists()
 
 
@@ -442,7 +442,7 @@ def test_write_component_stub_creates_file(vault):
     assert stub.exists()
     post = fm.load(stub)
     assert post.metadata["type"] == "component"
-    assert "[[ikeos]]" in post.content
+    assert "[[IkeOS]]" in post.content
 
 
 def test_get_vault_graph_includes_hub_nodes(tmp_path):

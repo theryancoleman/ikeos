@@ -58,3 +58,11 @@ def get_parent_umbrella(component_slug: str) -> str | None:
         if component_slug in umbrella.get("components", []):
             return umbrella_slug
     return None
+
+
+def get_umbrella_name(slug: str) -> str:
+    """Return the display name for an umbrella slug, falling back to the slug itself."""
+    entry = get_umbrella(slug)
+    if not entry:
+        return slug
+    return entry.get("name", slug)

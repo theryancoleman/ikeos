@@ -22,6 +22,11 @@ sys.path.insert(0, str(REPO_ROOT))
 
 TYPE_FOLDERS = {"note": "notes", "idea": "ideas", "bug": "bugs"}
 
+# Maps canonical slug → legacy vault folder name (for one-time renames)
+FOLDER_RENAMES = {
+    "recipe-binder": "RecipeBinder",
+}
+
 
 def load_registry(registry_path: Path) -> dict:
     if not registry_path.exists():
@@ -54,6 +59,7 @@ def migrate_entry(
     entry_type: str,
     component_slug: str,
     umbrella_slug: str,
+    umbrella_name: str,
     apply: bool,
 ) -> None:
     folder = TYPE_FOLDERS[entry_type]
@@ -71,7 +77,7 @@ def migrate_entry(
         tags.append(f"component/{component_slug}")
     post.metadata["tags"] = tags
 
-    wikilink_marker = f"[[{umbrella_slug}]]"
+    wikilink_marker = f"[[{umbrella_name}]]"
     if wikilink_marker not in post.content:
         post.content = post.content.rstrip() + f"\n\n{wikilink_marker}\n"
 
@@ -87,6 +93,24 @@ def migrate_entry(
         with open(dest_path, "w", encoding="utf-8") as f:
             f.write(serialized)
         src_path.unlink()
+
+
+def rename_component_folder(vault_path: Path, component_slug: str, apply: bool) -> bool:
+    """If component_slug has a legacy folder name, rename it. Returns True if folder is ready."""
+    target = vault_path / "projects" / component_slug
+    if target.exists():
+        return True
+    legacy_name = FOLDER_RENAMES.get(component_slug)
+    if not legacy_name:
+        return False
+    legacy = vault_path / "projects" / legacy_name
+    if not legacy.exists():
+        return False
+    action = "RENAME" if apply else "DRY-RUN"
+    print(f"  [{action}] projects/{legacy_name}/ → projects/{component_slug}/")
+    if apply:
+        legacy.rename(target)
+    return True
 
 
 def hide_component_project(vault_path: Path, component_slug: str, apply: bool) -> None:
@@ -121,7 +145,7 @@ def create_hub_and_stubs(vault_path: Path, umbrella_slug: str, umbrella_meta: di
         "project": umbrella_slug,
         "tags": ["hub", f"project/{umbrella_slug}"],
     }
-    hub_path = vault_path / "projects" / umbrella_slug / f"{umbrella_slug}.md"
+    hub_path = vault_path / "projects" / umbrella_slug / f"{umbrella_name}.md"
     action = "CREATE" if apply else "DRY-RUN"
     print(f"  [{action}] Hub page: {hub_path.relative_to(vault_path)}")
     if apply:
@@ -134,7 +158,7 @@ def create_hub_and_stubs(vault_path: Path, umbrella_slug: str, umbrella_meta: di
                 f.write(frontmatter.dumps(post))
 
     for component in components:
-        stub_content = f"# {component}\n\n[[{umbrella_slug}]]\n"
+        stub_content = f"# {component}\n\n[[{umbrella_name}]]\n"
         stub_meta = {
             "type": "component",
             "title": component,
@@ -175,12 +199,12 @@ def main():
             print(f"[SKIP] {umbrella_slug} — flat umbrella, no components")
             continue
 
-        print(f"\n[UMBRELLA] {umbrella_slug}")
+        umbrella_name = umbrella_meta.get("name", umbrella_slug)
+        print(f"\n[UMBRELLA] {umbrella_slug} ({umbrella_name})")
 
         # Migrate component entries
         for component_slug in components:
-            comp_dir = vault_path / "projects" / component_slug
-            if not comp_dir.exists():
+            if not rename_component_folder(vault_path, component_slug, apply=args.apply):
                 print(f"  [SKIP] Component '{component_slug}' not found in vault")
                 continue
 
@@ -191,7 +215,7 @@ def main():
             for e in entries:
                 migrate_entry(
                     vault_path, e["path"], e["type"],
-                    component_slug, umbrella_slug, apply=args.apply
+                    component_slug, umbrella_slug, umbrella_name, apply=args.apply
                 )
             hide_component_project(vault_path, component_slug, apply=args.apply)
 

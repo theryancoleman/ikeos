@@ -7,7 +7,9 @@
 
 ikeos:
   name: IkeOS
-  components: []            # TODO: add component slugs as IkeOS services are defined
+  components:
+    - obsidian-capture
+    - n8n
 
 claude-config:
   name: Claude Config
@@ -17,7 +19,29 @@ claude-config:
 homelab-manager:
   name: Homelab Manager
   components:
-    - obsidian-capture
+    - home-assistant
+    - media-stack
+    - infrastructure
+
+life-tools:
+  name: Life Tools
+  components:
+    - recipe-binder
+
+music-tools:
+  name: Music Tools
+  components:
+    - spotify-beatport
+
+rcade:
+  name: RCADE
+  components:
+    - microgames-dev
+
+pixitup:
+  name: PixItUp
+  components:
+    - zone-builder
 
 bcr-waivers:
   name: Wayvr
@@ -27,30 +51,6 @@ frc-dashboard:
   name: PitRadar
   components: []
 
-spotify-beatport:
-  name: Spotify × Beatport
-  components: []
-
 worldwardle:
   name: Worldwardle
-  components: []
-
-zone-builder:
-  name: Zone Builder
-  components: []
-
-n8n:
-  name: n8n
-  components: []
-
-microgames-dev:
-  name: Microgames Dev
-  components: []
-
-pixitup:
-  name: PixItUp
-  components: []
-
-rcade:
-  name: RCADE
   components: []
