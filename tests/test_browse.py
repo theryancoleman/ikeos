@@ -2,7 +2,7 @@ import pytest
 import os
 from unittest.mock import patch
 from app import create_app
-from app.services.vault import write_entry, read_entry
+from app.services.vault import write_entry, read_entry, write_project_meta, _read_project_meta, _invalidate_cache
 
 
 @pytest.fixture
@@ -90,9 +90,6 @@ def test_post_update_status_persists_to_vault(client, vault):
         assert entry["status"] == "done"
 
 
-from app.services.vault import write_project_meta
-
-
 @pytest.fixture
 def vault_with_projects(tmp_path):
     for slug, name in [("alpha", "Alpha Project"), ("beta", "Beta Project")]:
@@ -149,7 +146,6 @@ def test_update_project_settings_persists(settings_client):
             "/projects/alpha/settings",
             data={"name": "Alpha Renamed", "description": "A new desc", "hidden": ""},
         )
-        from app.services.vault import _read_project_meta, _invalidate_cache
         _invalidate_cache()
         meta = _read_project_meta("alpha")
     assert meta["name"] == "Alpha Renamed"
@@ -164,7 +160,6 @@ def test_update_project_settings_hidden_toggle(settings_client):
             "/projects/alpha/settings",
             data={"name": "Alpha", "description": "", "hidden": "on"},
         )
-        from app.services.vault import _read_project_meta, _invalidate_cache
         _invalidate_cache()
         meta = _read_project_meta("alpha")
     assert meta["hidden"] is True
