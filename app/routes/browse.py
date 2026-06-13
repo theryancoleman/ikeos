@@ -87,9 +87,15 @@ def settings():
 
 @bp.route("/projects/<slug>/settings", methods=["POST"])
 def update_project_settings(slug):
+    valid_slugs = {p["slug"] for p in get_projects_with_meta(include_hidden=True)}
+    if slug not in valid_slugs:
+        abort(404)
     name = request.form.get("name", "").strip() or slug
     description = request.form.get("description", "").strip()
     hidden = request.form.get("hidden") == "on"
-    write_project_meta(slug, name, description, hidden)
-    flash(f"'{name}' settings saved.")
+    success = write_project_meta(slug, name, description, hidden)
+    if success:
+        flash(f"'{name}' settings saved.")
+    else:
+        flash(f"Could not save settings for '{slug}'.")
     return redirect(url_for("browse.settings"))

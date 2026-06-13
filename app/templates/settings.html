@@ -10,44 +10,37 @@
     <p class="page-subtitle">Manage display names, descriptions, and visibility for each vault project. Slugs are read-only — they match the vault folder name.</p>
   </header>
 
-  <div class="settings-table-wrap">
-    <table class="settings-table">
-      <thead>
-        <tr>
-          <th>Slug</th>
-          <th>Display Name</th>
-          <th>Description</th>
-          <th>Hidden</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for p in projects %}
-        <tr class="settings-row{% if p.hidden %} settings-row-hidden{% endif %}">
-          <form method="POST" action="{{ url_for('browse.update_project_settings', slug=p.slug) }}">
-            <td class="st-slug"><code>{{ p.slug }}</code></td>
-            <td class="st-name">
-              <input type="text" name="name" value="{{ p.name }}"
-                     class="settings-input" required autocomplete="off">
-            </td>
-            <td class="st-desc">
-              <input type="text" name="description" value="{{ p.description or '' }}"
-                     class="settings-input" placeholder="Optional description…" autocomplete="off">
-            </td>
-            <td class="st-hidden">
-              <label class="settings-toggle" title="Hide from nav and dropdowns">
-                <input type="checkbox" name="hidden" {% if p.hidden %}checked{% endif %}>
-                <span class="toggle-label">Hidden</span>
-              </label>
-            </td>
-            <td class="st-action">
-              <button type="submit" class="pill pill-primary">Save</button>
-            </td>
-          </form>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+  <div class="settings-list">
+    <div class="settings-header">
+      <div>Slug</div>
+      <div>Display Name</div>
+      <div>Description</div>
+      <div>Hidden</div>
+      <div></div>
+    </div>
+    {% for p in projects %}
+    <form method="POST" action="{{ url_for('browse.update_project_settings', slug=p.slug) }}"
+          class="settings-row{% if p.hidden %} settings-row-hidden{% endif %}">
+      <div class="st-slug"><code>{{ p.slug }}</code></div>
+      <div class="st-name">
+        <input type="text" name="name" value="{{ p.name }}"
+               class="settings-input" required autocomplete="off">
+      </div>
+      <div class="st-desc">
+        <input type="text" name="description" value="{{ p.description or '' }}"
+               class="settings-input" placeholder="Optional description…" autocomplete="off">
+      </div>
+      <div class="st-hidden">
+        <label class="settings-toggle" title="Hide from nav and dropdowns">
+          <input type="checkbox" name="hidden" {% if p.hidden %}checked{% endif %}>
+          <span class="toggle-label">Hidden</span>
+        </label>
+      </div>
+      <div class="st-action">
+        <button type="submit" class="pill pill-primary">Save</button>
+      </div>
+    </form>
+    {% endfor %}
   </div>
 
 </div>

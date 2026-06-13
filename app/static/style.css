@@ -780,35 +780,40 @@ button[type="submit"] { margin-top: var(--space-3); }
   padding: 2rem 2.5rem;
 }
 
-
-.settings-table-wrap {
-  overflow-x: auto;
+.settings-list {
   margin-top: 1.5rem;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
-.settings-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.875rem;
+.settings-header,
+.settings-row {
+  display: grid;
+  grid-template-columns: 180px 1fr 1fr 90px 60px;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
 }
 
-.settings-table th {
-  text-align: left;
+.settings-header {
   font-size: 0.7rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.07em;
   color: #888;
-  padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid #333;
-  white-space: nowrap;
+  border-bottom: 1px solid #2a2a2a;
+  background: #0e0e0e;
 }
 
-.settings-table td {
-  padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid #222;
-  vertical-align: middle;
+.settings-row {
+  border-bottom: 1px solid #1e1e1e;
+  background: transparent;
+  transition: background 0.1s;
 }
+
+.settings-row:last-child { border-bottom: none; }
+.settings-row:hover { background: #0f0f0f; }
 
 .settings-row-hidden .st-slug code,
 .settings-row-hidden .st-name input,
@@ -823,6 +828,7 @@ button[type="submit"] { margin-top: var(--space-3); }
   background: #1a1a1a;
   padding: 0.15rem 0.4rem;
   border-radius: 4px;
+  word-break: break-all;
 }
 
 .settings-input {
