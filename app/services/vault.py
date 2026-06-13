@@ -1,3 +1,4 @@
+import logging
 import os
 import re
 import time
@@ -5,6 +6,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import frontmatter
+
+logger = logging.getLogger(__name__)
 
 from app.services.umbrella import get_umbrella_name
 
@@ -149,8 +152,8 @@ def _read_hub_pages() -> list[dict]:
                     entry["slug"] = candidate.stem  # e.g. "IkeOS", "Music Tools"
                     pages.append(entry)
                     break
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Failed to parse hub page %s: %s", candidate, e)
         # Component stubs
         stubs_dir = proj_dir / "components"
         if stubs_dir.exists():
@@ -161,8 +164,8 @@ def _read_hub_pages() -> list[dict]:
                     entry["body"] = post.content
                     entry["slug"] = stub_file.stem
                     pages.append(entry)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning("Failed to parse component stub %s: %s", stub_file, e)
     _hub_pages_cache = pages
     _hub_pages_cache_ts = now
     return pages

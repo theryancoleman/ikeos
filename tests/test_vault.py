@@ -359,11 +359,9 @@ def test_read_hub_pages_caches_result_on_second_call(tmp_path):
         "---\ntype: hub\ntitle: My Project\nproject: myproject\n---\n"
     )
 
-    from unittest.mock import patch
     from app.services import vault as vault_mod
 
-    vault_mod._hub_pages_cache = None
-    vault_mod._hub_pages_cache_ts = 0.0
+    vault_mod._invalidate_cache()
 
     with patch.object(vault_mod, "VAULT_PATH", tmp_path):
         result1 = vault_mod._read_hub_pages()
