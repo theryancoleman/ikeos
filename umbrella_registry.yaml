@@ -1,0 +1,56 @@
+# umbrella_registry.yaml
+# Maps umbrella project slugs to their component sub-projects.
+# Components listed here will be hidden from the top-level project picker
+# and captured into the umbrella's vault folder.
+#
+# Flat projects (components: []) appear as normal projects with no component picker.
+
+ikeos:
+  name: IkeOS
+  components: []            # TODO: add component slugs as IkeOS services are defined
+
+claude-config:
+  name: Claude Config
+  components:
+    - claude-code
+
+homelab-manager:
+  name: Homelab Manager
+  components:
+    - obsidian-capture
+
+bcr-waivers:
+  name: Wayvr
+  components: []
+
+frc-dashboard:
+  name: PitRadar
+  components: []
+
+spotify-beatport:
+  name: Spotify × Beatport
+  components: []
+
+worldwardle:
+  name: Worldwardle
+  components: []
+
+zone-builder:
+  name: Zone Builder
+  components: []
+
+n8n:
+  name: n8n
+  components: []
+
+microgames-dev:
+  name: Microgames Dev
+  components: []
+
+pixitup:
+  name: PixItUp
+  components: []
+
+rcade:
+  name: RCADE
+  components: []
