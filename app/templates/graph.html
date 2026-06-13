@@ -1,5 +1,78 @@
 {% extends "base.html" %}
 {% block title %}Graph{% endblock %}
 {% block content %}
-<p>Graph coming soon.</p>
+
+<div class="graph-page">
+  <header class="page-header">
+    <span class="ike-eyebrow">Vault</span>
+    <h1>Graph</h1>
+    <p class="page-subtitle">{{ node_count }} entries across {{ project_count }} projects — connections show wikilinks.</p>
+  </header>
+
+  <div class="graph-layout">
+
+    <!-- ── Canvas ── -->
+    <div class="graph-canvas-wrap">
+      <div class="graph-controls">
+        <label class="graph-filter-label">
+          <input type="checkbox" id="filter-bugs" checked>
+          <span class="graph-dot graph-dot-bug"></span>Bugs
+        </label>
+        <label class="graph-filter-label">
+          <input type="checkbox" id="filter-ideas" checked>
+          <span class="graph-dot graph-dot-idea"></span>Ideas
+        </label>
+        <label class="graph-filter-label">
+          <input type="checkbox" id="filter-notes" checked>
+          <span class="graph-dot graph-dot-note"></span>Notes
+        </label>
+        <span class="graph-hint">Drag · Scroll to zoom · Click to open</span>
+      </div>
+      <svg id="graph-svg"></svg>
+      <div id="graph-tooltip" class="graph-tooltip"></div>
+      <div class="graph-loading" id="graph-loading">
+        <div class="ike-loading-orbit" aria-hidden="true"></div>
+        <span>Mapping the vault…</span>
+      </div>
+    </div>
+
+    <!-- ── Health sidebar ── -->
+    <aside class="graph-health">
+
+      <div class="health-section">
+        <div class="health-heading">
+          <span class="health-badge" id="badge-untriaged">—</span>
+          Untriaged
+        </div>
+        <ul class="health-list" id="list-untriaged">
+          <li class="health-empty">Loading…</li>
+        </ul>
+      </div>
+
+      <div class="health-section">
+        <div class="health-heading">
+          <span class="health-badge" id="badge-stale">—</span>
+          Stale (&gt;30 days)
+        </div>
+        <ul class="health-list" id="list-stale">
+          <li class="health-empty">Loading…</li>
+        </ul>
+      </div>
+
+      <div class="health-section">
+        <div class="health-heading">
+          <span class="health-badge" id="badge-broken">—</span>
+          Broken Links
+        </div>
+        <ul class="health-list" id="list-broken">
+          <li class="health-empty">Loading…</li>
+        </ul>
+      </div>
+
+    </aside>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='vendor/d3.v7.min.js') }}"></script>
+<script src="{{ url_for('static', filename='graph.js') }}"></script>
 {% endblock %}

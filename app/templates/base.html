@@ -24,6 +24,7 @@
       <a href="{{ url_for('capture.capture_form') }}" class="nav-link {% if request.endpoint == 'capture.capture_form' %}is-active{% endif %}">Capture</a>
       <a href="{{ url_for('agents.status_page') }}" class="nav-link {% if request.endpoint == 'agents.status_page' %}is-active{% endif %}">Status</a>
       <a href="{{ url_for('browse.settings') }}" class="nav-link {% if request.endpoint == 'browse.settings' or request.endpoint == 'browse.update_project_settings' %}is-active{% endif %}">Settings</a>
+      <a href="{{ url_for('browse.graph') }}" class="nav-link {% if request.endpoint == 'browse.graph' %}is-active{% endif %}">Graph</a>
       {% if config_version %}<span class="nav-version">{{ config_version }}</span>{% endif %}
     </div>
   </nav>
