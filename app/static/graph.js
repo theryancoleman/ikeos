@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  var TYPE_COLOR = { bug: '#ef4444', idea: '#a855f7', note: '#3b82f6' };
+  var TYPE_COLOR = { bug: '#ef4444', idea: '#a855f7', note: '#3b82f6', hub: '#e2c97e', component: '#6b7280' };
   var STATUS_OPACITY = { done: 0.25, deferred: 0.2 };
   var URGENCY_RADIUS = { critical: 12, high: 10, medium: 8, low: 6 };
 
@@ -77,7 +77,8 @@
         .filter(function (n) {
           return (n.type === 'bug'  && showBugs)  ||
                  (n.type === 'idea' && showIdeas) ||
-                 (n.type === 'note' && showNotes);
+                 (n.type === 'note' && showNotes) ||
+                 n.type === 'hub';
         })
         .map(function (n) { return n.id; })
     );
@@ -147,7 +148,7 @@
       .selectAll('line')
       .data(linkData)
       .join('line')
-      .attr('stroke', '#2a2a2a')
+      .attr('stroke', '#3d3d3d')
       .attr('stroke-width', 1.5)
       .attr('stroke-opacity', 0.7);
 
