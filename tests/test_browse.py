@@ -195,6 +195,7 @@ def graph_client(graph_vault):
 def test_graph_page_renders(graph_client):
     response = graph_client.get("/graph")
     assert response.status_code == 200
+    assert b"Graph" in response.data
 
 
 def test_api_graph_returns_json(graph_client):

@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from app.services.vault import (
     get_projects_with_meta, read_entries, read_entry,
     update_entry_status, _read_project_meta, write_project_meta,
+    get_vault_graph,
 )
 
 bp = Blueprint("browse", __name__)
@@ -103,7 +104,6 @@ def update_project_settings(slug):
 
 @bp.route("/graph")
 def graph():
-    from app.services.vault import get_vault_graph
     data = get_vault_graph()
     return render_template(
         "graph.html",
@@ -114,5 +114,4 @@ def graph():
 
 @bp.route("/api/graph")
 def api_graph():
-    from app.services.vault import get_vault_graph
     return jsonify(get_vault_graph())
