@@ -5,6 +5,32 @@
   var STATUS_OPACITY = { done: 0.25, deferred: 0.2 };
   var URGENCY_RADIUS = { critical: 12, high: 10, medium: 8, low: 6 };
 
+  var PROJECT_PALETTE = [
+    '#6366f1', '#a855f7', '#ec4899', '#3b82f6',
+    '#10b981', '#f59e0b', '#ef4444', '#14b8a6',
+  ];
+
+  function padHull(pts, pad) {
+    var cx = 0, cy = 0;
+    pts.forEach(function (p) { cx += p[0]; cy += p[1]; });
+    cx /= pts.length; cy /= pts.length;
+    return pts.map(function (p) {
+      var dx = p[0] - cx, dy = p[1] - cy;
+      var len = Math.sqrt(dx * dx + dy * dy) || 1;
+      return [p[0] + dx / len * pad, p[1] + dy / len * pad];
+    });
+  }
+
+  function circlePath(cx, cy, r) {
+    return 'M' + (cx - r) + ',' + cy +
+      'a' + r + ',' + r + ' 0 1,0 ' + (r * 2) + ',0' +
+      'a' + r + ',' + r + ' 0 1,0 -' + (r * 2) + ',0';
+  }
+
+  function projectLabel(slug) {
+    return slug.replace(/-/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+  }
+
   var allNodes = [];
   var allLinks = [];
   var simulation = null;
@@ -143,6 +169,59 @@
         .on('zoom', function (event) { g.attr('transform', event.transform); })
     );
 
+    // ── Project hull overlays ────────────────────────────────────────────────
+    var projectColors = {};
+    projects.forEach(function (p, i) { projectColors[p] = PROJECT_PALETTE[i % PROJECT_PALETTE.length]; });
+
+    var hullG = g.append('g');
+    var hullPaths = [], hullLabels = [];
+    var labelG = g.append('g');
+
+    projects.forEach(function (proj) {
+      var col = projectColors[proj];
+      hullPaths.push(
+        hullG.append('path')
+          .attr('fill', col).attr('fill-opacity', 0.07)
+          .attr('stroke', col).attr('stroke-opacity', 0.22)
+          .attr('stroke-width', 1.5).attr('stroke-linejoin', 'round')
+      );
+      hullLabels.push(
+        labelG.append('text')
+          .text(projectLabel(proj))
+          .attr('fill', col).attr('fill-opacity', 0.5)
+          .attr('font-size', '10px').attr('text-anchor', 'middle')
+          .attr('letter-spacing', '0.06em').attr('pointer-events', 'none')
+      );
+    });
+
+    function updateHulls() {
+      var PAD = 22;
+      projects.forEach(function (proj, i) {
+        var pts = nodeData
+          .filter(function (n) { return n.project === proj && n.x != null; })
+          .map(function (n) { return [n.x, n.y]; });
+
+        if (pts.length === 0) { hullPaths[i].attr('d', null); hullLabels[i].attr('display', 'none'); return; }
+
+        var cx = pts.reduce(function (s, p) { return s + p[0]; }, 0) / pts.length;
+        var cy = pts.reduce(function (s, p) { return s + p[1]; }, 0) / pts.length;
+        hullLabels[i].attr('x', cx).attr('y', cy).attr('display', null);
+
+        var d;
+        if (pts.length < 3) {
+          var r = pts.length === 1 ? PAD + 8 :
+            Math.sqrt(Math.pow(pts[0][0] - pts[1][0], 2) + Math.pow(pts[0][1] - pts[1][1], 2)) / 2 + PAD;
+          d = circlePath(cx, cy, r);
+        } else {
+          var hull = d3.polygonHull(pts);
+          if (!hull) { hullPaths[i].attr('d', null); return; }
+          var padded = padHull(hull, PAD);
+          d = 'M' + padded.map(function (p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join('L') + 'Z';
+        }
+        hullPaths[i].attr('d', d);
+      });
+    }
+
     // Edges
     var link = g.append('g')
       .selectAll('line')
@@ -196,6 +275,7 @@
       );
 
     simulation.on('tick', function () {
+      updateHulls();
       link
         .attr('x1', function (d) { return d.source.x; })
         .attr('y1', function (d) { return d.source.y; })
