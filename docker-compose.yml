@@ -1,7 +1,7 @@
 services:
-  obsidian-capture:
+  ikeos:
     build: .
-    container_name: obsidian-capture
+    container_name: ikeos
     restart: unless-stopped
     env_file: .env
     ports:
@@ -13,8 +13,8 @@ services:
       - traefik_network
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.obsidian-capture.rule=Host(`192.168.1.77`)"
-      - "traefik.http.services.obsidian-capture.loadbalancer.server.port=5009"
+      - "traefik.http.routers.ikeos.rule=Host(`192.168.1.77`)"
+      - "traefik.http.services.ikeos.loadbalancer.server.port=5009"
 
 networks:
   traefik_network:

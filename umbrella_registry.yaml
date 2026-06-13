@@ -4,20 +4,27 @@
 # and captured into the umbrella's vault folder.
 #
 # Flat projects (components: []) appear as normal projects with no component picker.
+# codebases: Windows paths to the relevant project directories on disk.
 
 ikeos:
   name: IkeOS
+  codebases:
+    - C:\Server\projects\ikeos
   components:
     - obsidian-capture
     - n8n
 
 claude-config:
   name: Claude Config
+  codebases:
+    - C:\Server\claude-config
   components:
     - claude-code
 
 homelab-manager:
   name: Homelab Manager
+  codebases:
+    - C:\Server\projects\homelab-manager
   components:
     - home-assistant
     - media-stack
@@ -25,32 +32,45 @@ homelab-manager:
 
 life-tools:
   name: Life Tools
+  codebases: []
   components:
     - recipe-binder
 
 music-tools:
   name: Music Tools
+  codebases:
+    - C:\Server\projects\spotify-beatport
   components:
     - spotify-beatport
 
 rcade:
   name: RCADE
+  codebases:
+    - C:\Server\projects\RCADE
   components:
     - microgames-dev
 
 pixitup:
   name: PixItUp
+  codebases:
+    - C:\Server\projects\pixitup
   components:
     - zone-builder
 
 bcr-waivers:
   name: Wayvr
+  codebases:
+    - C:\Server\projects\bcr-waivers
   components: []
 
 frc-dashboard:
   name: PitRadar
+  codebases:
+    - C:\Server\projects\frc-dashboard
   components: []
 
 worldwardle:
   name: Worldwardle
+  codebases:
+    - C:\Server\projects\worldwardle
   components: []
