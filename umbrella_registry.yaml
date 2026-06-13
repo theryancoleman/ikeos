@@ -10,6 +10,7 @@ ikeos:
   name: IkeOS
   codebases:
     - C:\Server\projects\ikeos
+    - C:\Server\projects\n8n
   components:
     - obsidian-capture
     - n8n
@@ -32,7 +33,8 @@ homelab-manager:
 
 life-tools:
   name: Life Tools
-  codebases: []
+  codebases:
+    - C:\Server\projects\life-tools
   components:
     - recipe-binder
 
