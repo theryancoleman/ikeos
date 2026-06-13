@@ -47,3 +47,15 @@ Added a JSON endpoint so the capture column in the workspace can submit without 
 ## 2026-06-13: Per-project vault reads use global in-memory cache
 
 `read_entries(project=name)` previously bypassed the cache and did fresh file I/O on every project page load (slow on WSL2 Windows bind-mount). Changed to always populate the global `_entries_cache` on miss and filter in-memory for per-project requests. Trade-off: a cold-cache miss now scans all 174+ entries (~1.1s) instead of just one project's files, but the cache is shared across all reads so subsequent requests within the 10-minute TTL are instant. Writes still call `_invalidate_cache()`. Project page also consolidated from two cache lookups (`_read_project_meta` + `get_projects_with_meta`) to a single `get_projects_with_meta(include_hidden=True)` call.
+
+## 2026-06-13: Settings page uses CSS grid div layout, not table
+
+The project list on `/settings` is rendered as a `.settings-list` div with a `.settings-row` per project (each row is its own `<form>`). A table was considered but `<form>` elements inside `<tr>` are invalid HTML — form tags are not permitted as children of table rows. The CSS grid approach (`grid-template-columns: 180px 1fr 1fr 90px 60px`) gives the same columnar alignment without the invalidity.
+
+## 2026-06-13: Graph tab uses client-side D3.js, not Neo4j
+
+The vault graph (`/graph`) uses a D3 v7 force-directed graph rendered entirely in the browser, fed by the `/api/graph` JSON endpoint. Neo4j was considered but the existing `music-graph` Neo4j instance is dedicated to a separate project; adding a second instance for 174 vault entries would be disproportionate. D3 client-side requires no additional infrastructure and performs adequately at this scale. The `/api/graph` endpoint piggybacks on the existing `read_entries()` cache.
+
+## 2026-06-13: /graph route is thin — counts computed in JS, not server-side
+
+The `/graph` route calls no service functions; it simply renders the template. The subtitle ("N entries across M projects") is populated by `graph.js` after it receives the `/api/graph` response. This avoids calling `get_vault_graph()` twice per page load (once server-side for counts, once client-side for data).
