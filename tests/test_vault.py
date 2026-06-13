@@ -349,3 +349,62 @@ def test_get_vault_graph_node_urgency_fallback_to_severity(tmp_path):
         result = get_vault_graph()
     node = next(n for n in result["nodes"] if n["id"] == "2026-01-01-sev-note")
     assert node["urgency"] == "critical"
+
+
+# ── component / umbrella ─────────────────────────────────────────────────────
+
+def test_write_entry_with_component_sets_component_tag(vault):
+    with patch("app.services.vault.VAULT_PATH", vault):
+        from app.services.vault import write_entry
+        write_entry({
+            "type": "bug", "project": "ikeos", "title": "Boot crash",
+            "body": "It breaks", "severity": "high",
+            "component": "voice-bridge",
+        })
+    files = list((vault / "projects" / "ikeos" / "bugs").glob("*.md"))
+    assert len(files) == 1
+    post = fm.load(files[0])
+    assert post.metadata.get("component") == "voice-bridge"
+    assert "component/voice-bridge" in post.metadata["tags"]
+
+
+def test_write_entry_with_component_appends_wikilink(vault):
+    with patch("app.services.vault.VAULT_PATH", vault):
+        from app.services.vault import write_entry
+        write_entry({
+            "type": "note", "project": "ikeos", "title": "Arch notes",
+            "body": "Details here.", "component": "voice-bridge",
+        })
+    files = list((vault / "projects" / "ikeos" / "notes").glob("*.md"))
+    post = fm.load(files[0])
+    assert "[[ikeos]]" in post.content
+
+
+def test_write_entry_without_component_no_wikilink(vault):
+    with patch("app.services.vault.VAULT_PATH", vault):
+        from app.services.vault import write_entry
+        write_entry({
+            "type": "note", "project": "ikeos", "title": "Standalone",
+            "body": "No component.", "domains": [],
+        })
+    files = list((vault / "projects" / "ikeos" / "notes").glob("*.md"))
+    post = fm.load(files[0])
+    assert "[[ikeos]]" not in post.content
+
+
+def test_read_entries_filters_by_component(vault):
+    (vault / "projects" / "ikeos" / "bugs").mkdir(parents=True)
+    (vault / "projects" / "ikeos" / "bugs" / "2026-06-13-bug-a.md").write_text(
+        "---\ntype: bug\ntitle: Bug A\nproject: ikeos\ncomponent: voice-bridge\n"
+        "status: new\ncreated: 2026-06-13T10:00:00\ntags: [bug]\n---\n## Description\nA\n"
+    )
+    (vault / "projects" / "ikeos" / "bugs" / "2026-06-13-bug-b.md").write_text(
+        "---\ntype: bug\ntitle: Bug B\nproject: ikeos\ncomponent: display\n"
+        "status: new\ncreated: 2026-06-13T11:00:00\ntags: [bug]\n---\n## Description\nB\n"
+    )
+    with patch("app.services.vault.VAULT_PATH", vault):
+        from app.services.vault import read_entries, _invalidate_cache
+        _invalidate_cache()
+        entries = read_entries(project="ikeos", component="voice-bridge")
+    assert len(entries) == 1
+    assert entries[0]["title"] == "Bug A"

@@ -245,6 +245,9 @@ def write_entry(data: dict) -> str:
             tags.append(f"urgency/{urgency}")
         for domain in data.get("domains", []):
             tags.append(f"domain/{domain}")
+        component = data.get("component", "").strip()
+        if component:
+            tags.append(f"component/{component}")
 
         metadata = {
             "type": entry_type,
@@ -254,6 +257,8 @@ def write_entry(data: dict) -> str:
             "created": datetime.now().isoformat(timespec="seconds"),
             "tags": tags,
         }
+        if component:
+            metadata["component"] = component
 
         if entry_type == "idea":
             metadata["priority"] = data.get("priority", "medium")
@@ -264,6 +269,8 @@ def write_entry(data: dict) -> str:
         content = f"## Description\n{body}\n"
         if entry_type == "bug" and data.get("steps"):
             content += f"\n## Steps to reproduce\n{data['steps']}\n"
+        if component:
+            content += f"\n---\n[[{project}]]\n"
 
     post = frontmatter.Post(content, **metadata)
 
@@ -299,7 +306,7 @@ def _read_all_entries() -> list[dict]:
     return entries
 
 
-def read_entries(project: str = None, status_filter: list = None) -> list[dict]:
+def read_entries(project: str = None, status_filter: list = None, component: str = None) -> list[dict]:
     global _entries_cache, _entries_cache_ts
     now = time.monotonic()
 
@@ -310,6 +317,8 @@ def read_entries(project: str = None, status_filter: list = None) -> list[dict]:
     entries = _entries_cache
     if project is not None:
         entries = [e for e in entries if e.get("project") == project]
+    if component is not None:
+        entries = [e for e in entries if e.get("component") == component]
     if status_filter:
         entries = [e for e in entries if e.get("status") in status_filter]
 
