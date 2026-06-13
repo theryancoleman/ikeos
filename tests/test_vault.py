@@ -2,7 +2,7 @@ import pytest
 from pathlib import Path
 from unittest.mock import patch
 import frontmatter as fm
-from app.services.vault import write_entry, read_entry
+from app.services.vault import write_entry, read_entry, write_project_meta
 
 
 @pytest.fixture
@@ -155,3 +155,75 @@ def test_update_entry_status_returns_false_for_invalid_status(vault):
         assert result is False
         entry = read_entry("bcr-waivers", slug)
         assert entry["status"] == "new"  # unchanged
+
+
+def test_read_project_meta_returns_description(tmp_path):
+    proj = tmp_path / "projects" / "my-project"
+    proj.mkdir(parents=True)
+    (proj / "project.md").write_text(
+        "---\nname: My Project\ndescription: A test project\nhidden: false\n---\n"
+    )
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        from app.services.vault import _read_project_meta
+        meta = _read_project_meta("my-project")
+    assert meta["description"] == "A test project"
+
+
+def test_read_project_meta_description_defaults_to_empty(tmp_path):
+    proj = tmp_path / "projects" / "my-project"
+    proj.mkdir(parents=True)
+    (proj / "project.md").write_text("---\nname: My Project\nhidden: false\n---\n")
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        from app.services.vault import _read_project_meta
+        meta = _read_project_meta("my-project")
+    assert meta["description"] == ""
+
+
+def test_write_project_meta_creates_project_md(tmp_path):
+    proj = tmp_path / "projects" / "my-project"
+    proj.mkdir(parents=True)
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        result = write_project_meta("my-project", "My Project", "A description", False)
+    assert result is True
+    meta_file = proj / "project.md"
+    assert meta_file.exists()
+    post = fm.load(meta_file)
+    assert post.metadata["name"] == "My Project"
+    assert post.metadata["description"] == "A description"
+    assert post.metadata["hidden"] is False
+
+
+def test_write_project_meta_updates_existing(tmp_path):
+    proj = tmp_path / "projects" / "my-project"
+    proj.mkdir(parents=True)
+    (proj / "project.md").write_text("---\nname: Old Name\nhidden: false\n---\n")
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        write_project_meta("my-project", "New Name", "Updated desc", True)
+        from app.services.vault import _read_project_meta
+        meta = _read_project_meta("my-project")
+    assert meta["name"] == "New Name"
+    assert meta["description"] == "Updated desc"
+    assert meta["hidden"] is True
+
+
+def test_write_project_meta_returns_false_for_missing_slug(tmp_path):
+    (tmp_path / "projects").mkdir(parents=True)
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        result = write_project_meta("nonexistent", "Name", "", False)
+    assert result is False
+
+
+def test_get_projects_with_meta_includes_hidden_when_requested(tmp_path):
+    for slug, name, hidden in [("visible", "Visible", False), ("hidden-one", "Hidden", True)]:
+        d = tmp_path / "projects" / slug
+        d.mkdir(parents=True)
+        (d / "project.md").write_text(
+            f"---\nname: {name}\nhidden: {str(hidden).lower()}\n---\n"
+        )
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        from app.services.vault import get_projects_with_meta
+        visible_only = get_projects_with_meta(include_hidden=False)
+        all_projects = get_projects_with_meta(include_hidden=True)
+    assert len(visible_only) == 1
+    assert visible_only[0]["slug"] == "visible"
+    assert len(all_projects) == 2

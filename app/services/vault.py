@@ -38,15 +38,16 @@ TYPE_TAGS = {"note": "documentation", "idea": "enhancement", "bug": "bug", "deci
 def _read_project_meta(slug: str) -> dict:
     meta_file = VAULT_PATH / "projects" / slug / "project.md"
     if not meta_file.exists():
-        return {"name": slug, "hidden": False}
+        return {"name": slug, "description": "", "hidden": False}
     try:
         post = frontmatter.load(meta_file)
         return {
             "name": post.metadata.get("name", slug),
+            "description": post.metadata.get("description", ""),
             "hidden": bool(post.metadata.get("hidden", False)),
         }
     except Exception:
-        return {"name": slug, "hidden": False}
+        return {"name": slug, "description": "", "hidden": False}
 
 
 def get_projects() -> list[str]:
@@ -56,24 +57,44 @@ def get_projects() -> list[str]:
     return sorted(d.name for d in projects_dir.iterdir() if d.is_dir())
 
 
-def get_projects_with_meta() -> list[dict]:
+def get_projects_with_meta(include_hidden: bool = False) -> list[dict]:
     global _projects_cache, _projects_cache_ts
     now = time.monotonic()
     if _projects_cache is not None and (now - _projects_cache_ts) < _TTL:
-        return _projects_cache
-    projects_dir = VAULT_PATH / "projects"
-    if not projects_dir.exists():
-        return []
-    projects = []
-    for d in sorted(projects_dir.iterdir()):
-        if not d.is_dir():
-            continue
-        meta = _read_project_meta(d.name)
-        if not meta["hidden"]:
-            projects.append({"slug": d.name, "name": meta["name"]})
-    _projects_cache = projects
-    _projects_cache_ts = now
-    return projects
+        cached = _projects_cache
+    else:
+        projects_dir = VAULT_PATH / "projects"
+        if not projects_dir.exists():
+            return []
+        cached = []
+        for d in sorted(projects_dir.iterdir()):
+            if not d.is_dir():
+                continue
+            meta = _read_project_meta(d.name)
+            cached.append({
+                "slug": d.name,
+                "name": meta["name"],
+                "description": meta["description"],
+                "hidden": meta["hidden"],
+            })
+        _projects_cache = cached
+        _projects_cache_ts = now
+    if include_hidden:
+        return cached
+    return [p for p in cached if not p["hidden"]]
+
+
+def write_project_meta(slug: str, name: str, description: str, hidden: bool) -> bool:
+    """Write or overwrite project.md for the given slug."""
+    proj_dir = VAULT_PATH / "projects" / slug
+    if not proj_dir.exists():
+        return False
+    meta_file = proj_dir / "project.md"
+    post = frontmatter.Post("", name=name, description=description, hidden=hidden)
+    with open(meta_file, "w", encoding="utf-8") as f:
+        f.write(frontmatter.dumps(post))
+    _invalidate_cache()
+    return True
 
 
 def _slugify(title: str) -> str:
