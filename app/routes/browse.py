@@ -1,5 +1,8 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
-from app.services.vault import get_projects_with_meta, read_entries, read_entry, update_entry_status, _read_project_meta
+from app.services.vault import (
+    get_projects_with_meta, read_entries, read_entry,
+    update_entry_status, _read_project_meta, write_project_meta,
+)
 
 bp = Blueprint("browse", __name__)
 
@@ -74,3 +77,19 @@ def update_status(name, slug):
     flash("Status updated." if success else "Could not update status.")
     next_url = request.form.get("next") or url_for("browse.project", name=name)
     return redirect(next_url)
+
+
+@bp.route("/settings")
+def settings():
+    projects = get_projects_with_meta(include_hidden=True)
+    return render_template("settings.html", projects=projects)
+
+
+@bp.route("/projects/<slug>/settings", methods=["POST"])
+def update_project_settings(slug):
+    name = request.form.get("name", "").strip() or slug
+    description = request.form.get("description", "").strip()
+    hidden = request.form.get("hidden") == "on"
+    write_project_meta(slug, name, description, hidden)
+    flash(f"'{name}' settings saved.")
+    return redirect(url_for("browse.settings"))
