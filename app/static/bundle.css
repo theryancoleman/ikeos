@@ -1182,8 +1182,8 @@ a:hover { color: var(--brand-primary); text-decoration: underline; }
 
 /* ── Page header (Phase 2) ──────────────────────────────────────────────── */
 .page-header { margin-bottom: var(--space-9); }
-.page-header-actions { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-2); }
-.page-header-actions h1 { margin: 0; flex: 1; }
+.page-header-row { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-2); }
+.page-header-row h1 { margin: 0; flex: 1; }
 .page-header h1 {
   font-family: var(--font-display);
   font-size: 36px;
