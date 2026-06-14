@@ -59,3 +59,15 @@ The vault graph (`/graph`) uses a D3 v7 force-directed graph rendered entirely i
 ## 2026-06-13: /graph route is thin — counts computed in JS, not server-side
 
 The `/graph` route calls no service functions; it simply renders the template. The subtitle ("N entries across M projects") is populated by `graph.js` after it receives the `/api/graph` response. This avoids calling `get_vault_graph()` twice per page load (once server-side for counts, once client-side for data).
+
+## 2026-06-13: Hub nodes always visible in graph filteredData()
+
+Hub nodes represent projects in the wikilink graph and are the anchor points for all edges. Excluding them from `filteredData()` (e.g. when the user unchecks "bugs") dropped every edge, leaving isolated dots. Hub nodes are not filterable content — they are structural connectors. `n.type === 'hub'` is always included in the visibleIds set regardless of filter checkboxes.
+
+## 2026-06-13: D3 convex hull overlays chosen over hub-to-entry dandelion edges
+
+When wikilinks between entries exist, the graph uses actual edges. For the common case where older/closed entries lack explicit wikilinks back to their hub, the graph shows D3 `polygonHull` overlays — one coloured region per project — rather than synthesising fake hub→entry edges for every entry. Synthetic edges would create meaningless radial "dandelion" patterns and obscure real wikilink structure. Hulls provide project grouping without polluting the link data.
+
+## 2026-06-13: Native HTML radio buttons replace CSS-hidden chip pattern on capture form
+
+The original capture form used hidden `<input type="radio">` elements styled with `.type-chips` — clicking the `<label>` toggled a chip appearance. On iOS Safari, `pointer-events: none` on hidden inputs breaks the tap target, making type selection unreliable on mobile. Replaced with standard wrapped-label radios (`.type-radio-label`) using `accent-color` for brand tinting. Accessible: `role="radiogroup"` + `aria-labelledby`.
