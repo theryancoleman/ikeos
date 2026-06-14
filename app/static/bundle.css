@@ -1150,7 +1150,8 @@ input[type="radio"] {
 }
 .nav-link:hover { color: var(--text-primary); text-decoration: none; }
 .nav-link.is-active { color: var(--text-primary); }
-.nav-link.is-active::after {
+.nav-link.is-active::after,
+.nav-item.is-active > .nav-link::after {
   content: "";
   position: absolute;
   left: 0; right: 0; bottom: -6px;
@@ -1194,7 +1195,8 @@ input[type="radio"] {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.40);
   z-index: 50;
 }
-.nav-item:hover .nav-subnav { display: flex; }
+.nav-item:hover .nav-subnav,
+.nav-item:focus-within .nav-subnav { display: flex; }
 
 .nav-sub-link {
   font-family: var(--font-sans);
