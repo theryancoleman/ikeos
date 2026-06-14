@@ -124,7 +124,6 @@ body.workspace-body main {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  overflow: hidden;
   cursor: pointer;
   position: relative;
   flex-shrink: 0; /* cards hold natural height; card-grid scrolls when overflow */
@@ -132,14 +131,7 @@ body.workspace-body main {
               box-shadow var(--dur-base) var(--ease-out);
 }
 
-/* Activity chip — top-right corner of card */
-.card-activity {
-  position: absolute;
-  top: 0.55rem;
-  right: 0.6rem;
-  z-index: 1;
-  pointer-events: none;
-}
+/* .card-activity removed — activity chip now renders in card-meta-left */
 .session-card:hover {
   border-color: var(--border-default);
 }
@@ -307,6 +299,8 @@ body.workspace-body main {
   align-items: center;
   flex-wrap: wrap;
   background: rgba(11, 6, 26, 0.35);
+  border-bottom-left-radius: var(--radius-lg);
+  border-bottom-right-radius: var(--radius-lg);
 }
 
 /* ── Action chips ── */
@@ -718,9 +712,6 @@ body.workspace-body main {
   /* Compact page header */
   .workspace-page-header { padding: 0.5rem 1rem; }
   .workspace-page-header h1 { font-size: 22px; }
-
-  /* Reserve space on card right for absolute-positioned activity chip */
-  .card-body { padding-right: 3.5rem; }
 
   /* Let meta row wrap on very narrow screens */
   .card-meta { flex-wrap: wrap; }
