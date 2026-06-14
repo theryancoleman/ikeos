@@ -730,6 +730,18 @@ body.workspace-body main {
   font-family: var(--font-sans);
   padding: 0.1rem 0;
 }
+.modal-checkbox-label input[type="checkbox"] {
+  appearance: auto;
+  -webkit-appearance: auto;
+  width: auto;
+  height: auto;
+  padding: 0;
+  border: revert;
+  background: revert;
+  box-shadow: none;
+  transition: none;
+  flex-shrink: 0;
+}
 
 /* ── Empty state ── */
 .empty-state {
