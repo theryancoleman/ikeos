@@ -385,7 +385,7 @@ def _read_all_entries() -> list[dict]:
     entries = []
     for proj in get_projects():
         proj_dir = VAULT_PATH / "projects" / proj
-        for folder in ("bugs", "ideas", "notes", "grill-me"):
+        for folder in set(TYPE_FOLDERS.values()):
             type_dir = proj_dir / folder
             if not type_dir.exists():
                 continue
@@ -425,7 +425,7 @@ def read_entries(project: str = None, status_filter: list = None, component: str
 
 def read_entry(project: str, slug: str) -> dict | None:
     proj_dir = VAULT_PATH / "projects" / project
-    for folder in ("bugs", "ideas", "notes"):
+    for folder in ("bugs", "ideas", "notes", "grill-me"):
         filepath = proj_dir / folder / f"{slug}.md"
         if filepath.exists():
             post = frontmatter.load(filepath)
@@ -442,7 +442,7 @@ def update_entry_status(project: str, slug: str, new_status: str) -> bool:
     if new_status not in VALID_STATUSES:
         return False
     proj_dir = VAULT_PATH / "projects" / project
-    for folder in ("bugs", "ideas", "notes"):
+    for folder in ("bugs", "ideas", "notes", "grill-me"):
         filepath = proj_dir / folder / f"{slug}.md"
         if filepath.exists():
             post = frontmatter.load(filepath)

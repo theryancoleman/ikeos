@@ -539,3 +539,19 @@ def test_read_entries_includes_grill_me_folder(vault):
         _invalidate_cache()
         entries = read_entries(project="bcr-waivers")
     assert any(e["type"] == "grill-me" for e in entries)
+
+
+def test_update_entry_status_generic_grill_me(vault):
+    grill_dir = vault / "projects" / "bcr-waivers" / "grill-me"
+    grill_dir.mkdir(parents=True)
+    (grill_dir / "2026-06-14-test.md").write_text(
+        "---\ntype: grill-me\ntitle: Test\nproject: bcr-waivers\nstatus: new\n"
+        "created: 2026-06-14T10:00:00\ntags: [grill-me, status/new]\n---\n## Description\ntest\n"
+    )
+    with patch("app.services.vault.VAULT_PATH", vault):
+        from app.services.vault import update_entry_status_generic
+        result = update_entry_status_generic("grill-me", "bcr-waivers", "2026-06-14-test", "open")
+    assert result is True
+    import frontmatter as fm
+    post = fm.load(grill_dir / "2026-06-14-test.md")
+    assert post.metadata["status"] == "open"
