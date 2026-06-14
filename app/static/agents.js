@@ -398,10 +398,14 @@ async function submitNewSession(e) {
   closeModal();
 
   if (resp.ok && (rcOn || autoOn)) {
-    const session = await resp.json();
-    if (session && session.id) {
-      if (rcOn)   await sendCmd(session.id, '/remote-control');
-      if (autoOn) await sendCmd(session.id, '/auto');
+    try {
+      const session = await resp.json();
+      if (session && session.id) {
+        if (rcOn)   await sendCmd(session.id, '/remote-control');
+        if (autoOn) await sendCmd(session.id, '/auto');
+      }
+    } catch (err) {
+      console.error('submitNewSession dispatch failed:', err);
     }
   }
 
