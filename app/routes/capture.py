@@ -102,7 +102,7 @@ def patch_entries():
         return jsonify({"error": "Invalid filename"}), 400
 
     # Validate entry_type
-    if entry_type not in ("bug", "idea", "note", "decision"):
+    if entry_type not in ("bug", "idea", "note", "decision", "grill-me"):
         return jsonify({"error": "Invalid entry type"}), 400
 
     # Validate status against the lifecycle for this entry type
@@ -139,8 +139,8 @@ def capture_json():
 
     if not title:
         return jsonify({"error": "title is required"}), 400
-    if entry_type not in ("note", "idea", "bug"):
-        return jsonify({"error": "type must be note, idea, or bug"}), 400
+    if entry_type not in ("note", "idea", "bug", "grill-me"):
+        return jsonify({"error": "type must be note, idea, bug, or grill-me"}), 400
     if not project:
         return jsonify({"error": "project is required"}), 400
 

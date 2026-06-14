@@ -630,3 +630,39 @@ def test_capture_json_stores_component(client, tmp_path, monkeypatch):
     assert len(files) == 1
     post = fm_lib.load(files[0])
     assert post.metadata.get("component") == "voice-bridge"
+
+
+# ============= grill-me type support tests =============
+
+def test_patch_entries_accepts_grill_me_type(client, tmp_path, monkeypatch):
+    """PATCH /entries should accept grill-me type."""
+    import app.services.vault as vault_mod
+    monkeypatch.setattr(vault_mod, "VAULT_PATH", tmp_path)
+    vault_mod._invalidate_cache()
+    grill_dir = tmp_path / "projects" / "bcr-waivers" / "grill-me"
+    grill_dir.mkdir(parents=True)
+    (grill_dir / "2026-06-14-test-grill.md").write_text(
+        "---\ntype: grill-me\ntitle: Test Grill\nproject: bcr-waivers\nstatus: new\n"
+        "created: 2026-06-14T10:00:00\ntags: [grill-me, status/new]\n---\n## Description\ntest\n"
+    )
+    resp = client.patch(
+        "/entries",
+        json={"project": "bcr-waivers", "type": "grill-me", "filename": "2026-06-14-test-grill", "status": "open"},
+        headers={"X-Capture-Token": "test-token-secret"},
+    )
+    assert resp.status_code == 200
+
+
+def test_capture_json_accepts_grill_me_type(client, tmp_path, monkeypatch):
+    """POST /capture/json should accept grill-me type."""
+    import app.services.vault as vault_mod
+    monkeypatch.setattr(vault_mod, "VAULT_PATH", tmp_path)
+    vault_mod._invalidate_cache()
+    (tmp_path / "projects" / "bcr-waivers").mkdir(parents=True, exist_ok=True)
+    resp = client.post(
+        "/capture/json",
+        json={"type": "grill-me", "project": "bcr-waivers", "title": "Half baked"},
+    )
+    assert resp.status_code == 200
+    files = list((tmp_path / "projects" / "bcr-waivers" / "grill-me").glob("*.md"))
+    assert len(files) == 1
