@@ -395,6 +395,10 @@ async function submitNewSession(e) {
     project_dir:    fd.get('project_dir'),
     remote_control: false,
   });
+  if (!resp.ok) {
+    await pollSessions();
+    return;
+  }
   closeModal();
 
   if (resp.ok && (rcOn || autoOn)) {

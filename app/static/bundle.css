@@ -2140,7 +2140,7 @@ button[type="submit"] { margin-top: var(--space-3); }
   border-bottom: 1px solid var(--border-subtle, #1e1e1e);
 }
 
-.health-badge {
+.graph-health-badge {
   background: #222;
   color: #bbb;
   font-size: 0.7rem;
