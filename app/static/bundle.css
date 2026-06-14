@@ -1158,6 +1158,12 @@ input[type="radio"] {
   background: var(--ike-sunset-orange);
   box-shadow: 0 0 6px rgba(255, 120, 73, 0.70);
 }
+.nav-version {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
 /* ── Nav subnav ──────────────────────────────────────────────────────────── */
 .nav-end {
   margin-left: auto;
