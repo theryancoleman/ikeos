@@ -72,6 +72,72 @@ input[type="radio"] {
   color: var(--text-muted);
 }
 
+/* ── Nav subnav ──────────────────────────────────────────────────────────── */
+.nav-end {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.nav-subnav {
+  display: none;
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  flex-direction: column;
+  background: rgba(11, 6, 26, 0.95);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 0.4rem 0;
+  min-width: 120px;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.40);
+  z-index: 50;
+}
+.nav-item:hover .nav-subnav { display: flex; }
+
+.nav-sub-link {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  padding: 0.35rem 0.85rem;
+  transition: color var(--dur-quick) var(--ease-out),
+              background var(--dur-quick) var(--ease-out);
+  white-space: nowrap;
+}
+.nav-sub-link:hover { color: var(--text-primary); background: rgba(180,151,255,0.07); text-decoration: none; }
+.nav-sub-link.is-active { color: var(--text-primary); }
+
+/* Mobile: subnav items always visible, indented */
+@media (max-width: 768px) {
+  .nav-item { flex-direction: column; align-items: flex-start; }
+  .nav-subnav {
+    display: flex;
+    position: static;
+    background: none;
+    border: none;
+    box-shadow: none;
+    backdrop-filter: none;
+    padding: 0 0 0 1rem;
+    min-width: 0;
+  }
+  .nav-end { margin-left: 0; }
+}
+
+/* Settings gear icon */
+.nav-settings { font-size: 16px; padding: 2px 2px; }
+
+/* .nav-version no longer needs margin-left: auto — .nav-end owns it */
+.nav-version { margin-left: 0; }
+
 /* ── Layout ─────────────────────────────────────────────────────────────── */
 main { max-width: none; margin: 0; padding: 2rem 2.5rem; }
 
