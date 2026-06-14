@@ -1198,6 +1198,17 @@ input[type="radio"] {
 .nav-item:hover .nav-subnav,
 .nav-item:focus-within .nav-subnav { display: flex; }
 
+/* Transparent bridge fills the 10px gap between nav link and dropdown
+   so moving the mouse into the dropdown doesn't leave the hover zone */
+.nav-subnav::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 0;
+  right: 0;
+  height: 10px;
+}
+
 .nav-sub-link {
   font-family: var(--font-sans);
   font-size: 14px;
