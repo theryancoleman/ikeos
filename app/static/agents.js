@@ -85,6 +85,39 @@ function cardFooter(s) {
   `;
 }
 
+function cardMenuItems(s) {
+  if (s.status === 'active') {
+    return `
+      <button class="card-dropdown-item" onclick="event.stopPropagation();closeAllCardMenus();sendCmd('${esc(s.id)}','/clear')">/clear</button>
+      <button class="card-dropdown-item" onclick="event.stopPropagation();closeAllCardMenus();sendCmd('${esc(s.id)}','/compact')">/compact</button>
+      <button class="card-dropdown-item" onclick="event.stopPropagation();closeAllCardMenus();openPanel('${esc(s.id)}');openRenameInput('${esc(s.id)}')">Rename</button>
+      <div class="card-dropdown-sep"></div>
+      <button class="card-dropdown-item ${s.remote_control ? 'is-on' : ''}" onclick="event.stopPropagation();closeAllCardMenus();toggleRc('${esc(s.id)}')">RC: ${s.remote_control ? 'on' : 'off'}</button>
+      <button class="card-dropdown-item ${s.autonomous_mode ? 'is-on' : ''}" onclick="event.stopPropagation();closeAllCardMenus();toggleAuto('${esc(s.id)}')">Auto: ${s.autonomous_mode ? 'on' : 'off'}</button>
+      <div class="card-dropdown-sep"></div>
+      <button class="card-dropdown-item" onclick="event.stopPropagation();closeAllCardMenus();resetSession('${esc(s.id)}')">Reset</button>
+      <button class="card-dropdown-item item-danger" onclick="event.stopPropagation();closeAllCardMenus();stopSession('${esc(s.id)}')">Stop</button>
+      <button class="card-dropdown-item item-danger" onclick="event.stopPropagation();closeAllCardMenus();removeSession('${esc(s.id)}')">Remove</button>
+    `;
+  }
+  return `
+    <button class="card-dropdown-item" onclick="event.stopPropagation();closeAllCardMenus();resetSession('${esc(s.id)}')">Start</button>
+    <button class="card-dropdown-item item-danger" onclick="event.stopPropagation();closeAllCardMenus();removeSession('${esc(s.id)}')">Remove</button>
+  `;
+}
+
+function toggleCardMenu(id) {
+  const el = document.getElementById('cmenu-' + id);
+  if (!el) return;
+  const isOpen = el.classList.contains('open');
+  closeAllCardMenus();
+  if (!isOpen) el.classList.add('open');
+}
+
+function closeAllCardMenus() {
+  document.querySelectorAll('.card-dropdown.open').forEach(el => el.classList.remove('open'));
+}
+
 function renderCard(s) {
   const activeClass = s.status === 'active' ? ' session-active' : '';
   const selected    = s.id === selectedId ? ' selected' : '';
@@ -92,6 +125,9 @@ function renderCard(s) {
   return `
     <div class="session-card${activeClass}${selected}"
          data-id="${esc(s.id)}" onclick="openPanel('${esc(s.id)}')">
+      <button class="card-menu-btn" aria-label="Card actions"
+              onclick="event.stopPropagation();toggleCardMenu('${esc(s.id)}')">⋮</button>
+      <div class="card-dropdown" id="cmenu-${esc(s.id)}">${cardMenuItems(s)}</div>
       <div class="card-body">
         <div class="card-name"><span class="session-dot ${dotClass}"></span>${esc(s.name)}</div>
         <div class="card-project">${esc(s.project)}</div>
@@ -370,4 +406,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const found = (window.INITIAL_SESSIONS || []).find(s => s.id === urlSession);
     if (found) openPanel(urlSession);
   }
+
+  document.addEventListener('click', () => closeAllCardMenus());
 });

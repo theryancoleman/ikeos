@@ -291,6 +291,66 @@ body.workspace-body main {
   border-bottom-right-radius: var(--radius-lg);
 }
 
+/* ── Card hamburger menu ── */
+.card-menu-btn {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.45rem;
+  z-index: 2;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0.15rem 0.3rem;
+  border-radius: var(--radius-sm);
+  transition: color var(--dur-quick) var(--ease-out),
+              background var(--dur-quick) var(--ease-out);
+}
+.card-menu-btn:hover { color: var(--text-secondary); background: rgba(180,151,255,0.08); }
+
+.card-dropdown {
+  display: none;
+  position: absolute;
+  top: 1.8rem;
+  right: 0.45rem;
+  z-index: 20;
+  min-width: 140px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.50), 0 0 0 1px rgba(180,151,255,0.10);
+  flex-direction: column;
+  padding: 0.3rem 0;
+}
+.card-dropdown.open { display: flex; }
+
+.card-dropdown-item {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 0.35rem 0.85rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--dur-quick) var(--ease-out),
+              color var(--dur-quick) var(--ease-out);
+  white-space: nowrap;
+}
+.card-dropdown-item:hover { background: rgba(180,151,255,0.08); color: var(--text-primary); }
+.card-dropdown-item.is-on { color: var(--sem-discovery); }
+.card-dropdown-item.item-danger { color: #fca5a5; }
+.card-dropdown-item.item-danger:hover { background: rgba(248,113,113,0.10); }
+
+.card-dropdown-sep {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 0.2rem 0;
+}
+
 /* ── Action chips ── */
 .pill {
   display: inline-flex;
