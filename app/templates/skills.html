@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Skills{% endblock %}
+
+{% block content %}
+<div class="settings-page">
+
+  <header class="page-header">
+    <span class="ike-eyebrow">Claude Code</span>
+    <h1>Skills Reference</h1>
+    <p class="page-subtitle">All <code>/skills</code> configured in this environment. Invoke any of these in a Claude Code session by typing the command.</p>
+  </header>
+
+  {% for category, skills in categories.items() %}
+  <section class="skills-section">
+    <h2 class="skills-category-heading">{{ category }}</h2>
+    <div class="skills-table-wrap">
+      <table class="skills-table">
+        <thead>
+          <tr>
+            <th class="skills-col-cmd">Command</th>
+            <th class="skills-col-desc">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for skill in skills %}
+          <tr>
+            <td class="skills-cmd"><code>{{ skill.command }}</code></td>
+            <td class="skills-desc">{{ skill.description }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% endfor %}
+
+</div>
+
+<style>
+.skills-section {
+  margin-bottom: var(--space-8, 2rem);
+}
+
+.skills-category-heading {
+  font-size: var(--fs-h4, 0.9rem);
+  font-weight: var(--fw-semibold, 600);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary, #8B82A4);
+  margin: 0 0 var(--space-3, 0.5rem);
+}
+
+.skills-table-wrap {
+  border: 1px solid var(--border-subtle, #1e1e1e);
+  border-radius: var(--radius-md, 8px);
+  overflow: hidden;
+}
+
+.skills-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-body-sm, 0.83rem);
+}
+
+.skills-table thead {
+  background: var(--bg-surface, #0e0e0e);
+  border-bottom: 1px solid var(--border-subtle, #1e1e1e);
+}
+
+.skills-table th {
+  text-align: left;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-tertiary, #8B82A4);
+}
+
+.skills-table td {
+  padding: 0.5rem 0.85rem;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border-subtle, #161616);
+  color: var(--text-secondary, #C8C0DA);
+}
+
+.skills-table tr:last-child td {
+  border-bottom: none;
+}
+
+.skills-table tr:hover td {
+  background: var(--bg-hover, rgba(124,58,237,0.05));
+}
+
+.skills-col-cmd { width: 240px; }
+
+.skills-cmd code {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.82rem;
+  color: var(--ike-soft-lavender, #B497FF);
+  background: var(--bg-inset, #111);
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.skills-desc {
+  color: var(--text-secondary, #C8C0DA);
+  line-height: 1.5;
+}
+</style>
+{% endblock %}

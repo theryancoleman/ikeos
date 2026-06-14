@@ -5,6 +5,7 @@ from app.services.vault import (
     get_vault_graph,
 )
 from app.services.umbrella import get_components
+from app.services.skills import get_skills_by_category
 
 bp = Blueprint("browse", __name__)
 
@@ -108,6 +109,12 @@ def update_project_settings(slug):
     else:
         flash(f"Could not save settings for '{slug}'.")
     return redirect(url_for("browse.settings"))
+
+
+@bp.route("/skills")
+def skills():
+    categories = get_skills_by_category()
+    return render_template("skills.html", categories=categories)
 
 
 @bp.route("/graph")

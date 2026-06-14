@@ -1095,6 +1095,21 @@ code, pre, kbd, samp { font-family: var(--font-mono); font-size: var(--fs-code);
 
 
 
+/* The design system resets appearance:none on all inputs. Restore native rendering
+   for checkboxes and radios so they look like standard browser controls. */
+input[type="checkbox"],
+input[type="radio"] {
+  appearance: auto;
+  -webkit-appearance: auto;
+  width: auto;
+  height: auto;
+  padding: 0;
+  border: revert;
+  background: revert;
+  box-shadow: none;
+  transition: none;
+}
+
 /* ── Nav (Phase 1) ──────────────────────────────────────────────────────── */
 .ike-nav {
   background: rgba(11, 6, 26, 0.65);
@@ -1182,8 +1197,6 @@ a:hover { color: var(--brand-primary); text-decoration: underline; }
 
 /* ── Page header (Phase 2) ──────────────────────────────────────────────── */
 .page-header { margin-bottom: var(--space-9); }
-.page-header-row { display: flex; align-items: center; gap: var(--space-5); }
-.page-header-row h1 { margin: 0; flex: 1; }
 .page-header h1 {
   font-family: var(--font-display);
   font-size: 36px;
@@ -1392,7 +1405,8 @@ button[type="submit"] { margin-top: var(--space-3); }
   cursor: pointer;
   color: var(--text-secondary);
 }
-.type-radio-label input[type="radio"] { accent-color: var(--brand-primary); width: 15px; height: 15px; cursor: pointer; }
+.type-radio-label input[type="radio"],
+.domain-check input[type="checkbox"] { cursor: pointer; }
 
 /* ── Domain checkboxes ───────────────────────────────────────────────────── */
 .field-optional { color: var(--text-muted); font-size: var(--fs-caption); font-weight: 400; }
@@ -1405,7 +1419,6 @@ button[type="submit"] { margin-top: var(--space-3); }
   cursor: pointer;
   color: var(--text-secondary);
 }
-.domain-check input[type="checkbox"] { accent-color: var(--brand-primary); width: 15px; height: 15px; cursor: pointer; }
 .stay-field { margin-top: var(--space-3); }
 
 /* ── Project grid ────────────────────────────────────────────────────────── */
@@ -1493,6 +1506,8 @@ button[type="submit"] { margin-top: var(--space-3); }
 .project-header { display: flex; align-items: center; gap: var(--space-5); margin-bottom: var(--space-3); flex-wrap: wrap; }
 .project-header h1 { margin: 0; }
 .project-header-actions { display: flex; align-items: center; gap: var(--space-3); margin-left: auto; }
+.page-header-row { display: flex; align-items: center; gap: var(--space-5); }
+.page-header-row h1 { margin: 0; flex: 1; }
 
 .entry-group { list-style: none; }
 .entry-row {
@@ -1859,4 +1874,241 @@ button[type="submit"] { margin-top: var(--space-3); }
   .capture-footer button[type="submit"] { width: 100%; justify-content: center; }
 
 }
+
+/* ── Settings page ── */
+.settings-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 2.5rem;
+}
+
+.settings-list {
+  margin-top: 1.5rem;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.settings-header,
+.settings-row {
+  display: grid;
+  grid-template-columns: 180px 1fr 1fr 90px 60px;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+}
+
+.settings-header {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #888;
+  border-bottom: 1px solid #2a2a2a;
+  background: #0e0e0e;
+}
+
+.settings-row {
+  border-bottom: 1px solid #1e1e1e;
+  background: transparent;
+  transition: background 0.1s;
+}
+
+.settings-row:last-child { border-bottom: none; }
+.settings-row:hover { background: #0f0f0f; }
+
+.settings-row-hidden .st-slug code,
+.settings-row-hidden .st-name input,
+.settings-row-hidden .st-desc input {
+  opacity: 0.45;
+}
+
+.st-slug code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.78rem;
+  color: #aaa;
+  background: #1a1a1a;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  word-break: break-all;
+}
+
+.settings-input {
+  width: 100%;
+  background: transparent;
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 0.3rem 0.5rem;
+  color: inherit;
+  font-size: 0.85rem;
+  font-family: inherit;
+  transition: border-color 0.15s;
+}
+
+.settings-input:focus {
+  outline: none;
+  border-color: #555;
+  background: #111;
+}
+
+.settings-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: #888;
+  white-space: nowrap;
+}
+
+.settings-toggle input[type="checkbox"] {
+  cursor: pointer;
+}
+
+.st-action { white-space: nowrap; }
+
+/* ── Graph page ────────────────────────────────────────────────────────────── */
+.graph-page { padding: 1.5rem; }
+
+.graph-layout {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 1rem;
+  align-items: start;
+  margin-top: 1rem;
+}
+
+.graph-canvas-wrap {
+  position: relative;
+  background: #090909;
+  border: 1px solid var(--border-subtle, #222);
+  border-radius: 8px;
+  overflow: hidden;
+  min-height: 520px;
+}
+
+#graph-svg { display: block; width: 100%; }
+
+.graph-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.45rem 0.75rem;
+  border-bottom: 1px solid var(--border-subtle, #1e1e1e);
+  background: #0e0e0e;
+  flex-wrap: wrap;
+}
+
+.graph-filter-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  color: #aaa;
+  cursor: pointer;
+  user-select: none;
+}
+
+.graph-filter-label input[type="checkbox"] { cursor: pointer; }
+
+.graph-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.graph-dot-bug  { background: #ef4444; }
+.graph-dot-idea { background: #a855f7; }
+.graph-dot-note { background: #3b82f6; }
+
+.graph-hint { margin-left: auto; font-size: 0.7rem; color: #555; }
+
+.graph-tooltip {
+  position: absolute;
+  display: none;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.76rem;
+  color: #ddd;
+  pointer-events: none;
+  max-width: 240px;
+  line-height: 1.4;
+  z-index: 20;
+}
+
+.graph-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  font-size: 0.82rem;
+  color: #666;
+}
+
+/* ── Health sidebar ─────────────────────────────────────────────────────────── */
+.graph-health { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.health-section {
+  border: 1px solid var(--border-subtle, #222);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.health-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.75rem;
+  background: #0e0e0e;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #777;
+  border-bottom: 1px solid var(--border-subtle, #1e1e1e);
+}
+
+.health-badge {
+  background: #222;
+  color: #bbb;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 10px;
+  min-width: 22px;
+  text-align: center;
+}
+
+.health-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.health-item {
+  display: flex;
+  flex-direction: column;
+  padding: 0.35rem 0.75rem;
+  border-bottom: 1px solid #161616;
+  font-size: 0.76rem;
+}
+
+.health-item:last-child { border-bottom: none; }
+
+.health-item a { color: #ccc; text-decoration: none; }
+.health-item a:hover { color: #fff; }
+
+.health-item-broken { color: #777; font-family: monospace; font-size: 0.7rem; }
+
+.health-sub { color: #555; font-size: 0.68rem; margin-top: 1px; }
+
+.health-empty { padding: 0.5rem 0.75rem; color: #444; font-size: 0.76rem; }
 

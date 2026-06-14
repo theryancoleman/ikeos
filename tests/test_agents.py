@@ -91,7 +91,7 @@ def test_toggle_autonomous_mode_proxy(client, mocker):
 def test_home_page_renders(client, mocker):
     mocker.patch("app.routes.agents.requests.request",
                  return_value=_mock_response([MOCK_SESSION]))
-    resp = client.get("/")
+    resp = client.get("/dashboard")
     assert resp.status_code == 200
     assert b"Sessions" in resp.data
 
@@ -99,7 +99,7 @@ def test_home_page_renders(client, mocker):
 def test_home_page_has_capture_column(client, mocker):
     mocker.patch("app.routes.agents.requests.request",
                  return_value=_mock_response([MOCK_SESSION]))
-    resp = client.get("/")
+    resp = client.get("/dashboard")
     assert b"cap-project" in resp.data
 
 

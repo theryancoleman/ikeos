@@ -2,6 +2,21 @@
    All tokens come from the vendored design system. Do not add :root{} here. */
 @import url("ikeos/styles.css");
 
+/* The design system resets appearance:none on all inputs. Restore native rendering
+   for checkboxes and radios so they look like standard browser controls. */
+input[type="checkbox"],
+input[type="radio"] {
+  appearance: auto;
+  -webkit-appearance: auto;
+  width: auto;
+  height: auto;
+  padding: 0;
+  border: revert;
+  background: revert;
+  box-shadow: none;
+  transition: none;
+}
+
 /* ── Nav (Phase 1) ──────────────────────────────────────────────────────── */
 .ike-nav {
   background: rgba(11, 6, 26, 0.65);
@@ -298,7 +313,7 @@ button[type="submit"] { margin-top: var(--space-3); }
   color: var(--text-secondary);
 }
 .type-radio-label input[type="radio"],
-.domain-check input[type="checkbox"] { accent-color: var(--brand-primary); width: 15px; height: 15px; cursor: pointer; }
+.domain-check input[type="checkbox"] { cursor: pointer; }
 
 /* ── Domain checkboxes ───────────────────────────────────────────────────── */
 .field-optional { color: var(--text-muted); font-size: var(--fs-caption); font-weight: 400; }
@@ -854,9 +869,7 @@ button[type="submit"] { margin-top: var(--space-3); }
 }
 
 .settings-toggle input[type="checkbox"] {
-  accent-color: #5865f2;
-  width: 14px;
-  height: 14px;
+  cursor: pointer;
 }
 
 .st-action { white-space: nowrap; }
@@ -903,7 +916,7 @@ button[type="submit"] { margin-top: var(--space-3); }
   user-select: none;
 }
 
-.graph-filter-label input[type="checkbox"] { accent-color: #555; }
+.graph-filter-label input[type="checkbox"] { cursor: pointer; }
 
 .graph-dot {
   width: 9px;

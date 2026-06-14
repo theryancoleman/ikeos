@@ -1,0 +1,195 @@
+# skills_registry.yaml
+# Reference list of all /skills configured in this Claude Code environment.
+# Update this file when skills are added, renamed, or removed.
+# Format: command (the /slash invocation) and description (one-line summary).
+
+skills:
+  # ── Session lifecycle ────────────────────────────────────────────────────
+  - command: /auto
+    category: Session
+    description: Activate autonomous mode — triage vault entries, plan, and implement without clarifying questions.
+
+  - command: /handoff
+    category: Session
+    description: Compact the current session into a recoverable handoff document before context fills.
+
+  - command: /resume-session
+    category: Session
+    description: Load the most recent saved session state and brief before proceeding.
+
+  - command: /save-session
+    category: Session
+    description: Save current session state to a dated file for resumption later.
+
+  - command: /close-session
+    category: Session
+    description: Wrap up the session — document loose ends, update vault entries, mark ready to close.
+
+  - command: /zoom-out
+    category: Session
+    description: Step back and map the full module/caller landscape before diving into a task.
+
+  - command: /caveman
+    category: Session
+    description: Activate ultra-compressed communication mode (~75% token reduction). Say "caveman off" to deactivate.
+
+  # ── Planning & architecture ──────────────────────────────────────────────
+  - command: /plan
+    category: Planning
+    description: Explicitly enter planning mode — invokes the writing-plans skill for structured implementation planning.
+
+  - command: /grill-me
+    category: Planning
+    description: Run a relentless one-question-at-a-time design interview to stress-test a plan and find gaps.
+
+  - command: /improve-codebase-architecture
+    category: Planning
+    description: Run a periodic architectural health review — find deepening opportunities in shallow modules.
+
+  # ── Code review & quality ────────────────────────────────────────────────
+  - command: /code-review
+    category: Quality
+    description: Review the current diff for correctness bugs and simplification opportunities. Use --fix to apply findings.
+
+  - command: /simplify
+    category: Quality
+    description: Review changed code for reuse, simplification, and efficiency cleanups, then apply the fixes.
+
+  - command: /security-review
+    category: Quality
+    description: Audit code and configuration for security vulnerabilities, secrets exposure, and privilege issues.
+
+  - command: /review
+    category: Quality
+    description: Review a pull request for correctness, security, and maintainability.
+
+  # ── Vault & knowledge ────────────────────────────────────────────────────
+  - command: /triage
+    category: Vault
+    description: Interactively review and triage new entries (bugs, ideas, notes) from the Obsidian vault.
+
+  - command: /schema-check
+    category: Vault
+    description: Audit all Obsidian vault entries for tag schema compliance and optionally auto-fix violations.
+
+  - command: /promote
+    category: Vault
+    description: Promote a memory file or session decision into a draft ADR in the Obsidian vault.
+
+  # ── Skills & configuration ───────────────────────────────────────────────
+  - command: /update-config
+    category: Config
+    description: Configure the Claude Code harness via settings.json — add permissions, hooks, env vars, and behaviours.
+
+  - command: /keybindings-help
+    category: Config
+    description: Customize keyboard shortcuts, rebind keys, or add chord bindings in ~/.claude/keybindings.json.
+
+  - command: /fewer-permission-prompts
+    category: Config
+    description: Scan transcripts for common read-only tool calls and add allowlist rules to reduce permission prompts.
+
+  - command: /init
+    category: Config
+    description: Initialize Claude Code configuration for the current project.
+
+  # ── Project lifecycle ────────────────────────────────────────────────────
+  - command: /new-project
+    category: Project
+    description: Scaffold a new project with Docker, Claude config, and stack-appropriate templates.
+
+  - command: /get-better
+    category: Project
+    description: Alias for /identify-domain-skills — audits the project to surface knowledge worth formalizing as skills.
+
+  - command: /identify-domain-skills
+    category: Project
+    description: Audit a project's documentation to surface domain knowledge that should become reusable skills.
+
+  # ── Research & verification ──────────────────────────────────────────────
+  - command: /deep-research
+    category: Research
+    description: Fan-out web searches, fetch sources, adversarially verify claims, and synthesize a cited report.
+
+  - command: /verify
+    category: Research
+    description: Run the app and observe behaviour to confirm a change actually works — not just tests, real execution.
+
+  - command: /run
+    category: Research
+    description: Launch the project's app to see a change working — looks for a project skill or falls back to built-in patterns.
+
+  - command: /claude-api
+    category: Research
+    description: Reference for the Claude API / Anthropic SDK — model IDs, pricing, params, streaming, tool use, caching.
+
+  # ── Automation & scheduling ──────────────────────────────────────────────
+  - command: /loop
+    category: Automation
+    description: Run a prompt or slash command on a recurring interval (e.g. /loop 5m /foo). Omit interval to self-pace.
+
+  - command: /schedule
+    category: Automation
+    description: Create, update, list, or run scheduled remote agents (routines) that execute on a cron schedule.
+
+  # ── Superpowers workflow ─────────────────────────────────────────────────
+  - command: /superpowers:brainstorming
+    category: Superpowers
+    description: Explore user intent, requirements, and design before any implementation — invoke before creative work.
+
+  - command: /superpowers:writing-plans
+    category: Superpowers
+    description: Write a structured implementation plan from a spec or requirements before touching code.
+
+  - command: /superpowers:executing-plans
+    category: Superpowers
+    description: Execute a written implementation plan in a separate session with review checkpoints.
+
+  - command: /superpowers:subagent-driven-development
+    category: Superpowers
+    description: Execute implementation plans using independent subagents — one per task with review between each.
+
+  - command: /superpowers:systematic-debugging
+    category: Superpowers
+    description: Systematically diagnose a bug or test failure before proposing any fix.
+
+  - command: /superpowers:test-driven-development
+    category: Superpowers
+    description: Drive development with tests first — write the failing test, then the implementation.
+
+  - command: /superpowers:requesting-code-review
+    category: Superpowers
+    description: Request a code review before merging — verifies work meets requirements and catches issues.
+
+  - command: /superpowers:receiving-code-review
+    category: Superpowers
+    description: Process an incoming code review — triage findings and apply fixes systematically.
+
+  - command: /superpowers:finishing-a-development-branch
+    category: Superpowers
+    description: Guide completion of a branch — structured options for merge, PR, or cleanup after implementation.
+
+  - command: /superpowers:verification-before-completion
+    category: Superpowers
+    description: Verify all requirements are met before marking work complete — runs a final sanity check.
+
+  - command: /superpowers:using-git-worktrees
+    category: Superpowers
+    description: Set up an isolated git worktree before starting feature work that needs isolation.
+
+  - command: /superpowers:dispatching-parallel-agents
+    category: Superpowers
+    description: Fan out independent tasks to multiple subagents running in parallel.
+
+  - command: /superpowers:writing-skills
+    category: Superpowers
+    description: Author a new reusable skill — captures recurring workflows as invoke-once commands.
+
+  - command: /superpowers:using-superpowers
+    category: Superpowers
+    description: Introduction to the superpowers plugin — how to find and use available skills correctly.
+
+  # ── Plugin skills ────────────────────────────────────────────────────────
+  - command: /frontend-design:frontend-design
+    category: Plugin
+    description: Design and build web UI components — HTML, CSS, and vanilla JS following the IkeOS design system.
