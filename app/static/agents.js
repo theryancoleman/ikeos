@@ -407,5 +407,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (found) openPanel(urlSession);
   }
 
-  document.addEventListener('click', () => closeAllCardMenus());
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.card-menu-btn, .card-dropdown')) closeAllCardMenus();
+  });
 });

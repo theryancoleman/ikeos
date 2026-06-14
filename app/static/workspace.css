@@ -74,6 +74,7 @@ body.workspace-body main {
   flex-shrink: 0;
   background: rgba(27, 17, 48, 0.70);
   backdrop-filter: blur(12px);
+  z-index: 1;
 }
 .col-header h2 {
   margin: 0;
@@ -140,7 +141,7 @@ body.workspace-body main {
   box-shadow: var(--glow-purple-md);
 }
 
-.card-body { padding: 0.75rem 0.875rem; }
+.card-body { padding: 0.75rem 2.25rem 0.75rem 0.875rem; }
 
 .card-name {
   display: flex;
