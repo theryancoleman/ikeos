@@ -712,6 +712,24 @@ body.workspace-body main {
 }
 .modal select option { background: var(--bg-surface); }
 .modal-footer { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem; }
+.modal-launch-opts {
+  margin-bottom: 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.modal-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-transform: none;
+  letter-spacing: 0;
+  font-family: var(--font-sans);
+  padding: 0.1rem 0;
+}
 
 /* ── Empty state ── */
 .empty-state {

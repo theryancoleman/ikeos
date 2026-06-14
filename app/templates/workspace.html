@@ -138,6 +138,16 @@
         <input id="m-dir" name="project_dir" type="text"
                value="/mnt/c/Server/projects/{{ projects[0].slug if projects else '' }}">
       </div>
+      <div class="field modal-launch-opts">
+        <label class="modal-checkbox-label">
+          <input type="checkbox" id="m-rc" name="rc_on_start" checked>
+          <span>Auto-start Remote Control</span>
+        </label>
+        <label class="modal-checkbox-label">
+          <input type="checkbox" id="m-auto" name="auto_on_start">
+          <span>Enable /auto on launch</span>
+        </label>
+      </div>
       <div class="modal-footer">
         <button type="button" class="pill" onclick="closeModal()">Cancel</button>
         <button type="submit" class="pill pill-primary-filled">Start Session</button>
