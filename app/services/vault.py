@@ -39,11 +39,11 @@ def _invalidate_cache() -> None:
 
 VAULT_PATH = Path(os.environ.get("VAULT_PATH", "/vault"))
 
-VALID_TYPES = {"note", "idea", "bug", "decision"}
+VALID_TYPES = {"note", "idea", "bug", "decision", "grill-me"}
 VALID_STATUSES = {"new", "open", "in-progress", "done", "deferred"}
 DECISION_STATUSES = {"proposed", "accepted", "rejected", "superseded"}
-TYPE_FOLDERS = {"note": "notes", "idea": "ideas", "bug": "bugs"}
-TYPE_TAGS = {"note": "documentation", "idea": "enhancement", "bug": "bug", "decision": "decision"}
+TYPE_FOLDERS = {"note": "notes", "idea": "ideas", "bug": "bugs", "grill-me": "grill-me"}
+TYPE_TAGS = {"note": "documentation", "idea": "enhancement", "bug": "bug", "decision": "decision", "grill-me": "grill-me"}
 
 
 def _read_project_meta(slug: str) -> dict:
@@ -385,7 +385,7 @@ def _read_all_entries() -> list[dict]:
     entries = []
     for proj in get_projects():
         proj_dir = VAULT_PATH / "projects" / proj
-        for folder in ("bugs", "ideas", "notes"):
+        for folder in ("bugs", "ideas", "notes", "grill-me"):
             type_dir = proj_dir / folder
             if not type_dir.exists():
                 continue
@@ -476,6 +476,8 @@ def update_entry_status_generic(entry_type: str, project: str | None, filename: 
             base_path = VAULT_PATH / "projects" / project / "ideas"
         elif entry_type == "note":
             base_path = VAULT_PATH / "projects" / project / "notes"
+        elif entry_type == "grill-me":
+            base_path = VAULT_PATH / "projects" / project / "grill-me"
         else:
             return False
 

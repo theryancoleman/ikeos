@@ -512,3 +512,30 @@ def test_get_vault_graph_wikilink_resolves_to_hub(tmp_path):
     link_targets = {lnk["target"] for lnk in result["links"]}
     assert "ikeos" in link_targets
     assert not any(bl["broken_ref"] == "ikeos" for bl in result["health"]["broken_links"])
+
+
+def test_write_entry_creates_grill_me_in_correct_folder(vault):
+    with patch("app.services.vault.VAULT_PATH", vault):
+        from app.services.vault import write_entry
+        write_entry({"type": "grill-me", "project": "bcr-waivers", "title": "Half baked idea", "body": "Not sure yet"})
+
+    files = list((vault / "projects" / "bcr-waivers" / "grill-me").glob("*.md"))
+    assert len(files) == 1
+    import frontmatter as fm
+    post = fm.load(files[0])
+    assert post.metadata["type"] == "grill-me"
+    assert post.metadata["status"] == "new"
+
+
+def test_read_entries_includes_grill_me_folder(vault):
+    grill_dir = vault / "projects" / "bcr-waivers" / "grill-me"
+    grill_dir.mkdir(parents=True)
+    (grill_dir / "2026-06-14-half-formed.md").write_text(
+        "---\ntype: grill-me\ntitle: Half formed\nproject: bcr-waivers\nstatus: new\n"
+        "created: 2026-06-14T10:00:00\ntags: [grill-me]\n---\n## Description\nNeeds work\n"
+    )
+    with patch("app.services.vault.VAULT_PATH", vault):
+        from app.services.vault import read_entries, _invalidate_cache
+        _invalidate_cache()
+        entries = read_entries(project="bcr-waivers")
+    assert any(e["type"] == "grill-me" for e in entries)
