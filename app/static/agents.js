@@ -385,14 +385,26 @@ function updateModalDir(slug) {
 
 async function submitNewSession(e) {
   e.preventDefault();
-  const fd = new FormData(e.target);
-  await api('POST', '/sessions', {
+  const fd     = new FormData(e.target);
+  const rcOn   = document.getElementById('m-rc')?.checked   ?? false;
+  const autoOn = document.getElementById('m-auto')?.checked ?? false;
+
+  const resp = await api('POST', '/sessions', {
     name:           fd.get('name'),
     project:        fd.get('project'),
     project_dir:    fd.get('project_dir'),
     remote_control: false,
   });
   closeModal();
+
+  if (resp.ok && (rcOn || autoOn)) {
+    const session = await resp.json();
+    if (session && session.id) {
+      if (rcOn)   await sendCmd(session.id, '/remote-control');
+      if (autoOn) await sendCmd(session.id, '/auto');
+    }
+  }
+
   await pollSessions();
 }
 
