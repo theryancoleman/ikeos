@@ -93,6 +93,18 @@ skills:
     category: Config
     description: Initialize Claude Code configuration for the current project.
 
+  - command: /deploy-config
+    category: Config
+    description: Deploy changes from global/ to ~/.claude/ — commit first, sync, then verify the version stamp is clean.
+
+  - command: /add-permission
+    category: Config
+    description: Permanently allow a Bash command or tool in the global permission baseline (never the project-local file).
+
+  - command: /wire-remote
+    category: Config
+    description: Set up or fix a git remote for pushing from WSL2 — switches HTTPS remotes to SSH, verifies the SSH key, then pushes.
+
   # ── Project lifecycle ────────────────────────────────────────────────────
   - command: /new-project
     category: Project
