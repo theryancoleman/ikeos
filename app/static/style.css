@@ -148,6 +148,8 @@ input[type="radio"] {
 
 /* Settings gear icon */
 .nav-settings { font-size: 16px; padding: 2px 2px; }
+.nav-settings-label { display: none; }
+@media (max-width: 768px) { .nav-settings-label { display: inline; } }
 
 /* ── Layout ─────────────────────────────────────────────────────────────── */
 main { max-width: none; margin: 0; padding: 2rem 2.5rem; }
@@ -951,6 +953,52 @@ button[type="submit"] { margin-top: var(--space-3); }
 
 .st-action { white-space: nowrap; }
 
+/* ── Settings: hidden projects collapsible ───────────────────────────────── */
+.settings-hidden-section {
+  margin-top: 0.5rem;
+}
+
+.settings-hidden-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #888;
+  padding: 0.5rem 0;
+  user-select: none;
+  list-style: none;
+}
+
+.settings-hidden-summary::-webkit-details-marker { display: none; }
+
+.settings-hidden-summary::before {
+  content: '▶';
+  font-size: 0.6rem;
+  color: #555;
+  transition: transform 0.15s;
+  display: inline-block;
+}
+
+.settings-hidden-section[open] .settings-hidden-summary::before {
+  transform: rotate(90deg);
+}
+
+.settings-hidden-count {
+  background: #2a2a2a;
+  border-radius: 999px;
+  padding: 0.1rem 0.45rem;
+  font-size: 0.65rem;
+  color: #666;
+}
+
+.settings-list-hidden {
+  margin-top: 0.75rem;
+}
+
 /* ── Graph page ────────────────────────────────────────────────────────────── */
 .graph-page { padding: 1.5rem; }
 
@@ -1002,9 +1050,10 @@ button[type="submit"] { margin-top: var(--space-3); }
   display: inline-block;
   flex-shrink: 0;
 }
-.graph-dot-bug  { background: #ef4444; }
-.graph-dot-idea { background: #a855f7; }
-.graph-dot-note { background: #3b82f6; }
+.graph-dot-bug      { background: #ef4444; }
+.graph-dot-idea     { background: #a855f7; }
+.graph-dot-note     { background: #3b82f6; }
+.graph-dot-grill-me { background: #f59e0b; }
 
 .graph-hint { margin-left: auto; font-size: 0.7rem; color: #555; }
 
