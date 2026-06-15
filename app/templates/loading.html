@@ -425,7 +425,7 @@
   const welcomeEl = document.getElementById(‘ls-welcome’);
   const screenEl  = document.getElementById(‘ls-screen’);
 
-  let startTime    = null;
+  const wallStart  = Date.now(); // wall-clock start: advances even when backgrounded
   let captionIndex = 0;
   let rafHandle    = null;
   let done         = false;
@@ -438,9 +438,10 @@
     captionEl.style.animation = ‘’;
   }
 
-  function tick(ts) {
-    if (!startTime) startTime = ts;
-    const elapsed = ts - startTime;
+  function tick() {
+    // Use Date.now() so elapsed reflects real wall-clock time even after
+    // the app is backgrounded/suspended (performance.now() pauses on iOS).
+    const elapsed  = Date.now() - wallStart;
     const progress = Math.min(elapsed / DURATION, 1);
 
     // Update fill

@@ -1241,6 +1241,8 @@ input[type="radio"] {
 
 /* Settings gear icon */
 .nav-settings { font-size: 16px; padding: 2px 2px; }
+.nav-settings-label { display: none; }
+@media (max-width: 768px) { .nav-settings-label { display: inline; } }
 
 /* ── Layout ─────────────────────────────────────────────────────────────── */
 main { max-width: none; margin: 0; padding: 2rem 2.5rem; }
