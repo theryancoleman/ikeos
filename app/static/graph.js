@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  var TYPE_COLOR = { bug: '#ef4444', idea: '#a855f7', note: '#3b82f6', hub: '#e2c97e', component: '#6b7280' };
+  var TYPE_COLOR = { bug: '#ef4444', idea: '#a855f7', note: '#3b82f6', 'grill-me': '#f59e0b', hub: '#e2c97e', component: '#6b7280' };
   var STATUS_OPACITY = { done: 0.25, deferred: 0.2 };
   var URGENCY_RADIUS = { critical: 12, high: 10, medium: 8, low: 6 };
 
@@ -94,16 +94,18 @@
   // ── Force graph ─────────────────────────────────────────────────────────────
 
   function filteredData() {
-    var showBugs  = document.getElementById('filter-bugs').checked;
-    var showIdeas = document.getElementById('filter-ideas').checked;
-    var showNotes = document.getElementById('filter-notes').checked;
+    var showBugs     = document.getElementById('filter-bugs').checked;
+    var showIdeas    = document.getElementById('filter-ideas').checked;
+    var showNotes    = document.getElementById('filter-notes').checked;
+    var showGrillMe  = document.getElementById('filter-grill-me').checked;
 
     var visibleIds = new Set(
       allNodes
         .filter(function (n) {
-          return (n.type === 'bug'  && showBugs)  ||
-                 (n.type === 'idea' && showIdeas) ||
-                 (n.type === 'note' && showNotes) ||
+          return (n.type === 'bug'      && showBugs)    ||
+                 (n.type === 'idea'     && showIdeas)   ||
+                 (n.type === 'note'     && showNotes)   ||
+                 (n.type === 'grill-me' && showGrillMe) ||
                  n.type === 'hub';
         })
         .map(function (n) { return n.id; })
@@ -309,7 +311,7 @@
       renderHealth(data.health);
       renderGraph();
 
-      ['filter-bugs', 'filter-ideas', 'filter-notes'].forEach(function (id) {
+      ['filter-bugs', 'filter-ideas', 'filter-notes', 'filter-grill-me'].forEach(function (id) {
         document.getElementById(id).addEventListener('change', renderGraph);
       });
 

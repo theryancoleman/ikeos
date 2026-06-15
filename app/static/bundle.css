@@ -2143,9 +2143,10 @@ button[type="submit"] { margin-top: var(--space-3); }
   display: inline-block;
   flex-shrink: 0;
 }
-.graph-dot-bug  { background: #ef4444; }
-.graph-dot-idea { background: #a855f7; }
-.graph-dot-note { background: #3b82f6; }
+.graph-dot-bug      { background: #ef4444; }
+.graph-dot-idea     { background: #a855f7; }
+.graph-dot-note     { background: #3b82f6; }
+.graph-dot-grill-me { background: #f59e0b; }
 
 .graph-hint { margin-left: auto; font-size: 0.7rem; color: #555; }
 
