@@ -71,3 +71,15 @@ When wikilinks between entries exist, the graph uses actual edges. For the commo
 ## 2026-06-13: Native HTML radio buttons replace CSS-hidden chip pattern on capture form
 
 The original capture form used hidden `<input type="radio">` elements styled with `.type-chips` — clicking the `<label>` toggled a chip appearance. On iOS Safari, `pointer-events: none` on hidden inputs breaks the tap target, making type selection unreliable on mobile. Replaced with standard wrapped-label radios (`.type-radio-label`) using `accent-color` for brand tinting. Accessible: `role="radiogroup"` + `aria-labelledby`.
+
+## 2026-06-14: Nav subnav uses ::before bridge pseudo-element to fix hover gap
+
+The subnav is positioned with `top: calc(100% + 10px)`, creating a 10px visual gap between the nav link and the dropdown. Moving the mouse across this gap exits the `.nav-item` hover zone, collapsing the dropdown before the user reaches it. A transparent `::before` pseudo-element on `.nav-subnav` fills the gap, keeping the hover zone continuous without affecting appearance.
+
+## 2026-06-14: grill-me is a first-class entry type with its own vault folder
+
+Rather than storing grill-me entries in `notes/` with a distinguishing type field, `grill-me` gets its own `grill-me/` folder alongside `bugs/`, `ideas/`, `notes/`. This keeps the folder-per-type pattern consistent across the vault and makes the folder structure self-documenting. `TYPE_FOLDERS` drives both `write_entry()` and the scan loop, so the folder name is defined in one place.
+
+## 2026-06-14: _read_all_entries driven from TYPE_FOLDERS.values(), not a hardcoded tuple
+
+Previously `_read_all_entries` iterated a hardcoded `("bugs", "ideas", "notes")` tuple. When `grill-me` was added to `TYPE_FOLDERS`, two other functions (`read_entry`, `update_entry_status`) were found to have the same hardcoded tuple and were missed in the initial commit. Changed `_read_all_entries` to `set(TYPE_FOLDERS.values())` so any future type added to `TYPE_FOLDERS` is automatically scanned. `read_entry` and `update_entry_status` were also patched to include `"grill-me"` explicitly.
