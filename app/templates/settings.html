@@ -18,9 +18,9 @@
       <div>Hidden</div>
       <div></div>
     </div>
-    {% for p in projects %}
+    {% for p in projects if not p.hidden %}
     <form method="POST" action="{{ url_for('browse.update_project_settings', slug=p.slug) }}"
-          class="settings-row{% if p.hidden %} settings-row-hidden{% endif %}">
+          class="settings-row">
       <div class="st-slug"><code>{{ p.slug }}</code></div>
       <div class="st-name">
         <input type="text" name="name" value="{{ p.name }}"
@@ -42,6 +42,47 @@
     </form>
     {% endfor %}
   </div>
+
+  {% set hidden_projects = projects | selectattr('hidden') | list %}
+  {% if hidden_projects %}
+  <details class="settings-hidden-section">
+    <summary class="settings-hidden-summary">
+      Hidden projects <span class="settings-hidden-count">{{ hidden_projects | length }}</span>
+    </summary>
+    <div class="settings-list settings-list-hidden">
+      <div class="settings-header">
+        <div>Slug</div>
+        <div>Display Name</div>
+        <div>Description</div>
+        <div>Hidden</div>
+        <div></div>
+      </div>
+      {% for p in hidden_projects %}
+      <form method="POST" action="{{ url_for('browse.update_project_settings', slug=p.slug) }}"
+            class="settings-row settings-row-hidden">
+        <div class="st-slug"><code>{{ p.slug }}</code></div>
+        <div class="st-name">
+          <input type="text" name="name" value="{{ p.name }}"
+                 class="settings-input" required autocomplete="off">
+        </div>
+        <div class="st-desc">
+          <input type="text" name="description" value="{{ p.description or '' }}"
+                 class="settings-input" placeholder="Optional description…" autocomplete="off">
+        </div>
+        <div class="st-hidden">
+          <label class="settings-toggle" title="Hide from nav and dropdowns">
+            <input type="checkbox" name="hidden" {% if p.hidden %}checked{% endif %}>
+            <span class="toggle-label">Hidden</span>
+          </label>
+        </div>
+        <div class="st-action">
+          <button type="submit" class="pill pill-primary">Save</button>
+        </div>
+      </form>
+      {% endfor %}
+    </div>
+  </details>
+  {% endif %}
 
 </div>
 {% endblock %}
