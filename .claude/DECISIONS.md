@@ -83,3 +83,7 @@ Rather than storing grill-me entries in `notes/` with a distinguishing type fiel
 ## 2026-06-14: _read_all_entries driven from TYPE_FOLDERS.values(), not a hardcoded tuple
 
 Previously `_read_all_entries` iterated a hardcoded `("bugs", "ideas", "notes")` tuple. When `grill-me` was added to `TYPE_FOLDERS`, two other functions (`read_entry`, `update_entry_status`) were found to have the same hardcoded tuple and were missed in the initial commit. Changed `_read_all_entries` to `set(TYPE_FOLDERS.values())` so any future type added to `TYPE_FOLDERS` is automatically scanned. `read_entry` and `update_entry_status` were also patched to include `"grill-me"` explicitly.
+
+## 2026-06-15: bundle.css is generated — always edit style.css, never bundle.css
+
+`scripts/bundle_css.py` runs during `docker build` and overwrites `app/static/bundle.css` by inlining all `@import` chains from `app/static/style.css`. Edits made directly to `bundle.css` are silently discarded on the next build. The source of truth for all app CSS is `app/static/style.css` (and `app/static/ikeos/styles.css` for design-system tokens). The committed `bundle.css` in git reflects the last build output but is not the editing target.
