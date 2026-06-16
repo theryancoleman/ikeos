@@ -1,4 +1,5 @@
 import os
+from datetime import date
 from pathlib import Path
 
 import yaml
@@ -9,6 +10,26 @@ _REGISTRY_PATH = Path(
         Path(__file__).parent.parent.parent / "skills_registry.yaml",
     )
 )
+
+_BADGE_WINDOW_DAYS = 14
+
+
+def _compute_badge(skill: dict) -> str | None:
+    today = date.today()
+
+    added = skill.get("added")
+    if added is not None:
+        added_date = added if isinstance(added, date) else date.fromisoformat(str(added))
+        if (today - added_date).days <= _BADGE_WINDOW_DAYS:
+            return "new"
+
+    updated = skill.get("updated")
+    if updated is not None:
+        updated_date = updated if isinstance(updated, date) else date.fromisoformat(str(updated))
+        if (today - updated_date).days <= _BADGE_WINDOW_DAYS:
+            return "updated"
+
+    return None
 
 
 def get_skills() -> list[dict]:
@@ -24,5 +45,7 @@ def get_skills_by_category() -> dict[str, list[dict]]:
     grouped: dict[str, list[dict]] = {}
     for skill in skills:
         cat = skill.get("category", "Other")
-        grouped.setdefault(cat, []).append(skill)
+        skill_entry = dict(skill)
+        skill_entry["badge"] = _compute_badge(skill)
+        grouped.setdefault(cat, []).append(skill_entry)
     return grouped

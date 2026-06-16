@@ -1,50 +1,62 @@
 # skills_registry.yaml
 # Reference list of all /skills configured in this Claude Code environment.
 # Update this file when skills are added, renamed, or removed.
-# Format: command (the /slash invocation) and description (one-line summary).
+# Format: command (the /slash invocation), description, and optional added/updated dates.
+# Dates drive "New" / "Updated" badges on the Skills page (window: 14 days).
 
 skills:
   # ── Session lifecycle ────────────────────────────────────────────────────
   - command: /auto
     category: Session
     description: Activate autonomous mode — triage vault entries, plan, and implement without clarifying questions.
+    added: '2026-06-05'
 
   - command: /handoff
     category: Session
     description: Compact the current session into a recoverable handoff document before context fills.
+    added: '2026-06-14'
 
   - command: /resume-session
     category: Session
     description: Load the most recent saved session state and brief before proceeding.
+    added: '2026-06-14'
 
   - command: /save-session
     category: Session
     description: Save current session state to a dated file for resumption later.
+    added: '2026-06-14'
 
   - command: /close-session
     category: Session
     description: Wrap up the session — document loose ends, update vault entries, mark ready to close.
+    added: '2026-06-10'
+    updated: '2026-06-15'
 
   - command: /zoom-out
     category: Session
     description: Step back and map the full module/caller landscape before diving into a task.
+    added: '2026-06-14'
 
   - command: /caveman
     category: Session
     description: Activate ultra-compressed communication mode (~75% token reduction). Say "caveman off" to deactivate.
+    added: '2026-06-14'
 
   # ── Planning & architecture ──────────────────────────────────────────────
   - command: /plan
     category: Planning
     description: Explicitly enter planning mode — invokes the writing-plans skill for structured implementation planning.
+    updated: '2026-06-10'
 
   - command: /grill-me
     category: Planning
     description: Run a relentless one-question-at-a-time design interview to stress-test a plan and find gaps.
+    added: '2026-06-14'
 
   - command: /improve-codebase-architecture
     category: Planning
     description: Run a periodic architectural health review — find deepening opportunities in shallow modules.
+    added: '2026-06-14'
 
   # ── Code review & quality ────────────────────────────────────────────────
   - command: /code-review
@@ -67,14 +79,17 @@ skills:
   - command: /triage
     category: Vault
     description: Interactively review and triage new entries (bugs, ideas, notes) from the Obsidian vault.
+    updated: '2026-06-15'
 
   - command: /schema-check
     category: Vault
     description: Audit all Obsidian vault entries for tag schema compliance and optionally auto-fix violations.
+    updated: '2026-06-13'
 
   - command: /promote
     category: Vault
     description: Promote a memory file or session decision into a draft ADR in the Obsidian vault.
+    updated: '2026-06-11'
 
   # ── Skills & configuration ───────────────────────────────────────────────
   - command: /update-config
@@ -96,19 +111,28 @@ skills:
   - command: /deploy-config
     category: Config
     description: Deploy changes from global/ to ~/.claude/ — commit first, sync, then verify the version stamp is clean.
+    added: '2026-06-14'
 
   - command: /add-permission
     category: Config
     description: Permanently allow a Bash command or tool in the global permission baseline (never the project-local file).
+    added: '2026-06-14'
 
   - command: /wire-remote
     category: Config
     description: Set up or fix a git remote for pushing from WSL2 — switches HTTPS remotes to SSH, verifies the SSH key, then pushes.
+    added: '2026-06-14'
+
+  - command: /rollback
+    category: Config
+    description: Revert a bad skill deployment, salvage learnings, and log the regression event to the metrics store.
+    added: '2026-06-15'
 
   # ── Project lifecycle ────────────────────────────────────────────────────
   - command: /new-project
     category: Project
     description: Scaffold a new project with Docker, Claude config, and stack-appropriate templates.
+    updated: '2026-06-13'
 
   - command: /get-better
     category: Project
@@ -143,6 +167,11 @@ skills:
   - command: /schedule
     category: Automation
     description: Create, update, list, or run scheduled remote agents (routines) that execute on a cron schedule.
+
+  - command: /deep-research-weekly
+    category: Automation
+    description: Run the weekly external research cycle — fetch sources, generate structured summaries, propose vault entries.
+    added: '2026-06-15'
 
   # ── Superpowers workflow ─────────────────────────────────────────────────
   - command: /superpowers:brainstorming
