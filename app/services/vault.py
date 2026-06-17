@@ -503,6 +503,49 @@ def update_entry_status(project: str, slug: str, new_status: str) -> bool:
     return False
 
 
+_HOUSEKEEPING_ALLOWED_FIELDS: dict[str, set[str]] = {
+    "housekeeping-task": {"enabled", "last_run", "last_error", "consecutive_failures"},
+    "housekeeping-heartbeat": {"last_run", "tasks_run", "tasks_failed", "tasks_skipped"},
+}
+
+
+def update_housekeeping_fields(
+    entry_type: str,
+    project: str,
+    filename: str,
+    fields: dict,
+) -> bool:
+    """Overwrite allowed runtime fields on a housekeeping vault entry."""
+    allowed = _HOUSEKEEPING_ALLOWED_FIELDS.get(entry_type)
+    if allowed is None:
+        return False
+
+    if ".." in filename or "/" in filename or "\\" in filename:
+        return False
+
+    updates = {k: v for k, v in fields.items() if k in allowed}
+    if not updates:
+        return False
+
+    fname = filename if filename.endswith(".md") else f"{filename}.md"
+    filepath = VAULT_PATH / "projects" / project / "housekeeping" / fname
+    if not filepath.exists():
+        return False
+
+    try:
+        post = frontmatter.load(filepath)
+        for k, v in updates.items():
+            post.metadata[k] = v
+        temp_filepath = filepath.with_suffix(".tmp")
+        with open(temp_filepath, "w", encoding="utf-8") as f:
+            f.write(frontmatter.dumps(post))
+        temp_filepath.replace(filepath)
+        _invalidate_cache()
+        return True
+    except Exception:
+        return False
+
+
 def update_entry_status_generic(entry_type: str, project: str | None, filename: str, new_status: str) -> bool:
     """Update status for any entry type (task or decision), with byte-identical body preservation."""
     # Validate status based on type

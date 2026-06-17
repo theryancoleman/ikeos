@@ -664,3 +664,90 @@ def test_write_entry_housekeeping_heartbeat_is_singleton(vault):
         write_entry({"type": "housekeeping-heartbeat", "project": "claude-config", "title": "HB"})
     files = list((vault / "projects" / "claude-config" / "housekeeping").glob("*.md"))
     assert len(files) == 1
+
+
+# ============= update_housekeeping_fields tests =============
+
+def test_update_housekeeping_fields_task_enabled_toggle(vault):
+    with patch("app.services.vault.VAULT_PATH", vault):
+        (vault / "projects" / "claude-config").mkdir(parents=True)
+        from app.services.vault import write_entry, update_housekeeping_fields
+        slug = write_entry({
+            "type": "housekeeping-task",
+            "project": "claude-config",
+            "title": "Test task",
+            "body": "",
+            "interval": "weekly",
+            "success_definition": "Done.",
+        })
+        result = update_housekeeping_fields(
+            "housekeeping-task", "claude-config", slug, {"enabled": "false"}
+        )
+        assert result is True
+        post = fm.load(vault / "projects" / "claude-config" / "housekeeping" / f"{slug}.md")
+        assert post.metadata["enabled"] == "false"
+
+
+def test_update_housekeeping_fields_heartbeat(vault):
+    with patch("app.services.vault.VAULT_PATH", vault):
+        (vault / "projects" / "claude-config").mkdir(parents=True)
+        from app.services.vault import write_entry, update_housekeeping_fields
+        write_entry({"type": "housekeeping-heartbeat", "project": "claude-config", "title": "HB"})
+        result = update_housekeeping_fields(
+            "housekeeping-heartbeat", "claude-config", "last-run",
+            {"last_run": "2026-06-17T12:00:00", "tasks_run": "3",
+             "tasks_failed": "0", "tasks_skipped": "1"},
+        )
+        assert result is True
+        post = fm.load(vault / "projects" / "claude-config" / "housekeeping" / "last-run.md")
+        assert post.metadata["last_run"] == "2026-06-17T12:00:00"
+        assert post.metadata["tasks_run"] == "3"
+        assert post.metadata["tasks_skipped"] == "1"
+
+
+def test_update_housekeeping_fields_ignores_disallowed_fields(vault):
+    with patch("app.services.vault.VAULT_PATH", vault):
+        (vault / "projects" / "claude-config").mkdir(parents=True)
+        from app.services.vault import write_entry, update_housekeeping_fields
+        slug = write_entry({
+            "type": "housekeeping-task",
+            "project": "claude-config",
+            "title": "Original",
+            "body": "",
+            "interval": "weekly",
+            "success_definition": "Done.",
+        })
+        # title is not in the allowed set — should be silently ignored
+        update_housekeeping_fields(
+            "housekeeping-task", "claude-config", slug,
+            {"title": "HACKED", "enabled": "false"},
+        )
+        post = fm.load(vault / "projects" / "claude-config" / "housekeeping" / f"{slug}.md")
+        assert post.metadata["title"] == "Original"
+        assert post.metadata["enabled"] == "false"
+
+
+def test_update_housekeeping_fields_invalid_type_returns_false(vault):
+    with patch("app.services.vault.VAULT_PATH", vault):
+        from app.services.vault import update_housekeeping_fields
+        result = update_housekeeping_fields("bug", "claude-config", "any", {"last_run": "2026-06-17"})
+        assert result is False
+
+
+def test_update_housekeeping_fields_missing_file_returns_false(vault):
+    with patch("app.services.vault.VAULT_PATH", vault):
+        (vault / "projects" / "claude-config").mkdir(parents=True)
+        from app.services.vault import update_housekeeping_fields
+        result = update_housekeeping_fields(
+            "housekeeping-task", "claude-config", "nonexistent", {"enabled": "false"}
+        )
+        assert result is False
+
+
+def test_update_housekeeping_fields_path_traversal_returns_false(vault):
+    with patch("app.services.vault.VAULT_PATH", vault):
+        from app.services.vault import update_housekeeping_fields
+        result = update_housekeeping_fields(
+            "housekeeping-task", "claude-config", "../../etc/passwd", {"enabled": "false"}
+        )
+        assert result is False
