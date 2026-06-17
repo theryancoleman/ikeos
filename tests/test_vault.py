@@ -620,3 +620,47 @@ def test_write_entry_housekeeping_task_defaults_interval_to_weekly(vault):
     files = list((vault / "projects" / "claude-config" / "housekeeping").glob("*.md"))
     post = fm.load(files[0])
     assert post.metadata["interval"] == "weekly"
+
+
+# ============= housekeeping-heartbeat write tests =============
+
+def test_write_entry_housekeeping_heartbeat_creates_last_run_md(vault):
+    with patch("app.services.vault.VAULT_PATH", vault):
+        (vault / "projects" / "claude-config").mkdir(parents=True)
+        from app.services.vault import write_entry
+        slug = write_entry({
+            "type": "housekeeping-heartbeat",
+            "project": "claude-config",
+            "title": "Housekeeping Last Run",
+        })
+    heartbeat = vault / "projects" / "claude-config" / "housekeeping" / "last-run.md"
+    assert heartbeat.exists()
+    assert slug == "last-run"
+
+
+def test_write_entry_housekeeping_heartbeat_frontmatter(vault):
+    with patch("app.services.vault.VAULT_PATH", vault):
+        (vault / "projects" / "claude-config").mkdir(parents=True)
+        from app.services.vault import write_entry
+        write_entry({
+            "type": "housekeeping-heartbeat",
+            "project": "claude-config",
+            "title": "Housekeeping Last Run",
+        })
+    post = fm.load(vault / "projects" / "claude-config" / "housekeeping" / "last-run.md")
+    assert post.metadata["type"] == "housekeeping-heartbeat"
+    assert post.metadata["last_run"] == "null"
+    assert post.metadata["tasks_run"] == "0"
+    assert post.metadata["tasks_failed"] == "0"
+    assert post.metadata["tasks_skipped"] == "0"
+
+
+def test_write_entry_housekeeping_heartbeat_is_singleton(vault):
+    """Writing heartbeat twice overwrites, never duplicates."""
+    with patch("app.services.vault.VAULT_PATH", vault):
+        (vault / "projects" / "claude-config").mkdir(parents=True)
+        from app.services.vault import write_entry
+        write_entry({"type": "housekeeping-heartbeat", "project": "claude-config", "title": "HB"})
+        write_entry({"type": "housekeeping-heartbeat", "project": "claude-config", "title": "HB"})
+    files = list((vault / "projects" / "claude-config" / "housekeeping").glob("*.md"))
+    assert len(files) == 1

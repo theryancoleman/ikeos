@@ -353,6 +353,27 @@ def write_entry(data: dict) -> str:
             f.write(frontmatter.dumps(post))
         _invalidate_cache()
         return slug
+    elif entry_type == "housekeeping-heartbeat":
+        project = data.get("project", "")
+        target_dir = VAULT_PATH / "projects" / project / "housekeeping"
+        target_dir.mkdir(parents=True, exist_ok=True)
+        metadata = {
+            "title": "Housekeeping Last Run",
+            "type": "housekeeping-heartbeat",
+            "project": project,
+            "last_run": "null",
+            "tasks_run": "0",
+            "tasks_failed": "0",
+            "tasks_skipped": "0",
+            "created": datetime.now().isoformat(timespec="seconds"),
+            "tags": ["housekeeping-heartbeat", project],
+        }
+        post = frontmatter.Post("", **metadata)
+        filepath = target_dir / "last-run.md"  # singleton — fixed name, no date prefix
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(frontmatter.dumps(post))
+        _invalidate_cache()
+        return "last-run"
     else:
         folder = TYPE_FOLDERS[entry_type]
         target_dir = VAULT_PATH / "projects" / project / folder
