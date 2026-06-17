@@ -84,6 +84,14 @@ Rather than storing grill-me entries in `notes/` with a distinguishing type fiel
 
 Previously `_read_all_entries` iterated a hardcoded `("bugs", "ideas", "notes")` tuple. When `grill-me` was added to `TYPE_FOLDERS`, two other functions (`read_entry`, `update_entry_status`) were found to have the same hardcoded tuple and were missed in the initial commit. Changed `_read_all_entries` to `set(TYPE_FOLDERS.values())` so any future type added to `TYPE_FOLDERS` is automatically scanned. `read_entry` and `update_entry_status` were also patched to include `"grill-me"` explicitly.
 
+## 2026-06-17: workspace.css is now imported into style.css (part of the bundle)
+
+Previously workspace.css was linked only from workspace.html, so `.pill`, `.session-card`, `.card-footer` and other shared UI classes were unavailable on other pages (Status, Skills, etc.). Adding `@import url("workspace.css")` to style.css makes these classes available everywhere via bundle.css. workspace.html still links workspace.css directly, which is harmless (CSS is idempotent).
+
+## 2026-06-17: Container protection stored in ~/.claude-protected-containers.json
+
+The session manager persists protected container names to `~/.claude-protected-containers.json` (alongside `~/.claude-sessions.json`). Protected containers cannot be restarted or stopped via the API (403). The `PROTECTED_CONTAINERS` env var provides defaults without requiring a pre-existing file. Protection state flows through `GET /infrastructure` as `"protected": bool` per container.
+
 ## 2026-06-15: bundle.css is generated — always edit style.css, never bundle.css
 
 `scripts/bundle_css.py` runs during `docker build` and overwrites `app/static/bundle.css` by inlining all `@import` chains from `app/static/style.css`. Edits made directly to `bundle.css` are silently discarded on the next build. The source of truth for all app CSS is `app/static/style.css` (and `app/static/ikeos/styles.css` for design-system tokens). The committed `bundle.css` in git reflects the last build output but is not the editing target.
