@@ -666,3 +666,64 @@ def test_capture_json_accepts_grill_me_type(client, tmp_path, monkeypatch):
     assert resp.status_code == 200
     files = list((tmp_path / "projects" / "bcr-waivers" / "grill-me").glob("*.md"))
     assert len(files) == 1
+
+
+# ============= housekeeping-task capture_json tests =============
+
+def test_capture_json_housekeeping_task(client, tmp_path, monkeypatch):
+    import app.services.vault as v
+    monkeypatch.setattr(v, "VAULT_PATH", tmp_path)
+    v._invalidate_cache()
+    (tmp_path / "projects" / "claude-config").mkdir(parents=True)
+
+    resp = client.post("/capture/json", json={
+        "type": "housekeeping-task",
+        "project": "claude-config",
+        "title": "Prune vault",
+        "interval": "weekly",
+        "success_definition": "Old entries pruned.",
+    })
+    assert resp.status_code == 200
+    assert resp.get_json()["ok"] is True
+    files = list((tmp_path / "projects" / "claude-config" / "housekeeping").glob("*.md"))
+    assert len(files) == 1
+
+
+def test_capture_json_housekeeping_task_missing_title(client):
+    resp = client.post("/capture/json", json={
+        "type": "housekeeping-task",
+        "project": "claude-config",
+        "interval": "weekly",
+        "success_definition": "Done.",
+    })
+    assert resp.status_code == 400
+
+
+def test_capture_json_housekeeping_task_missing_project(client):
+    resp = client.post("/capture/json", json={
+        "type": "housekeeping-task",
+        "title": "Test",
+        "interval": "weekly",
+        "success_definition": "Done.",
+    })
+    assert resp.status_code == 400
+
+
+def test_capture_json_housekeeping_task_defaults_interval_to_weekly(client, tmp_path, monkeypatch):
+    import app.services.vault as v
+    monkeypatch.setattr(v, "VAULT_PATH", tmp_path)
+    v._invalidate_cache()
+    (tmp_path / "projects" / "claude-config").mkdir(parents=True)
+
+    resp = client.post("/capture/json", json={
+        "type": "housekeeping-task",
+        "project": "claude-config",
+        "title": "Prune vault",
+        "success_definition": "Done.",
+        # interval omitted — should default to weekly
+    })
+    assert resp.status_code == 200
+    files = list((tmp_path / "projects" / "claude-config" / "housekeeping").glob("*.md"))
+    import frontmatter as fm
+    post = fm.load(files[0])
+    assert post.metadata["interval"] == "weekly"

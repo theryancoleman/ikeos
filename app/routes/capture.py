@@ -139,8 +139,8 @@ def capture_json():
 
     if not title:
         return jsonify({"error": "title is required"}), 400
-    if entry_type not in ("note", "idea", "bug", "grill-me"):
-        return jsonify({"error": "type must be note, idea, bug, or grill-me"}), 400
+    if entry_type not in ("note", "idea", "bug", "grill-me", "housekeeping-task"):
+        return jsonify({"error": "type must be note, idea, bug, grill-me, or housekeeping-task"}), 400
     if not project:
         return jsonify({"error": "project is required"}), 400
 
@@ -160,6 +160,9 @@ def capture_json():
     elif entry_type == "bug":
         data["severity"] = req.get("severity", "medium")
         data["steps"] = req.get("steps", "")
+    elif entry_type == "housekeeping-task":
+        data["interval"] = req.get("interval", "weekly")
+        data["success_definition"] = req.get("success_definition", "")
 
     write_entry(data)
     return jsonify({"ok": True}), 200
