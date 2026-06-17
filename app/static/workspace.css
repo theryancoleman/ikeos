@@ -878,6 +878,40 @@ body.workspace-body main {
 .ct-actions { white-space: nowrap; }
 .ct-actions .pill { margin-right: 0.3rem; }
 
+.container-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.65rem;
+  margin-top: 0.75rem;
+}
+
+.container-card-protected { opacity: 0.65; }
+.container-card-protected:hover { opacity: 0.85; }
+.ct-lock { font-size: 11px; margin-left: 0.25rem; }
+
+.ct-card-ports {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 130px;
+}
+
+.ct-protect-btn {
+  font-size: 11px;
+  color: var(--text-muted);
+  border-color: var(--border-subtle);
+  background: transparent;
+  margin-left: auto;
+}
+.ct-protect-btn:hover {
+  color: var(--text-secondary);
+  border-color: var(--border-default);
+  background: rgba(180,151,255,0.06);
+}
+
 .container-state { font-size: 11px; font-weight: 500; }
 .state-running { color: var(--sem-discovery); }
 .state-exited  { color: var(--text-muted); }

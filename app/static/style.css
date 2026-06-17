@@ -1,6 +1,7 @@
 /* ʻIkeOS — app/static/style.css
    All tokens come from the vendored design system. Do not add :root{} here. */
 @import url("ikeos/styles.css");
+@import url("workspace.css");
 
 /* The design system resets appearance:none on all inputs. Restore native rendering
    for checkboxes and radios so they look like standard browser controls. */

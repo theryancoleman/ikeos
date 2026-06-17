@@ -166,3 +166,11 @@ def infra_start_container(name):
         return jsonify({"error": "invalid container name"}), 400
     data, status = _proxy("POST", f"/infrastructure/containers/{name}/start")
     return jsonify(data), status
+
+
+@bp.route("/infrastructure/containers/<name>/protection", methods=["PATCH"])
+def infra_toggle_protection(name):
+    if not _CONTAINER_NAME_RE.match(name):
+        return jsonify({"error": "invalid container name"}), 400
+    data, status = _proxy("PATCH", f"/infrastructure/containers/{name}/protection")
+    return jsonify(data), status
