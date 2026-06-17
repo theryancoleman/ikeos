@@ -596,6 +596,27 @@ def test_write_entry_housekeeping_task_frontmatter(vault):
     assert post.metadata["last_run"] == "null"
     assert post.metadata["last_error"] == "null"
     assert post.metadata["consecutive_failures"] == "0"
+    assert post.metadata["title"] == "Prune vault"
+    assert post.metadata["project"] == "claude-config"
+    assert post.metadata["success_definition"] == "Done."
+    assert "created" in post.metadata
     assert "housekeeping-task" in post.metadata["tags"]
     assert "status/enabled" in post.metadata["tags"]
     assert "claude-config" in post.metadata["tags"]
+
+
+def test_write_entry_housekeeping_task_defaults_interval_to_weekly(vault):
+    with patch("app.services.vault.VAULT_PATH", vault):
+        (vault / "projects" / "claude-config").mkdir(parents=True)
+        from app.services.vault import write_entry
+        write_entry({
+            "type": "housekeeping-task",
+            "project": "claude-config",
+            "title": "Test",
+            "body": "",
+            "success_definition": "Done.",
+            # interval omitted — should default to weekly
+        })
+    files = list((vault / "projects" / "claude-config" / "housekeeping").glob("*.md"))
+    post = fm.load(files[0])
+    assert post.metadata["interval"] == "weekly"
