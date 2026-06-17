@@ -141,7 +141,9 @@ def patch_housekeeping():
     if not request.is_json:
         return jsonify({"error": "JSON body required"}), 400
 
-    req_data = request.get_json()
+    req_data = request.get_json(silent=True)
+    if req_data is None:
+        return jsonify({"error": "Invalid or empty JSON body"}), 400
     project = req_data.get("project", "").strip()
     entry_type = req_data.get("type", "").strip()
     filename = req_data.get("filename", "").strip()

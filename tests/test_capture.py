@@ -842,3 +842,27 @@ def test_patch_housekeeping_wrong_token_returns_401(client, tmp_path, monkeypatc
             headers={"X-Capture-Token": "wrong-token"},
         )
     assert resp.status_code == 401
+
+
+def test_patch_housekeeping_empty_fields_returns_400(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("CAPTURE_TOKEN", "test-token-secret")
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        resp = client.patch(
+            "/entries/housekeeping",
+            json={"project": "claude-config", "type": "housekeeping-task",
+                  "filename": "test", "fields": {}},
+            headers={"X-Capture-Token": "test-token-secret"},
+        )
+    assert resp.status_code == 400
+
+
+def test_patch_housekeeping_malformed_json_returns_400(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("CAPTURE_TOKEN", "test-token-secret")
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        resp = client.patch(
+            "/entries/housekeeping",
+            data=b"{not valid json",
+            content_type="application/json",
+            headers={"X-Capture-Token": "test-token-secret"},
+        )
+    assert resp.status_code == 400
