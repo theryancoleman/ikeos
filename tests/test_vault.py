@@ -718,10 +718,11 @@ def test_update_housekeeping_fields_ignores_disallowed_fields(vault):
             "success_definition": "Done.",
         })
         # title is not in the allowed set — should be silently ignored
-        update_housekeeping_fields(
+        result = update_housekeeping_fields(
             "housekeeping-task", "claude-config", slug,
             {"title": "HACKED", "enabled": "false"},
         )
+        assert result is True
         post = fm.load(vault / "projects" / "claude-config" / "housekeeping" / f"{slug}.md")
         assert post.metadata["title"] == "Original"
         assert post.metadata["enabled"] == "false"
@@ -749,5 +750,24 @@ def test_update_housekeeping_fields_path_traversal_returns_false(vault):
         from app.services.vault import update_housekeeping_fields
         result = update_housekeeping_fields(
             "housekeeping-task", "claude-config", "../../etc/passwd", {"enabled": "false"}
+        )
+        assert result is False
+
+
+def test_update_housekeeping_fields_project_traversal_returns_false(vault):
+    with patch("app.services.vault.VAULT_PATH", vault):
+        from app.services.vault import update_housekeeping_fields
+        result = update_housekeeping_fields(
+            "housekeeping-task", "../../etc", "some-task", {"enabled": "false"}
+        )
+        assert result is False
+
+
+def test_update_housekeeping_fields_all_disallowed_fields_returns_false(vault):
+    with patch("app.services.vault.VAULT_PATH", vault):
+        from app.services.vault import update_housekeeping_fields
+        # title is not in the allowed set for housekeeping-task
+        result = update_housekeeping_fields(
+            "housekeeping-task", "claude-config", "some-task", {"title": "HACKED"}
         )
         assert result is False

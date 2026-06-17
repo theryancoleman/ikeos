@@ -523,6 +523,9 @@ def update_housekeeping_fields(
     if ".." in filename or "/" in filename or "\\" in filename:
         return False
 
+    if ".." in project or "/" in project or "\\" in project:
+        return False
+
     updates = {k: v for k, v in fields.items() if k in allowed}
     if not updates:
         return False
@@ -532,17 +535,22 @@ def update_housekeeping_fields(
     if not filepath.exists():
         return False
 
+    temp_filepath = filepath.with_suffix(".tmp")
     try:
         post = frontmatter.load(filepath)
         for k, v in updates.items():
             post.metadata[k] = v
-        temp_filepath = filepath.with_suffix(".tmp")
         with open(temp_filepath, "w", encoding="utf-8") as f:
             f.write(frontmatter.dumps(post))
         temp_filepath.replace(filepath)
         _invalidate_cache()
         return True
     except Exception:
+        logger.exception(
+            "Failed to update housekeeping fields for %s/%s/%s",
+            entry_type, project, filename,
+        )
+        temp_filepath.unlink(missing_ok=True)
         return False
 
 
