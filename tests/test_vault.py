@@ -555,3 +555,47 @@ def test_update_entry_status_generic_grill_me(vault):
     import frontmatter as fm
     post = fm.load(grill_dir / "2026-06-14-test.md")
     assert post.metadata["status"] == "open"
+
+
+# ============= housekeeping-task write tests =============
+
+def test_write_entry_housekeeping_task_creates_file_in_housekeeping_folder(vault):
+    with patch("app.services.vault.VAULT_PATH", vault):
+        (vault / "projects" / "claude-config").mkdir(parents=True)
+        from app.services.vault import write_entry
+        slug = write_entry({
+            "type": "housekeeping-task",
+            "project": "claude-config",
+            "title": "Prune stale entries",
+            "body": "Run the pruner.",
+            "interval": "weekly",
+            "success_definition": "No entries older than 90 days remain.",
+        })
+    files = list((vault / "projects" / "claude-config" / "housekeeping").glob("*.md"))
+    assert len(files) == 1
+    assert slug in files[0].name
+
+
+def test_write_entry_housekeeping_task_frontmatter(vault):
+    with patch("app.services.vault.VAULT_PATH", vault):
+        (vault / "projects" / "claude-config").mkdir(parents=True)
+        from app.services.vault import write_entry
+        write_entry({
+            "type": "housekeeping-task",
+            "project": "claude-config",
+            "title": "Prune vault",
+            "body": "",
+            "interval": "monthly",
+            "success_definition": "Done.",
+        })
+    files = list((vault / "projects" / "claude-config" / "housekeeping").glob("*.md"))
+    post = fm.load(files[0])
+    assert post.metadata["type"] == "housekeeping-task"
+    assert post.metadata["interval"] == "monthly"
+    assert post.metadata["enabled"] == "true"
+    assert post.metadata["last_run"] == "null"
+    assert post.metadata["last_error"] == "null"
+    assert post.metadata["consecutive_failures"] == "0"
+    assert "housekeeping-task" in post.metadata["tags"]
+    assert "status/enabled" in post.metadata["tags"]
+    assert "claude-config" in post.metadata["tags"]

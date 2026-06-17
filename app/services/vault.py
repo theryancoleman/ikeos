@@ -39,7 +39,7 @@ def _invalidate_cache() -> None:
 
 VAULT_PATH = Path(os.environ.get("VAULT_PATH", "/vault"))
 
-VALID_TYPES = {"note", "idea", "bug", "decision", "grill-me"}
+VALID_TYPES = {"note", "idea", "bug", "decision", "grill-me", "housekeeping-task", "housekeeping-heartbeat"}
 VALID_STATUSES = {"new", "open", "in-progress", "done", "deferred"}
 DECISION_STATUSES = {"proposed", "accepted", "rejected", "superseded"}
 TYPE_FOLDERS = {"note": "notes", "idea": "ideas", "bug": "bugs", "grill-me": "grill-me"}
@@ -329,6 +329,30 @@ def write_entry(data: dict) -> str:
         if project:
             metadata["project"] = project
         content = f"## Context\n\n{body}\n\n## Decision\n\n\n## Consequences\n\n"
+    elif entry_type == "housekeeping-task":
+        project = data.get("project", "")
+        target_dir = VAULT_PATH / "projects" / project / "housekeeping"
+        target_dir.mkdir(parents=True, exist_ok=True)
+        metadata = {
+            "title": title,
+            "type": "housekeeping-task",
+            "project": project,
+            "interval": data.get("interval", "weekly"),
+            "enabled": "true",
+            "success_definition": data.get("success_definition", ""),
+            "last_run": "null",
+            "last_error": "null",
+            "consecutive_failures": "0",
+            "created": datetime.now().isoformat(timespec="seconds"),
+            "tags": ["housekeeping-task", project, "status/enabled"],
+        }
+        content = f"## Instructions\n{body}\n"
+        post = frontmatter.Post(content, **metadata)
+        filepath = target_dir / f"{slug}.md"
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(frontmatter.dumps(post))
+        _invalidate_cache()
+        return slug
     else:
         folder = TYPE_FOLDERS[entry_type]
         target_dir = VAULT_PATH / "projects" / project / folder
