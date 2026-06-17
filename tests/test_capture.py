@@ -727,3 +727,118 @@ def test_capture_json_housekeeping_task_defaults_interval_to_weekly(client, tmp_
     import frontmatter as fm
     post = fm.load(files[0])
     assert post.metadata["interval"] == "weekly"
+
+
+# ============= PATCH /entries/housekeeping tests =============
+
+def test_patch_housekeeping_requires_token(client, tmp_path):
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        resp = client.patch("/entries/housekeeping", json={
+            "project": "claude-config",
+            "type": "housekeeping-task",
+            "filename": "test",
+            "fields": {"enabled": "false"},
+        })
+    assert resp.status_code == 401
+
+
+def test_patch_housekeeping_task_enabled(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("CAPTURE_TOKEN", "test-token-secret")
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        (tmp_path / "projects" / "claude-config").mkdir(parents=True)
+        from app.services.vault import write_entry
+        slug = write_entry({
+            "type": "housekeeping-task",
+            "project": "claude-config",
+            "title": "Test task",
+            "body": "",
+            "interval": "weekly",
+            "success_definition": "Done.",
+        })
+        resp = client.patch(
+            "/entries/housekeeping",
+            json={"project": "claude-config", "type": "housekeeping-task",
+                  "filename": slug, "fields": {"enabled": "false"}},
+            headers={"X-Capture-Token": "test-token-secret"},
+        )
+    assert resp.status_code == 200
+    assert "Updated" in resp.get_json().get("message", "")
+
+
+def test_patch_housekeeping_heartbeat(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("CAPTURE_TOKEN", "test-token-secret")
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        (tmp_path / "projects" / "claude-config").mkdir(parents=True)
+        from app.services.vault import write_entry
+        write_entry({"type": "housekeeping-heartbeat", "project": "claude-config", "title": "HB"})
+        resp = client.patch(
+            "/entries/housekeeping",
+            json={"project": "claude-config", "type": "housekeeping-heartbeat",
+                  "filename": "last-run",
+                  "fields": {"last_run": "2026-06-17T12:00:00", "tasks_run": "5",
+                              "tasks_failed": "1", "tasks_skipped": "2"}},
+            headers={"X-Capture-Token": "test-token-secret"},
+        )
+    assert resp.status_code == 200
+
+
+def test_patch_housekeeping_invalid_type_returns_400(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("CAPTURE_TOKEN", "test-token-secret")
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        resp = client.patch(
+            "/entries/housekeeping",
+            json={"project": "claude-config", "type": "bug",
+                  "filename": "test", "fields": {"enabled": "false"}},
+            headers={"X-Capture-Token": "test-token-secret"},
+        )
+    assert resp.status_code == 400
+
+
+def test_patch_housekeeping_missing_entry_returns_404(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("CAPTURE_TOKEN", "test-token-secret")
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        (tmp_path / "projects" / "claude-config").mkdir(parents=True)
+        resp = client.patch(
+            "/entries/housekeeping",
+            json={"project": "claude-config", "type": "housekeeping-task",
+                  "filename": "nonexistent", "fields": {"enabled": "false"}},
+            headers={"X-Capture-Token": "test-token-secret"},
+        )
+    assert resp.status_code == 404
+
+
+def test_patch_housekeeping_path_traversal_returns_400(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("CAPTURE_TOKEN", "test-token-secret")
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        resp = client.patch(
+            "/entries/housekeeping",
+            json={"project": "claude-config", "type": "housekeeping-task",
+                  "filename": "../../etc/passwd", "fields": {"enabled": "false"}},
+            headers={"X-Capture-Token": "test-token-secret"},
+        )
+    assert resp.status_code == 400
+
+
+def test_patch_housekeeping_requires_json_body(client, tmp_path, monkeypatch):
+    """PATCH /entries/housekeeping rejects form data — JSON body only."""
+    monkeypatch.setenv("CAPTURE_TOKEN", "test-token-secret")
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        resp = client.patch(
+            "/entries/housekeeping",
+            data={"project": "claude-config", "type": "housekeeping-task",
+                  "filename": "test", "enabled": "false"},
+            headers={"X-Capture-Token": "test-token-secret"},
+        )
+    assert resp.status_code == 400
+
+
+def test_patch_housekeeping_wrong_token_returns_401(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("CAPTURE_TOKEN", "test-token-secret")
+    with patch("app.services.vault.VAULT_PATH", tmp_path):
+        resp = client.patch(
+            "/entries/housekeeping",
+            json={"project": "claude-config", "type": "housekeeping-task",
+                  "filename": "test", "fields": {"enabled": "false"}},
+            headers={"X-Capture-Token": "wrong-token"},
+        )
+    assert resp.status_code == 401

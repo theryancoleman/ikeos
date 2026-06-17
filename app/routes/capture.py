@@ -1,6 +1,6 @@
 import os
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
-from app.services.vault import get_projects_with_meta, write_entry, update_entry_status_generic
+from app.services.vault import get_projects_with_meta, write_entry, update_entry_status_generic, update_housekeeping_fields
 from app.services.umbrella import get_components
 
 bp = Blueprint("capture", __name__)
@@ -128,6 +128,42 @@ def patch_entries():
         return jsonify({"error": "Entry not found or invalid status"}), 404
 
     return jsonify({"message": "Status updated"}), 200
+
+
+@bp.route("/entries/housekeeping", methods=["PATCH"])
+def patch_housekeeping():
+    """Update housekeeping runtime fields. JSON body only."""
+    token = request.headers.get("X-Capture-Token", "")
+    is_valid, status_code = _validate_token(token)
+    if not is_valid:
+        return jsonify({"error": "Unauthorized" if status_code == 401 else "Service unavailable"}), status_code
+
+    if not request.is_json:
+        return jsonify({"error": "JSON body required"}), 400
+
+    req_data = request.get_json()
+    project = req_data.get("project", "").strip()
+    entry_type = req_data.get("type", "").strip()
+    filename = req_data.get("filename", "").strip()
+    fields = req_data.get("fields")
+
+    if not isinstance(fields, dict) or not fields:
+        return jsonify({"error": "fields must be a non-empty object"}), 400
+
+    if not _reject_path_traversal(filename):
+        return jsonify({"error": "Invalid filename"}), 400
+
+    if entry_type not in ("housekeeping-task", "housekeeping-heartbeat"):
+        return jsonify({"error": "type must be housekeeping-task or housekeeping-heartbeat"}), 400
+
+    if not project:
+        return jsonify({"error": "project is required"}), 400
+
+    success = update_housekeeping_fields(entry_type, project, filename, fields)
+    if not success:
+        return jsonify({"error": "Entry not found or no valid fields provided"}), 404
+
+    return jsonify({"message": "Updated"}), 200
 
 
 @bp.route("/capture/json", methods=["POST"])
