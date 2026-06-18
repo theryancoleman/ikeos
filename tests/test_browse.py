@@ -20,8 +20,7 @@ def vault(tmp_path):
 @pytest.fixture
 def client(vault):
     os.environ["FLASK_SECRET_KEY"] = "test-secret-key"
-    app = create_app()
-    app.config["TESTING"] = True
+    app = create_app({"TESTING": True})
     with patch("app.services.vault.VAULT_PATH", vault):
         with app.test_client() as client:
             yield client
@@ -104,8 +103,7 @@ def vault_with_projects(tmp_path):
 @pytest.fixture
 def settings_client(vault_with_projects):
     os.environ["FLASK_SECRET_KEY"] = "test-secret-key"
-    app = create_app()
-    app.config["TESTING"] = True
+    app = create_app({"TESTING": True})
     with patch("app.services.vault.VAULT_PATH", vault_with_projects):
         with app.test_client() as c:
             yield c, vault_with_projects
@@ -185,8 +183,7 @@ def graph_client(graph_vault):
     from app.services.vault import _invalidate_cache
     _invalidate_cache()
     os.environ["FLASK_SECRET_KEY"] = "test-secret-key"
-    app = create_app()
-    app.config["TESTING"] = True
+    app = create_app({"TESTING": True})
     with patch("app.services.vault.VAULT_PATH", graph_vault):
         with app.test_client() as client:
             yield client

@@ -9,8 +9,7 @@ from app import create_app
 def client(tmp_path, monkeypatch):
     os.environ["FLASK_SECRET_KEY"] = "test-secret-key"
     monkeypatch.setenv("CAPTURE_TOKEN", "test-token-secret")
-    app = create_app()
-    app.config["TESTING"] = True
+    app = create_app({"TESTING": True})
     with patch("app.services.vault.VAULT_PATH", tmp_path):
         (tmp_path / "projects" / "bcr-waivers").mkdir(parents=True)
         with app.test_client() as client:
@@ -22,8 +21,7 @@ def client_no_token(tmp_path):
     """Client fixture with no CAPTURE_TOKEN env var."""
     os.environ.pop("CAPTURE_TOKEN", None)
     os.environ["FLASK_SECRET_KEY"] = "test-secret-key"
-    app = create_app()
-    app.config["TESTING"] = True
+    app = create_app({"TESTING": True})
     with patch("app.services.vault.VAULT_PATH", tmp_path):
         (tmp_path / "projects" / "bcr-waivers").mkdir(parents=True)
         with app.test_client() as client:

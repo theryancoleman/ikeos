@@ -18,7 +18,6 @@ def reset_vault_cache():
 
 @pytest.fixture
 def client():
-    app = create_app()
-    app.config["TESTING"] = True
+    app = create_app({"TESTING": True})
     with app.test_client() as c:
         yield c

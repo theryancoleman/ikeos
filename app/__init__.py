@@ -15,8 +15,10 @@ def _warm_cache():
         pass
 
 
-def create_app():
+def create_app(config: dict | None = None) -> Flask:
     app = Flask(__name__, template_folder="templates", static_folder="static")
+    if config:
+        app.config.update(config)
     app.secret_key = os.environ["FLASK_SECRET_KEY"]
     app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 3600  # 1 hour; eliminates no-cache round-trips on every page switch
 
@@ -71,5 +73,8 @@ def create_app():
         return "ok", 200
 
     threading.Thread(target=_warm_cache, daemon=True).start()
+
+    from app.services import scheduler as scheduler_svc
+    scheduler_svc.start(app)
 
     return app
