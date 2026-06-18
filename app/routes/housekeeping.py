@@ -68,6 +68,7 @@ def index():
         hk_age=_age_str(heartbeat.get("last_run")),
         hk_status=_widget_status(heartbeat),
         schedule=schedule,
+        capture_token=CAPTURE_TOKEN,
     )
 
 

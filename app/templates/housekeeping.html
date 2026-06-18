@@ -212,6 +212,7 @@ document.getElementById('addTaskForm').addEventListener('submit', async function
 });
 
 // ── Schedule control ──
+const _captureToken = {{ capture_token | tojson }};
 const _schedState = {
   enabled: {{ schedule.enabled | tojson }},
   day_of_week: {{ schedule.day_of_week | tojson }},
@@ -250,7 +251,10 @@ async function saveSchedule() {
   try {
     const resp = await fetch('/housekeeping/schedule', {
       method: 'PATCH',
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Capture-Token': _captureToken,
+      },
       body: JSON.stringify(payload),
     });
     if (resp.ok) {
