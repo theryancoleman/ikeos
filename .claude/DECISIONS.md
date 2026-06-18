@@ -92,6 +92,18 @@ Previously workspace.css was linked only from workspace.html, so `.pill`, `.sess
 
 The session manager persists protected container names to `~/.claude-protected-containers.json` (alongside `~/.claude-sessions.json`). Protected containers cannot be restarted or stopped via the API (403). The `PROTECTED_CONTAINERS` env var provides defaults without requiring a pre-existing file. Protection state flows through `GET /infrastructure` as `"protected": bool` per container.
 
+## 2026-06-18: Housekeeping scheduler uses APScheduler BackgroundScheduler pinned to 1 gunicorn worker
+
+APScheduler's BackgroundScheduler starts a thread per process. With gunicorn's default multi-worker model, each worker would launch its own scheduler instance, causing the cron job to fire N times per trigger window and spawn N simultaneous Claude sessions. Fix: gunicorn pinned to `--workers 1` in Dockerfile CMD. If workers are ever scaled, a process-safe solution (e.g., a dedicated cron service or APScheduler's SQLAlchemyJobStore for leader election) would be required.
+
+## 2026-06-18: Vault files owned by uid 999 — deletion must go through a container
+
+The obsidian-capture container writes vault files as uid 999. Direct deletion from WSL2/host shell fails. Vault file deletion must go through a container that has the vault mounted R/W (ikeos at `/vault` or obsidian-capture). IkeOS exposes this as `DELETE /housekeeping/tasks/<filename>/delete` backed by `vault.delete_housekeeping_task()` which calls `filepath.unlink()` inside the container context.
+
+## 2026-06-18: Browser JS mutation endpoints require token injected via Jinja2
+
+Flask routes gated by `X-Capture-Token` cannot receive the token from browser JS unless it is injected into the page at render time. Pattern: pass the token from the route handler to the template, inject as `const _captureToken = {{ capture_token | tojson }};` in a `<script>` block, then include `'X-Capture-Token': _captureToken` in `fetch()` headers. Applied on `PATCH /housekeeping/schedule` (saveSchedule) and `POST /housekeeping/tasks/<f>/delete` (deleteTask).
+
 ## 2026-06-15: bundle.css is generated — always edit style.css, never bundle.css
 
 `scripts/bundle_css.py` runs during `docker build` and overwrites `app/static/bundle.css` by inlining all `@import` chains from `app/static/style.css`. Edits made directly to `bundle.css` are silently discarded on the next build. The source of truth for all app CSS is `app/static/style.css` (and `app/static/ikeos/styles.css` for design-system tokens). The committed `bundle.css` in git reflects the last build output but is not the editing target.
