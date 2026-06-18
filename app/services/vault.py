@@ -2,7 +2,7 @@ import logging
 import os
 import re
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import frontmatter
@@ -604,3 +604,90 @@ def update_entry_status_generic(entry_type: str, project: str | None, filename: 
         return True
     except Exception:
         return False
+
+
+# ── Housekeeping read ─────────────────────────────────────────────────────────
+
+_INTERVAL_THRESHOLDS: dict[str, int] = {
+    "weekly": 6,
+    "monthly": 27,
+    "quarterly": 83,
+    "annually": 364,
+}
+
+
+def _compute_task_status(task: dict) -> str:
+    if task.get("enabled") != "true":
+        return "disabled"
+    if task.get("consecutive_failures", "0") != "0":
+        return "error"
+    last_run = task.get("last_run", "null")
+    if last_run == "null" or last_run is None:
+        return "due" if task.get("interval") == "weekly" else "uninitialized"
+    threshold = _INTERVAL_THRESHOLDS.get(task.get("interval", "weekly"), 6)
+    try:
+        last_run_dt = datetime.fromisoformat(last_run) if isinstance(last_run, str) else last_run
+        days_since = (datetime.now() - last_run_dt.replace(tzinfo=None)).days
+        if days_since >= threshold + 3:
+            return "overdue"
+        if days_since >= threshold:
+            return "due"
+        return "ok"
+    except (ValueError, TypeError):
+        return "unknown"
+
+
+def _compute_next_run(task: dict) -> str | None:
+    last_run = task.get("last_run", "null")
+    if last_run == "null" or last_run is None:
+        return None
+    threshold = _INTERVAL_THRESHOLDS.get(task.get("interval", "weekly"), 6)
+    try:
+        last_run_dt = datetime.fromisoformat(last_run) if isinstance(last_run, str) else last_run
+        return (last_run_dt.replace(tzinfo=None) + timedelta(days=threshold)).date().isoformat()
+    except (ValueError, TypeError):
+        return None
+
+
+def read_housekeeping_tasks(project: str) -> list[dict]:
+    """Read all housekeeping-task entries. Uncached — state changes frequently."""
+    folder = VAULT_PATH / "projects" / project / "housekeeping"
+    if not folder.exists():
+        return []
+    tasks = []
+    for filepath in sorted(folder.glob("*.md")):
+        if filepath.name == "last-run.md":
+            continue
+        try:
+            post = frontmatter.load(filepath)
+            if post.metadata.get("type") != "housekeeping-task":
+                continue
+            task = dict(post.metadata)
+            task["filename"] = filepath.stem
+            task["status"] = _compute_task_status(task)
+            task["next_run"] = _compute_next_run(task)
+            tasks.append(task)
+        except Exception:
+            continue
+    return tasks
+
+
+def read_housekeeping_heartbeat(project: str) -> dict:
+    """Read the housekeeping heartbeat singleton. Returns safe defaults if missing."""
+    _safe: dict = {
+        "last_run": None,
+        "tasks_run": "0",
+        "tasks_failed": "0",
+        "tasks_skipped": "0",
+    }
+    filepath = VAULT_PATH / "projects" / project / "housekeeping" / "last-run.md"
+    if not filepath.exists():
+        return _safe.copy()
+    try:
+        post = frontmatter.load(filepath)
+        data = dict(post.metadata)
+        if data.get("last_run") in ("null", None, ""):
+            data["last_run"] = None
+        return {**_safe, **data}
+    except Exception:
+        return _safe.copy()
