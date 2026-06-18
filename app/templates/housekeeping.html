@@ -36,8 +36,8 @@
             <td class="hk-actions">
               <button class="pill"
                       onclick="toggleTask('{{ task.filename | forceescape }}', this)"
-                      data-enabled="{{ task.enabled }}">
-                {{ 'Disable' if task.enabled == 'true' else 'Enable' }}
+                      data-enabled="{{ task.enabled | string | lower }}">
+                {{ 'Disable' if (task.enabled | string | lower) == 'true' else 'Enable' }}
               </button>
               <button class="pill"
                       onclick="resetTask('{{ task.filename | forceescape }}', this)">Reset</button>
@@ -99,6 +99,7 @@ async function toggleTask(filename, btn) {
     }
   } catch (e) {
     btn.disabled = false;
+    alert('Network error — could not toggle task.');
   }
 }
 
@@ -115,6 +116,7 @@ async function resetTask(filename, btn) {
     }
   } catch (e) {
     btn.disabled = false;
+    alert('Network error — could not reset task.');
   }
 }
 
@@ -137,6 +139,7 @@ async function runTask(filename, btn) {
   } catch (e) {
     btn.textContent = 'Run';
     btn.disabled = false;
+    alert('Network error — could not launch session.');
   }
 }
 
