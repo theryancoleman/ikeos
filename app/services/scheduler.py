@@ -143,3 +143,36 @@ def trigger_now() -> str | None:
     except (requests.RequestException, OSError):
         logger.exception("Housekeeping trigger failed")
         return None
+
+
+def _job() -> None:
+    logger.info("Housekeeping scheduled trigger firing")
+    trigger_now()
+
+
+def start(app) -> None:
+    global _scheduler
+    if app.config.get("TESTING"):
+        return
+    from apscheduler.schedulers.background import BackgroundScheduler
+
+    config = get_config()
+    _scheduler = BackgroundScheduler()
+    _scheduler.add_job(
+        _job,
+        "cron",
+        id="housekeeping",
+        day_of_week=config["day_of_week"],
+        hour=config["hour"],
+        minute=config["minute"],
+    )
+    _scheduler.start()
+    if not config.get("enabled"):
+        _scheduler.pause_job("housekeeping")
+    logger.info(
+        "Housekeeping scheduler started (enabled=%s, schedule=%s %s:%s)",
+        config.get("enabled"),
+        config["day_of_week"],
+        config["hour"],
+        config["minute"],
+    )
