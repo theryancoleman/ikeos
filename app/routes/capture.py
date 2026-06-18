@@ -177,8 +177,8 @@ def capture_json():
 
     if not title:
         return jsonify({"error": "title is required"}), 400
-    if entry_type not in ("note", "idea", "bug", "grill-me", "housekeeping-task"):
-        return jsonify({"error": "type must be note, idea, bug, grill-me, or housekeeping-task"}), 400
+    if entry_type not in ("note", "idea", "bug", "grill-me", "housekeeping-task", "housekeeping-heartbeat"):
+        return jsonify({"error": "type must be note, idea, bug, grill-me, housekeeping-task, or housekeeping-heartbeat"}), 400
     if not project:
         return jsonify({"error": "project is required"}), 400
 
