@@ -11,6 +11,7 @@ bp = Blueprint("housekeeping", __name__)
 CAPTURE_URL = os.environ.get("CAPTURE_URL", "http://host.docker.internal:5009")
 CAPTURE_TOKEN = os.environ.get("CAPTURE_TOKEN", "")
 SESSION_MANAGER_URL = os.environ.get("SESSION_MANAGER_URL", "http://host.docker.internal:5010")
+HOUSEKEEPING_PROJECT_DIR = os.environ.get("HOUSEKEEPING_PROJECT_DIR", "/mnt/c/Server/claude-config")
 
 
 def _capture_headers() -> dict:
@@ -179,7 +180,7 @@ def run_task(filename: str):
     try:
         create_resp = requests.post(
             f"{SESSION_MANAGER_URL}/sessions",
-            json={"name": session_name},
+            json={"name": session_name, "project": "claude-config", "project_dir": HOUSEKEEPING_PROJECT_DIR},
             timeout=5,
         )
         if not create_resp.ok:

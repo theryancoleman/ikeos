@@ -115,10 +115,11 @@ def trigger_now() -> str | None:
     now = datetime.now()
     session_name = f"housekeeping-{now.strftime('%Y%m%d')}"
     sm_url = os.environ.get("SESSION_MANAGER_URL", "http://host.docker.internal:5010")
+    project_dir = os.environ.get("HOUSEKEEPING_PROJECT_DIR", "/mnt/c/Server/claude-config")
     try:
         create_resp = requests.post(
             f"{sm_url}/sessions",
-            json={"name": session_name},
+            json={"name": session_name, "project": "claude-config", "project_dir": project_dir},
             timeout=5,
         )
         if not create_resp.ok:
