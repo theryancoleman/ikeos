@@ -1,6 +1,8 @@
 import pytest
+import requests
 from pathlib import Path
 from unittest.mock import patch, MagicMock
+from unittest.mock import patch as mock_patch
 from datetime import datetime, timedelta
 
 
@@ -223,3 +225,119 @@ def test_housekeeping_index_empty_state(client, tmp_path, monkeypatch):
     resp = client.get("/housekeeping")
     assert resp.status_code == 200
     assert b"No tasks" in resp.data
+
+
+# ── Write route tests ──
+
+def test_create_task_success(client, tmp_path, monkeypatch):
+    import app.services.vault as v
+    monkeypatch.setattr(v, "VAULT_PATH", tmp_path)
+    (tmp_path / "projects" / "claude-config").mkdir(parents=True)
+
+    mock_resp = MagicMock()
+    mock_resp.ok = True
+    mock_resp.json.return_value = {"ok": True}
+
+    with mock_patch("app.routes.housekeeping.requests.post", return_value=mock_resp):
+        resp = client.post("/housekeeping/tasks", data={
+            "title": "Prune old entries",
+            "interval": "weekly",
+            "success_definition": "All entries older than 90 days removed.",
+        })
+    assert resp.status_code == 200
+    assert resp.get_json()["ok"] is True
+
+
+def test_create_task_missing_title_returns_400(client):
+    resp = client.post("/housekeeping/tasks", data={
+        "interval": "weekly",
+        "success_definition": "Done.",
+    })
+    assert resp.status_code == 400
+
+
+def test_create_task_missing_success_definition_returns_400(client):
+    resp = client.post("/housekeeping/tasks", data={
+        "title": "Test task",
+        "interval": "weekly",
+    })
+    assert resp.status_code == 400
+
+
+def test_toggle_task_disables(client, tmp_path, monkeypatch):
+    import app.services.vault as v
+    monkeypatch.setattr(v, "VAULT_PATH", tmp_path)
+    folder = tmp_path / "projects" / "claude-config" / "housekeeping"
+    folder.mkdir(parents=True)
+    _write_task(folder, "2026-06-17-test-task.md", enabled="true")
+
+    mock_resp = MagicMock()
+    mock_resp.ok = True
+    mock_resp.json.return_value = {"message": "Updated"}
+
+    with mock_patch("app.routes.housekeeping.requests.patch", return_value=mock_resp):
+        resp = client.post("/housekeeping/tasks/2026-06-17-test-task/toggle")
+    assert resp.status_code == 200
+    assert resp.get_json()["enabled"] == "false"
+
+
+def test_toggle_task_enables(client, tmp_path, monkeypatch):
+    import app.services.vault as v
+    monkeypatch.setattr(v, "VAULT_PATH", tmp_path)
+    folder = tmp_path / "projects" / "claude-config" / "housekeeping"
+    folder.mkdir(parents=True)
+    _write_task(folder, "2026-06-17-test-task.md", enabled="false")
+
+    mock_resp = MagicMock()
+    mock_resp.ok = True
+
+    with mock_patch("app.routes.housekeeping.requests.patch", return_value=mock_resp):
+        resp = client.post("/housekeeping/tasks/2026-06-17-test-task/toggle")
+    assert resp.status_code == 200
+    assert resp.get_json()["enabled"] == "true"
+
+
+def test_toggle_task_not_found_returns_404(client, tmp_path, monkeypatch):
+    import app.services.vault as v
+    monkeypatch.setattr(v, "VAULT_PATH", tmp_path)
+    (tmp_path / "projects" / "claude-config").mkdir(parents=True)
+    resp = client.post("/housekeeping/tasks/nonexistent-task/toggle")
+    assert resp.status_code == 404
+
+
+def test_reset_task_success(client, tmp_path, monkeypatch):
+    import app.services.vault as v
+    monkeypatch.setattr(v, "VAULT_PATH", tmp_path)
+    (tmp_path / "projects" / "claude-config").mkdir(parents=True)
+
+    mock_resp = MagicMock()
+    mock_resp.ok = True
+
+    with mock_patch("app.routes.housekeeping.requests.patch", return_value=mock_resp):
+        resp = client.post("/housekeeping/tasks/2026-06-17-some-task/reset")
+    assert resp.status_code == 200
+    assert resp.get_json()["ok"] is True
+
+
+def test_run_task_creates_session(client):
+    create_mock = MagicMock()
+    create_mock.ok = True
+    create_mock.json.return_value = {"id": "session-abc123"}
+
+    cmd_mock = MagicMock()
+    cmd_mock.ok = True
+
+    with mock_patch("app.routes.housekeeping.requests.post",
+                    side_effect=[create_mock, cmd_mock]):
+        resp = client.post("/housekeeping/tasks/2026-06-17-test-task/run")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["ok"] is True
+    assert data["session_id"] == "session-abc123"
+
+
+def test_run_task_session_manager_unreachable(client):
+    with mock_patch("app.routes.housekeeping.requests.post",
+                    side_effect=requests.RequestException("timeout")):
+        resp = client.post("/housekeeping/tasks/2026-06-17-test-task/run")
+    assert resp.status_code == 502
