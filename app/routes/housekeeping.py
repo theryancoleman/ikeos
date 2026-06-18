@@ -4,6 +4,8 @@ from datetime import datetime
 
 from flask import Blueprint, render_template, request, jsonify
 
+from app.services.scheduler import get_config_with_next_run, update_config
+
 bp = Blueprint("housekeeping", __name__)
 
 CAPTURE_URL = os.environ.get("CAPTURE_URL", "http://host.docker.internal:5009")
@@ -56,7 +58,6 @@ def _check_auth() -> tuple[bool, int]:
 @bp.route("/housekeeping")
 def index():
     from app.services.vault import read_housekeeping_tasks, read_housekeeping_heartbeat
-    from app.services.scheduler import get_config_with_next_run
     tasks = read_housekeeping_tasks("claude-config")
     heartbeat = read_housekeeping_heartbeat("claude-config")
     schedule = get_config_with_next_run()
@@ -189,7 +190,6 @@ def run_task(filename: str):
 
 @bp.route("/housekeeping/schedule", methods=["GET"])
 def get_schedule():
-    from app.services.scheduler import get_config_with_next_run
     return jsonify(get_config_with_next_run()), 200
 
 
@@ -208,7 +208,6 @@ def patch_schedule():
     if not fields:
         return jsonify({"error": "No valid fields provided"}), 400
     try:
-        from app.services.scheduler import update_config, get_config_with_next_run
         update_config(fields)
         return jsonify(get_config_with_next_run()), 200
     except ValueError as e:

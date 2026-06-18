@@ -440,3 +440,15 @@ def test_patch_schedule_updates_and_returns_config(client, monkeypatch, tmp_path
     assert data["minute"] == 30
     assert data["day_of_week"] == "mon"
     assert data["enabled"] is False
+
+
+def test_patch_schedule_rejects_all_unrecognized_keys(client, monkeypatch, tmp_path):
+    (tmp_path / "projects" / "claude-config" / "housekeeping").mkdir(parents=True)
+    monkeypatch.setenv("VAULT_PATH", str(tmp_path))
+    import app.routes.housekeeping as hk_mod
+    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "tok")
+    resp = client.patch("/housekeeping/schedule",
+                        json={"unknown_key": "value", "also_unknown": 123},
+                        headers={"X-Capture-Token": "tok"})
+    assert resp.status_code == 400
+    assert "No valid fields" in resp.get_json()["error"]
