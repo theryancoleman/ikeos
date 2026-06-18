@@ -1,6 +1,5 @@
 import os
 import requests
-import threading
 from datetime import datetime
 
 from flask import Blueprint, render_template, request, jsonify
@@ -47,21 +46,6 @@ def _widget_status(heartbeat: dict) -> str:
     if heartbeat.get("tasks_failed", "0") != "0":
         return "failed"
     return "ok"
-
-
-def _schedule_command(sm_url: str, session_id: str, command: str, delay: float = 8.0) -> None:
-    def _send() -> None:
-        try:
-            requests.post(
-                f"{sm_url}/sessions/{session_id}/command",
-                json={"command": command},
-                timeout=5,
-            )
-        except Exception:
-            pass
-    t = threading.Timer(delay, _send)
-    t.daemon = True
-    t.start()
 
 
 def _check_auth() -> tuple[bool, int]:
@@ -196,7 +180,12 @@ def run_task(filename: str):
     try:
         create_resp = requests.post(
             f"{SESSION_MANAGER_URL}/sessions",
-            json={"name": session_name, "project": "claude-config", "project_dir": HOUSEKEEPING_PROJECT_DIR},
+            json={
+                "name": session_name,
+                "project": "claude-config",
+                "project_dir": HOUSEKEEPING_PROJECT_DIR,
+                "initial_command": command,
+            },
             timeout=5,
         )
         if not create_resp.ok:
@@ -207,8 +196,6 @@ def run_task(filename: str):
     except requests.RequestException:
         return jsonify({"error": "Session manager unreachable"}), 502
 
-    # Claude Code needs ~8 s to boot before it hears commands
-    _schedule_command(SESSION_MANAGER_URL, session_id, command)
     return jsonify({"ok": True, "session_id": session_id}), 200
 
 
