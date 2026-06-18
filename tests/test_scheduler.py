@@ -174,6 +174,29 @@ def test_trigger_now_returns_none_when_session_create_fails(sched_vault, monkeyp
     assert result is None
 
 
+def test_trigger_now_returns_none_when_command_send_fails(sched_vault, monkeypatch):
+    monkeypatch.setenv("VAULT_PATH", str(sched_vault))
+    monkeypatch.setenv("SESSION_MANAGER_URL", "http://mock-sm")
+
+    mock_create = MagicMock()
+    mock_create.ok = True
+    mock_create.json.return_value = {"id": "sess-fail-cmd"}
+
+    mock_cmd = MagicMock()
+    mock_cmd.ok = False
+    mock_cmd.status_code = 500
+
+    with patch("app.services.scheduler.requests.post",
+               side_effect=[mock_create, mock_cmd]):
+        from app.services.scheduler import trigger_now, get_config
+        result = trigger_now()
+
+    assert result is None
+    # last_triggered must NOT be written when command fails
+    config = get_config()
+    assert config["last_triggered"] is None
+
+
 def test_trigger_now_updates_last_triggered_in_config(sched_vault, monkeypatch):
     monkeypatch.setenv("VAULT_PATH", str(sched_vault))
     monkeypatch.setenv("SESSION_MANAGER_URL", "http://mock-sm")

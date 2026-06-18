@@ -112,8 +112,8 @@ def get_config_with_next_run() -> dict:
 
 
 def trigger_now() -> str | None:
-    today = datetime.now().strftime("%Y%m%d")
-    session_name = f"housekeeping-{today}"
+    now = datetime.now()
+    session_name = f"housekeeping-{now.strftime('%Y%m%d')}"
     sm_url = os.environ.get("SESSION_MANAGER_URL", "http://host.docker.internal:5010")
     try:
         create_resp = requests.post(
@@ -137,9 +137,9 @@ def trigger_now() -> str | None:
             logger.error("Failed to send housekeeping command: %s", cmd_resp.status_code)
             return None
         config = get_config()
-        config["last_triggered"] = datetime.now().isoformat(timespec="seconds")
+        config["last_triggered"] = now.isoformat(timespec="seconds")
         _write_config(config)
         return session_id
-    except requests.RequestException:
-        logger.exception("Session manager unreachable during housekeeping trigger")
+    except (requests.RequestException, OSError):
+        logger.exception("Housekeeping trigger failed")
         return None
