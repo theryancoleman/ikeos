@@ -6,7 +6,7 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 _VALID_DAYS = {"mon", "tue", "wed", "thu", "fri", "sat", "sun"}
-_DEFAULTS: dict = {
+_DEFAULTS: dict[str, bool | str | int | None] = {
     "enabled": False,
     "day_of_week": "sun",
     "hour": 3,
@@ -46,13 +46,21 @@ def get_config() -> dict:
 
 def _validate(fields: dict) -> None:
     if "day_of_week" in fields and fields["day_of_week"] not in _VALID_DAYS:
-        raise ValueError(
-            f"day_of_week must be one of: {', '.join(sorted(_VALID_DAYS))}"
-        )
-    if "hour" in fields and not (0 <= int(fields["hour"]) <= 23):
-        raise ValueError("hour must be 0–23")
-    if "minute" in fields and not (0 <= int(fields["minute"]) <= 59):
-        raise ValueError("minute must be 0–59")
+        raise ValueError(f"day_of_week must be one of: {', '.join(sorted(_VALID_DAYS))}")
+    if "hour" in fields:
+        try:
+            hour = int(fields["hour"])
+        except (TypeError, ValueError):
+            raise ValueError("hour must be 0-23")
+        if not (0 <= hour <= 23):
+            raise ValueError("hour must be 0-23")
+    if "minute" in fields:
+        try:
+            minute = int(fields["minute"])
+        except (TypeError, ValueError):
+            raise ValueError("minute must be 0-59")
+        if not (0 <= minute <= 59):
+            raise ValueError("minute must be 0-59")
 
 
 def _reschedule(config: dict) -> None:
@@ -60,6 +68,7 @@ def _reschedule(config: dict) -> None:
         return
     job = _scheduler.get_job("housekeeping")
     if job is None:
+        logger.warning("housekeeping job not found in scheduler; live schedule not updated")
         return
     _scheduler.reschedule_job(
         "housekeeping",
@@ -78,6 +87,9 @@ def update_config(fields: dict) -> dict:
     _validate(fields)
     current = get_config()
     allowed = {"enabled", "day_of_week", "hour", "minute"}
+    unknown = set(fields) - allowed
+    if unknown:
+        logger.warning("update_config: ignoring unknown field(s): %s", ", ".join(sorted(unknown)))
     for k, v in fields.items():
         if k in allowed:
             current[k] = v
@@ -88,9 +100,9 @@ def update_config(fields: dict) -> dict:
 
 def get_config_with_next_run() -> dict:
     config = get_config()
-    config["next_run"] = None
+    next_run = None
     if config.get("enabled") and _scheduler is not None:
         job = _scheduler.get_job("housekeeping")
         if job and job.next_run_time:
-            config["next_run"] = job.next_run_time.isoformat(timespec="seconds")
-    return config
+            next_run = job.next_run_time.isoformat(timespec="seconds")
+    return {**config, "next_run": next_run}
