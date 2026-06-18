@@ -31,6 +31,7 @@
       <a href="{{ url_for('agents.agents') }}"    class="nav-link {% if request.endpoint == 'agents.agents' %}is-active{% endif %}">Sessions</a>
       <a href="{{ url_for('agents.status_page') }}" class="nav-link {% if request.endpoint == 'agents.status_page' %}is-active{% endif %}">Status</a>
       <a href="{{ url_for('browse.skills') }}"    class="nav-link {% if request.endpoint == 'browse.skills' %}is-active{% endif %}">Skills</a>
+      <a href="{{ url_for('housekeeping.index') }}" class="nav-link {% if request.endpoint == 'housekeeping.index' %}is-active{% endif %}">Housekeeping</a>
 
       <div class="nav-end">
         {% if config_version %}<span class="nav-version">{{ config_version }}</span>{% endif %}
