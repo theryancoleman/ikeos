@@ -3,16 +3,159 @@
 
 {% block content %}
 <div class="settings-page">
+
   <header class="page-header">
     <span class="ike-eyebrow">System</span>
     <h1>Housekeeping</h1>
+    <p class="page-subtitle">Automated maintenance tasks — reads definitions from the claude-config vault.</p>
   </header>
-  {% if tasks %}
-    {% for task in tasks %}
-      <p>{{ task.filename }}</p>
-    {% endfor %}
-  {% else %}
-    <p class="empty">No tasks defined yet.</p>
-  {% endif %}
+
+  <section>
+    <div class="ike-eyebrow">Tasks <span class="eyebrow-count">/ {{ tasks | length }}</span></div>
+    {% if tasks %}
+    <div class="hk-table-wrap">
+      <table class="hk-table">
+        <thead>
+          <tr>
+            <th class="hk-col-name">Name</th>
+            <th class="hk-col-interval">Interval</th>
+            <th class="hk-col-status">Status</th>
+            <th class="hk-col-date">Last Run</th>
+            <th class="hk-col-date">Next Due</th>
+            <th class="hk-col-actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for task in tasks %}
+          <tr>
+            <td class="hk-name">{{ task.title }}</td>
+            <td class="hk-interval">{{ task.interval }}</td>
+            <td><span class="hk-pill hk-pill--{{ task.status }}">{{ task.status }}</span></td>
+            <td class="hk-date">{{ task.last_run if task.last_run and task.last_run != 'null' else '—' }}</td>
+            <td class="hk-date">{{ task.next_run or '—' }}</td>
+            <td class="hk-actions">
+              <button class="pill"
+                      onclick="toggleTask('{{ task.filename | forceescape }}', this)"
+                      data-enabled="{{ task.enabled }}">
+                {{ 'Disable' if task.enabled == 'true' else 'Enable' }}
+              </button>
+              <button class="pill"
+                      onclick="resetTask('{{ task.filename | forceescape }}', this)">Reset</button>
+              <button class="pill pill-primary-filled"
+                      onclick="runTask('{{ task.filename | forceescape }}', this)">Run</button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="empty">No tasks defined yet. Add one below.</p>
+    {% endif %}
+  </section>
+
+  <section class="hk-add-section">
+    <div class="ike-eyebrow">Add Task</div>
+    <form class="hk-add-form" id="addTaskForm">
+      <div class="hk-form-row">
+        <label for="hk-title">Title</label>
+        <input type="text" id="hk-title" name="title" required
+               placeholder="e.g. Prune stale vault entries">
+      </div>
+      <div class="hk-form-row">
+        <label for="hk-interval">Interval</label>
+        <select id="hk-interval" name="interval">
+          <option value="weekly">Weekly</option>
+          <option value="monthly">Monthly</option>
+          <option value="quarterly">Quarterly</option>
+          <option value="annually">Annually</option>
+        </select>
+      </div>
+      <div class="hk-form-row">
+        <label for="hk-success">Success Definition</label>
+        <textarea id="hk-success" name="success_definition" required rows="3"
+                  placeholder="Describe what success looks like — passed to the judge subagent."></textarea>
+      </div>
+      <div class="hk-form-footer">
+        <button type="submit" class="pill pill-primary-filled">Add Task</button>
+        <span class="hk-form-msg" id="addTaskMsg"></span>
+      </div>
+    </form>
+  </section>
+
 </div>
+
+<script>
+async function toggleTask(filename, btn) {
+  btn.disabled = true;
+  try {
+    const resp = await fetch(`/housekeeping/tasks/${encodeURIComponent(filename)}/toggle`,
+                             {method: 'POST'});
+    if (resp.ok) {
+      location.reload();
+    } else {
+      btn.disabled = false;
+      alert('Failed to toggle task.');
+    }
+  } catch (e) {
+    btn.disabled = false;
+  }
+}
+
+async function resetTask(filename, btn) {
+  btn.disabled = true;
+  try {
+    const resp = await fetch(`/housekeeping/tasks/${encodeURIComponent(filename)}/reset`,
+                             {method: 'POST'});
+    if (resp.ok) {
+      location.reload();
+    } else {
+      btn.disabled = false;
+      alert('Failed to reset timer.');
+    }
+  } catch (e) {
+    btn.disabled = false;
+  }
+}
+
+async function runTask(filename, btn) {
+  btn.disabled = true;
+  btn.textContent = '…';
+  try {
+    const resp = await fetch(`/housekeeping/tasks/${encodeURIComponent(filename)}/run`,
+                             {method: 'POST'});
+    if (resp.ok) {
+      const data = await resp.json();
+      btn.textContent = 'Launched ↗';
+      btn.onclick = () => window.location.href = '/agents';
+      btn.disabled = false;
+    } else {
+      btn.textContent = 'Run';
+      btn.disabled = false;
+      alert('Failed to launch session.');
+    }
+  } catch (e) {
+    btn.textContent = 'Run';
+    btn.disabled = false;
+  }
+}
+
+document.getElementById('addTaskForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const msg = document.getElementById('addTaskMsg');
+  msg.textContent = '';
+  const resp = await fetch('/housekeeping/tasks', {
+    method: 'POST',
+    body: new FormData(e.target),
+  });
+  if (resp.ok) {
+    msg.textContent = 'Task added.';
+    e.target.reset();
+    setTimeout(() => location.reload(), 800);
+  } else {
+    const err = await resp.json().catch(() => ({}));
+    msg.textContent = err.error || 'Failed to add task.';
+  }
+});
+</script>
 {% endblock %}

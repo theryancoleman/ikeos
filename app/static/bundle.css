@@ -3168,3 +3168,184 @@ button[type="submit"] { margin-top: var(--space-3); }
 
 .health-empty { padding: 0.5rem 0.75rem; color: #444; font-size: 0.76rem; }
 
+/* ── Housekeeping page ──────────────────────────────────────── */
+
+.hk-table-wrap {
+  border: 1px solid var(--border-subtle, #1e1e1e);
+  border-radius: var(--radius-md, 8px);
+  overflow: hidden;
+  margin-bottom: var(--space-8, 2rem);
+}
+
+.hk-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-body-sm, 0.83rem);
+}
+
+.hk-table thead {
+  background: var(--bg-surface, #0e0e0e);
+  border-bottom: 1px solid var(--border-subtle, #1e1e1e);
+}
+
+.hk-table th {
+  text-align: left;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-tertiary, #8B82A4);
+}
+
+.hk-table td {
+  padding: 0.55rem 0.85rem;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--border-subtle, #161616);
+  color: var(--text-secondary, #C8C0DA);
+}
+
+.hk-table tr:last-child td { border-bottom: none; }
+.hk-table tr:hover td { background: var(--bg-hover, rgba(124,58,237,0.05)); }
+
+.hk-col-name     { width: 35%; }
+.hk-col-interval { width: 10%; }
+.hk-col-status   { width: 10%; }
+.hk-col-date     { width: 14%; }
+.hk-col-actions  { width: 17%; }
+
+.hk-name { color: var(--text-primary, #EDE9F8); font-weight: 500; }
+.hk-date { font-size: 0.78rem; color: var(--text-tertiary, #8B82A4); }
+.hk-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* Status pills */
+.hk-pill {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 4px;
+  line-height: 1.7;
+}
+.hk-pill--ok           { background: rgba(34,197,94,0.12);  color: #4ADE80; border: 1px solid rgba(34,197,94,0.25); }
+.hk-pill--due          { background: rgba(245,158,11,0.12); color: #FCD34D; border: 1px solid rgba(245,158,11,0.25); }
+.hk-pill--overdue      { background: rgba(239,68,68,0.12);  color: #F87171; border: 1px solid rgba(239,68,68,0.25); }
+.hk-pill--error        { background: rgba(239,68,68,0.12);  color: #F87171; border: 1px solid rgba(239,68,68,0.25); }
+.hk-pill--disabled     { background: rgba(139,130,164,0.1); color: #8B82A4; border: 1px solid rgba(139,130,164,0.2); }
+.hk-pill--uninitialized{ background: rgba(139,130,164,0.1); color: #8B82A4; border: 1px solid rgba(139,130,164,0.2); }
+
+/* Add task form */
+.hk-add-section { margin-top: var(--space-8, 2rem); }
+
+.hk-add-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 1rem);
+  max-width: 560px;
+  margin-top: var(--space-4, 1rem);
+}
+
+.hk-form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hk-form-row label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary, #8B82A4);
+}
+
+.hk-form-row input,
+.hk-form-row select,
+.hk-form-row textarea {
+  background: var(--bg-inset, #111);
+  border: 1px solid var(--border-subtle, #1e1e1e);
+  border-radius: var(--radius-sm, 6px);
+  color: var(--text-primary, #EDE9F8);
+  padding: 0.45rem 0.65rem;
+  font-size: 0.85rem;
+  font-family: inherit;
+}
+
+.hk-form-row input:focus,
+.hk-form-row select:focus,
+.hk-form-row textarea:focus {
+  outline: none;
+  border-color: var(--ike-soft-lavender, #B497FF);
+}
+
+.hk-form-row textarea { resize: vertical; }
+
+.hk-form-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3, 0.5rem);
+}
+
+.hk-form-msg {
+  font-size: 0.8rem;
+  color: var(--text-tertiary, #8B82A4);
+}
+
+/* ── Dashboard housekeeping widget ──────────────────────────── */
+
+.hk-widget {
+  margin-top: var(--space-6, 1.5rem);
+  padding: var(--space-4, 1rem);
+  background: var(--bg-surface, #0e0e0e);
+  border: 1px solid var(--border-subtle, #1e1e1e);
+  border-radius: var(--radius-md, 8px);
+}
+
+.hk-widget-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3, 0.5rem);
+  margin-bottom: 0.35rem;
+}
+
+.hk-widget-label {
+  font-size: 0.78rem;
+  color: var(--text-secondary, #C8C0DA);
+}
+
+.hk-widget-age {
+  font-size: 0.78rem;
+  color: var(--text-tertiary, #8B82A4);
+}
+
+.hk-widget-summary {
+  font-size: 0.75rem;
+  color: var(--text-tertiary, #8B82A4);
+  margin-bottom: 0.5rem;
+}
+
+.hk-widget-link {
+  font-size: 0.78rem;
+  color: var(--ike-soft-lavender, #B497FF);
+  text-decoration: none;
+}
+
+.hk-widget-link:hover { text-decoration: underline; }
+
+/* Widget status pills */
+.hk-widget-status {
+  display: inline-block;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+  line-height: 1.7;
+}
+.hk-widget-status--ok      { background: rgba(34,197,94,0.12);  color: #4ADE80; border: 1px solid rgba(34,197,94,0.25); }
+.hk-widget-status--overdue { background: rgba(245,158,11,0.12); color: #FCD34D; border: 1px solid rgba(245,158,11,0.25); }
+.hk-widget-status--failed  { background: rgba(239,68,68,0.12);  color: #F87171; border: 1px solid rgba(239,68,68,0.25); }
