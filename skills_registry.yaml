@@ -128,6 +128,12 @@ skills:
     description: Revert a bad skill deployment, salvage learnings, and log the regression event to the metrics store.
     added: '2026-06-15'
 
+  # ── Deployment ──────────────────────────────────────────────────────────
+  - command: /deploy-cottage
+    category: Deployment
+    description: Deploy Docker services to the cottage Windows host via SSH, working around Docker Desktop credential helper limitations.
+    added: '2026-06-17'
+
   # ── Project lifecycle ────────────────────────────────────────────────────
   - command: /new-project
     category: Project

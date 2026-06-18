@@ -41,16 +41,17 @@
     <div class="container-cards">
       {% for c in infra.containers %}
       {% set cname = c.Names | replace('/', '') %}
+      {% set is_unhealthy = '(unhealthy)' in c.Status %}
       <div class="session-card container-card {% if c.protected %}container-card-protected{% endif %}" data-name="{{ cname }}">
         <div class="card-body">
           <div class="card-name">
-            <span class="session-dot {% if c.State == 'running' %}is-active{% else %}is-stopped{% endif %}"></span>
+            <span class="session-dot {% if c.State == 'running' %}{% if is_unhealthy %}is-unhealthy{% else %}is-active{% endif %}{% else %}is-stopped{% endif %}"></span>
             {{ cname }}
             {% if c.protected %}<span class="ct-lock" title="Protected">🔒</span>{% endif %}
           </div>
           <div class="card-project">{{ c.Image | docker_image }}</div>
           <div class="card-meta">
-            <span class="container-state state-{{ c.State }}">{{ c.Status }}</span>
+            <span class="container-state state-{{ c.State }}{% if is_unhealthy %} state-unhealthy{% endif %}">{{ c.Status }}</span>
             {% set port = c.Ports | docker_ports %}
             {% if port != '—' %}<span class="ct-card-ports">:{{ port }}</span>{% endif %}
           </div>

@@ -216,7 +216,10 @@
       background: var(--ike-grad-aurora, linear-gradient(135deg, #7C3AED 0%, #FF7849 100%));
       box-shadow: 0 0 12px rgba(124,58,237,0.6);
       width: 0%;
-      transition: width 120ms linear;
+      animation: ls-bar-progress 6.5s linear forwards;
+    }
+    @keyframes ls-bar-progress {
+      to { width: 100%; }
     }
     .ls-bar-shimmer {
       position: absolute; top: 0; bottom: 0;
@@ -339,6 +342,7 @@
       .ls-orbital-a,
       .ls-orbital-b,
       .ls-bar-shimmer,
+      .ls-bar-fill,
       .ls-eyebrow-dot { animation: none !important; }
       .ls-caption { animation: none !important; }
       .ls-welcome { transition: opacity 200ms ease !important; transform: none !important; }
@@ -410,7 +414,7 @@
 
 <script>
 (function () {
-  const DURATION = 6500; // ms
+  const DURATION = 6500;
   const CAPTIONS = [
     ‘Tracing connections…’,
     ‘Re-reading what you’ve captured…’,
@@ -420,54 +424,27 @@
   ];
   const CAPTION_INTERVAL = DURATION / CAPTIONS.length; // 1300ms each
 
-  const fillEl    = document.getElementById(‘ls-fill’);
   const captionEl = document.getElementById(‘ls-caption’);
   const welcomeEl = document.getElementById(‘ls-welcome’);
   const screenEl  = document.getElementById(‘ls-screen’);
 
-  const wallStart  = Date.now(); // wall-clock start: advances even when backgrounded
-  let captionIndex = 0;
-  let rafHandle    = null;
-  let done         = false;
-
   function setCaption(idx) {
     captionEl.textContent = CAPTIONS[idx];
-    // Re-trigger CSS animation by forcing a reflow
     captionEl.style.animation = ‘none’;
     void captionEl.offsetWidth;
     captionEl.style.animation = ‘’;
   }
 
-  function tick() {
-    // Use Date.now() so elapsed reflects real wall-clock time even after
-    // the app is backgrounded/suspended (performance.now() pauses on iOS).
-    const elapsed  = Date.now() - wallStart;
-    const progress = Math.min(elapsed / DURATION, 1);
+  // Advance captions via setTimeout — reliable on iOS even when backgrounded
+  CAPTIONS.forEach(function (caption, i) {
+    if (i === 0) return;
+    setTimeout(function () { setCaption(i); }, CAPTION_INTERVAL * i);
+  });
 
-    // Update fill
-    fillEl.style.width = (progress * 100).toFixed(1) + ‘%’;
-
-    // Advance caption
-    const expectedCaption = Math.min(Math.floor(elapsed / CAPTION_INTERVAL), CAPTIONS.length - 1);
-    if (expectedCaption !== captionIndex) {
-      captionIndex = expectedCaption;
-      setCaption(captionIndex);
-    }
-
-    if (progress < 1) {
-      rafHandle = requestAnimationFrame(tick);
-    } else if (!done) {
-      done = true;
-      onComplete();
-    }
-  }
-
-  function onComplete() {
-    // Show welcome overlay after 280ms
+  // Complete: show welcome overlay, then fade out and redirect
+  setTimeout(function () {
     setTimeout(function () {
       welcomeEl.classList.add(‘is-visible’);
-
-      // Fade out and redirect after welcome has been visible 1200ms
       setTimeout(function () {
         screenEl.classList.add(‘is-exiting’);
         sessionStorage.setItem(‘ike_splash_seen’, ‘1’);
@@ -476,14 +453,7 @@
         }, 520);
       }, 1200);
     }, 280);
-  }
-
-  rafHandle = requestAnimationFrame(tick);
-
-  // Clean up on unload
-  window.addEventListener(‘pagehide’, function () {
-    if (rafHandle) cancelAnimationFrame(rafHandle);
-  });
+  }, DURATION);
 }());
 </script>
 </body>

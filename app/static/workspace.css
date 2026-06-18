@@ -890,13 +890,15 @@ body.workspace-body main {
 .ct-lock { font-size: 11px; margin-left: 0.25rem; }
 
 .ct-card-ports {
-  font-size: 10px;
+  font-size: 12px;
   font-family: var(--font-mono);
-  color: var(--text-tertiary);
+  font-weight: 600;
+  color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 130px;
+  letter-spacing: 0.02em;
 }
 
 .ct-protect-btn {
@@ -913,9 +915,16 @@ body.workspace-body main {
 }
 
 .container-state { font-size: 11px; font-weight: 500; }
-.state-running { color: var(--sem-discovery); }
-.state-exited  { color: var(--text-muted); }
-.state-paused  { color: var(--sem-understanding); }
+.state-running   { color: var(--sem-discovery); }
+.state-exited    { color: var(--text-muted); }
+.state-paused    { color: var(--sem-understanding); }
+.state-unhealthy { color: var(--status-error); }
+
+.session-dot.is-unhealthy {
+  background: var(--status-error);
+  box-shadow: 0 0 8px rgba(248, 113, 113, 0.7);
+  animation: ike-pulse 2.2s ease-in-out infinite;
+}
 .state-created { color: var(--text-tertiary); }
 
 .component-pills {
