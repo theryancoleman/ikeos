@@ -8,7 +8,7 @@ bp = Blueprint("housekeeping", __name__)
 
 CAPTURE_URL = os.environ.get("CAPTURE_URL", "http://host.docker.internal:5009")
 CAPTURE_TOKEN = os.environ.get("CAPTURE_TOKEN", "")
-SESSION_MANAGER_URL = "http://host.docker.internal:5010"
+SESSION_MANAGER_URL = os.environ.get("SESSION_MANAGER_URL", "http://host.docker.internal:5010")
 
 
 def _capture_headers() -> dict:
@@ -121,6 +121,12 @@ def toggle_task(filename: str):
 
 @bp.route("/housekeeping/tasks/<filename>/reset", methods=["POST"])
 def reset_task(filename: str):
+    from app.services.vault import read_housekeeping_tasks
+    tasks = read_housekeeping_tasks("claude-config")
+    task = next((t for t in tasks if t.get("filename") == filename), None)
+    if not task:
+        return jsonify({"error": "Task not found"}), 404
+
     try:
         resp = requests.patch(
             f"{CAPTURE_URL}/entries/housekeeping",

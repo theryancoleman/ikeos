@@ -308,7 +308,9 @@ def test_toggle_task_not_found_returns_404(client, tmp_path, monkeypatch):
 def test_reset_task_success(client, tmp_path, monkeypatch):
     import app.services.vault as v
     monkeypatch.setattr(v, "VAULT_PATH", tmp_path)
-    (tmp_path / "projects" / "claude-config").mkdir(parents=True)
+    folder = tmp_path / "projects" / "claude-config" / "housekeeping"
+    folder.mkdir(parents=True)
+    _write_task(folder, "2026-06-17-some-task.md")
 
     mock_resp = MagicMock()
     mock_resp.ok = True
@@ -317,6 +319,14 @@ def test_reset_task_success(client, tmp_path, monkeypatch):
         resp = client.post("/housekeeping/tasks/2026-06-17-some-task/reset")
     assert resp.status_code == 200
     assert resp.get_json()["ok"] is True
+
+
+def test_reset_task_not_found_returns_404(client, tmp_path, monkeypatch):
+    import app.services.vault as v
+    monkeypatch.setattr(v, "VAULT_PATH", tmp_path)
+    (tmp_path / "projects" / "claude-config").mkdir(parents=True)
+    resp = client.post("/housekeeping/tasks/nonexistent-task/reset")
+    assert resp.status_code == 404
 
 
 def test_run_task_creates_session(client):
