@@ -1,7 +1,10 @@
 import json
 import logging
 import os
+from datetime import datetime
 from pathlib import Path
+
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -106,3 +109,37 @@ def get_config_with_next_run() -> dict:
         if job and job.next_run_time:
             next_run = job.next_run_time.isoformat(timespec="seconds")
     return {**config, "next_run": next_run}
+
+
+def trigger_now() -> str | None:
+    today = datetime.now().strftime("%Y%m%d")
+    session_name = f"housekeeping-{today}"
+    sm_url = os.environ.get("SESSION_MANAGER_URL", "http://host.docker.internal:5010")
+    try:
+        create_resp = requests.post(
+            f"{sm_url}/sessions",
+            json={"name": session_name},
+            timeout=5,
+        )
+        if not create_resp.ok:
+            logger.error("Failed to create housekeeping session: %s", create_resp.status_code)
+            return None
+        session_id = create_resp.json().get("id")
+        if not session_id:
+            logger.error("No session ID returned from session manager")
+            return None
+        cmd_resp = requests.post(
+            f"{sm_url}/sessions/{session_id}/command",
+            json={"command": "/housekeeping — run in scheduled mode"},
+            timeout=5,
+        )
+        if not cmd_resp.ok:
+            logger.error("Failed to send housekeeping command: %s", cmd_resp.status_code)
+            return None
+        config = get_config()
+        config["last_triggered"] = datetime.now().isoformat(timespec="seconds")
+        _write_config(config)
+        return session_id
+    except requests.RequestException:
+        logger.exception("Session manager unreachable during housekeeping trigger")
+        return None
