@@ -90,6 +90,23 @@
         <p class="empty">Nothing here yet — the first node starts the constellation.</p>
       {% endif %}
     </section>
+
+    <!-- ── Housekeeping heartbeat ── -->
+    <section>
+      <div class="ike-eyebrow">Housekeeping</div>
+      <div class="hk-widget">
+        <div class="hk-widget-row">
+          <span class="hk-widget-label">Last run: <span class="hk-widget-age">{{ hk_age }}</span></span>
+          <span class="hk-widget-status hk-widget-status--{{ hk_status }}">{{ hk_status }}</span>
+        </div>
+        <div class="hk-widget-summary">
+          {{ housekeeping_heartbeat.tasks_run }} run ·
+          {{ housekeeping_heartbeat.tasks_failed }} failed ·
+          {{ housekeeping_heartbeat.tasks_skipped }} skipped
+        </div>
+        <a href="{{ url_for('housekeeping.index') }}" class="hk-widget-link">Manage tasks →</a>
+      </div>
+    </section>
   </div>
 
 </div>

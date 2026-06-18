@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from app.services.vault import (
     get_projects_with_meta, read_entries, read_entry,
     update_entry_status, write_project_meta,
-    get_vault_graph,
+    get_vault_graph, read_housekeeping_heartbeat,
 )
 from app.services.umbrella import get_components
 from app.services.skills import get_skills_by_category
@@ -32,12 +32,20 @@ def tasks():
     in_flight = [e for e in all_entries if e.get("status") == "in-progress"]
     needs_triage = [e for e in all_entries if e.get("status") == "new"]
 
+    from app.routes.housekeeping import _age_str, _widget_status
+    heartbeat = read_housekeeping_heartbeat("claude-config")
+    hk_age = _age_str(heartbeat.get("last_run"))
+    hk_status = _widget_status(heartbeat)
+
     return render_template(
         "dashboard.html",
         projects=projects,
         project_stats=project_stats,
         in_flight=in_flight,
         needs_triage=needs_triage,
+        housekeeping_heartbeat=heartbeat,
+        hk_age=hk_age,
+        hk_status=hk_status,
     )
 
 
