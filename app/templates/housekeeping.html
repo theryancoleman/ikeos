@@ -93,6 +93,8 @@
                       onclick="resetTask('{{ task.filename | forceescape }}', this)">Reset</button>
               <button class="pill pill-primary-filled"
                       onclick="runTask('{{ task.filename | forceescape }}', this)">Run</button>
+              <button class="pill pill-danger"
+                      onclick="deleteTask('{{ task.filename | forceescape }}', this)">Delete</button>
             </td>
           </tr>
           {% endfor %}
@@ -190,6 +192,24 @@ async function runTask(filename, btn) {
     btn.textContent = 'Run';
     btn.disabled = false;
     alert('Network error — could not launch session.');
+  }
+}
+
+async function deleteTask(filename, btn) {
+  if (!confirm(`Delete "${filename}"? This cannot be undone.`)) return;
+  btn.disabled = true;
+  try {
+    const resp = await fetch(`/housekeeping/tasks/${encodeURIComponent(filename)}/delete`,
+                             {method: 'POST', headers: {'X-Capture-Token': _captureToken}});
+    if (resp.ok) {
+      location.reload();
+    } else {
+      btn.disabled = false;
+      alert('Failed to delete task.');
+    }
+  } catch (e) {
+    btn.disabled = false;
+    alert('Network error — could not delete task.');
   }
 }
 

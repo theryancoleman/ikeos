@@ -692,3 +692,21 @@ def read_housekeeping_heartbeat(project: str) -> dict:
         return {**_safe, **data}
     except Exception:
         return _safe.copy()
+
+
+def delete_housekeeping_task(project: str, filename: str) -> bool:
+    """Delete a housekeeping task file. Returns True if deleted, False if not found."""
+    folder = VAULT_PATH / "projects" / project / "housekeeping"
+    filepath = folder / f"{filename}.md"
+    if not filepath.exists():
+        return False
+    if filepath.name == "last-run.md":
+        return False
+    try:
+        post = frontmatter.load(filepath)
+        if post.metadata.get("type") != "housekeeping-task":
+            return False
+    except Exception:
+        return False
+    filepath.unlink()
+    return True

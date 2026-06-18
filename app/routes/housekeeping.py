@@ -160,6 +160,18 @@ def reset_task(filename: str):
     return jsonify({"ok": True}), 200
 
 
+@bp.route("/housekeeping/tasks/<filename>/delete", methods=["POST"])
+def delete_task(filename: str):
+    ok, status = _check_auth()
+    if not ok:
+        return jsonify({"error": "Unauthorized" if status == 401 else "Service unavailable"}), status
+    from app.services.vault import delete_housekeeping_task
+    deleted = delete_housekeeping_task("claude-config", filename)
+    if not deleted:
+        return jsonify({"error": "Task not found"}), 404
+    return jsonify({"ok": True}), 200
+
+
 @bp.route("/housekeeping/tasks/<filename>/run", methods=["POST"])
 def run_task(filename: str):
     session_name = f"housekeeping-{filename}"
