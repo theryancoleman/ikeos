@@ -10,6 +10,56 @@
     <p class="page-subtitle">Automated maintenance tasks — reads definitions from the claude-config vault.</p>
   </header>
 
+  <section class="hk-schedule-section">
+    <div class="ike-eyebrow">Schedule</div>
+    <div class="hk-schedule-card">
+      <div class="hk-schedule-row">
+        <label class="hk-schedule-toggle-label">
+          <input type="checkbox" id="sched-enabled"
+                 {% if schedule.enabled %}checked{% endif %}>
+          Enable weekly run
+        </label>
+      </div>
+      <div class="hk-schedule-row hk-schedule-time-row" id="sched-time-row">
+        <label for="sched-day">Day</label>
+        <select id="sched-day">
+          {% for d, label in [('mon','Monday'),('tue','Tuesday'),('wed','Wednesday'),
+                               ('thu','Thursday'),('fri','Friday'),('sat','Saturday'),
+                               ('sun','Sunday')] %}
+          <option value="{{ d }}" {% if schedule.day_of_week == d %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <label for="sched-hour">Time</label>
+        <input type="number" id="sched-hour" min="0" max="23"
+               value="{{ schedule.hour }}" class="hk-time-input">
+        <span class="hk-time-sep">:</span>
+        <input type="number" id="sched-minute" min="0" max="59"
+               value="{{ schedule.minute }}" class="hk-time-input">
+      </div>
+      <div class="hk-schedule-meta">
+        <span class="hk-schedule-label">Next run:</span>
+        <span id="sched-next">
+          {%- if schedule.next_run -%}
+            {{ schedule.next_run }}
+          {%- elif schedule.enabled -%}
+            Calculating…
+          {%- else -%}
+            Disabled
+          {%- endif -%}
+        </span>
+      </div>
+      <div class="hk-schedule-meta">
+        <span class="hk-schedule-label">Last triggered:</span>
+        <span id="sched-last">{{ schedule.last_triggered or 'Never' }}</span>
+      </div>
+      <div class="hk-schedule-footer">
+        <button class="pill pill-primary" id="sched-save"
+                onclick="saveSchedule()" style="display:none">Save</button>
+        <span class="hk-form-msg" id="sched-msg"></span>
+      </div>
+    </div>
+  </section>
+
   <section>
     <div class="ike-eyebrow">Tasks <span class="eyebrow-count">/ {{ tasks | length }}</span></div>
     {% if tasks %}
@@ -160,5 +210,69 @@ document.getElementById('addTaskForm').addEventListener('submit', async function
     msg.textContent = err.error || 'Failed to add task.';
   }
 });
+
+// ── Schedule control ──
+const _schedState = {
+  enabled: {{ schedule.enabled | tojson }},
+  day_of_week: {{ schedule.day_of_week | tojson }},
+  hour: {{ schedule.hour | int }},
+  minute: {{ schedule.minute | int }},
+};
+
+function _schedChanged() {
+  return document.getElementById('sched-enabled').checked !== _schedState.enabled ||
+         document.getElementById('sched-day').value !== _schedState.day_of_week ||
+         parseInt(document.getElementById('sched-hour').value) !== _schedState.hour ||
+         parseInt(document.getElementById('sched-minute').value) !== _schedState.minute;
+}
+
+function _updateSaveBtn() {
+  document.getElementById('sched-save').style.display = _schedChanged() ? '' : 'none';
+}
+
+['sched-enabled', 'sched-day', 'sched-hour', 'sched-minute'].forEach(function(id) {
+  const el = document.getElementById(id);
+  el.addEventListener('change', _updateSaveBtn);
+  el.addEventListener('input', _updateSaveBtn);
+});
+
+async function saveSchedule() {
+  const btn = document.getElementById('sched-save');
+  const msg = document.getElementById('sched-msg');
+  btn.disabled = true;
+  msg.textContent = '';
+  const payload = {
+    enabled: document.getElementById('sched-enabled').checked,
+    day_of_week: document.getElementById('sched-day').value,
+    hour: parseInt(document.getElementById('sched-hour').value),
+    minute: parseInt(document.getElementById('sched-minute').value),
+  };
+  try {
+    const resp = await fetch('/housekeeping/schedule', {
+      method: 'PATCH',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload),
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      _schedState.enabled = data.enabled;
+      _schedState.day_of_week = data.day_of_week;
+      _schedState.hour = data.hour;
+      _schedState.minute = data.minute;
+      document.getElementById('sched-next').textContent =
+        data.next_run || (data.enabled ? 'Calculating…' : 'Disabled');
+      document.getElementById('sched-last').textContent = data.last_triggered || 'Never';
+      btn.style.display = 'none';
+      msg.textContent = 'Saved.';
+      setTimeout(function() { msg.textContent = ''; }, 2000);
+    } else {
+      const err = await resp.json().catch(function() { return {}; });
+      msg.textContent = err.error || 'Failed to save.';
+    }
+  } catch (e) {
+    msg.textContent = 'Network error — could not save schedule.';
+  }
+  btn.disabled = false;
+}
 </script>
 {% endblock %}
