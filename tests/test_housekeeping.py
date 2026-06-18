@@ -351,3 +351,92 @@ def test_run_task_session_manager_unreachable(client):
                     side_effect=requests.RequestException("timeout")):
         resp = client.post("/housekeeping/tasks/2026-06-17-test-task/run")
     assert resp.status_code == 502
+
+
+# ── GET /housekeeping/schedule ──
+
+def test_get_schedule_returns_config_shape(client, monkeypatch, tmp_path):
+    (tmp_path / "projects" / "claude-config" / "housekeeping").mkdir(parents=True)
+    monkeypatch.setenv("VAULT_PATH", str(tmp_path))
+    resp = client.get("/housekeeping/schedule")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert "enabled" in data
+    assert "day_of_week" in data
+    assert "hour" in data
+    assert "minute" in data
+    assert "last_triggered" in data
+    assert "next_run" in data
+
+
+def test_get_schedule_returns_defaults_when_no_file(client, monkeypatch, tmp_path):
+    (tmp_path / "projects" / "claude-config" / "housekeeping").mkdir(parents=True)
+    monkeypatch.setenv("VAULT_PATH", str(tmp_path))
+    resp = client.get("/housekeeping/schedule")
+    data = resp.get_json()
+    assert data["enabled"] is False
+    assert data["day_of_week"] == "sun"
+    assert data["next_run"] is None  # scheduler not running in test mode
+
+
+# ── PATCH /housekeeping/schedule ──
+
+def test_patch_schedule_requires_token(client, monkeypatch):
+    import app.routes.housekeeping as hk_mod
+    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "real-token")
+    resp = client.patch("/housekeeping/schedule",
+                        json={"enabled": True},
+                        headers={"X-Capture-Token": "wrong-token"})
+    assert resp.status_code == 401
+
+
+def test_patch_schedule_rejects_non_json_body(client, monkeypatch, tmp_path):
+    (tmp_path / "projects" / "claude-config" / "housekeeping").mkdir(parents=True)
+    monkeypatch.setenv("VAULT_PATH", str(tmp_path))
+    import app.routes.housekeeping as hk_mod
+    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "tok")
+    resp = client.patch("/housekeeping/schedule",
+                        data="not json",
+                        headers={"X-Capture-Token": "tok",
+                                 "Content-Type": "text/plain"})
+    assert resp.status_code == 400
+
+
+def test_patch_schedule_rejects_invalid_hour(client, monkeypatch, tmp_path):
+    (tmp_path / "projects" / "claude-config" / "housekeeping").mkdir(parents=True)
+    monkeypatch.setenv("VAULT_PATH", str(tmp_path))
+    import app.routes.housekeeping as hk_mod
+    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "tok")
+    resp = client.patch("/housekeeping/schedule",
+                        json={"hour": 25},
+                        headers={"X-Capture-Token": "tok"})
+    assert resp.status_code == 400
+    assert "hour" in resp.get_json()["error"]
+
+
+def test_patch_schedule_rejects_invalid_day_of_week(client, monkeypatch, tmp_path):
+    (tmp_path / "projects" / "claude-config" / "housekeeping").mkdir(parents=True)
+    monkeypatch.setenv("VAULT_PATH", str(tmp_path))
+    import app.routes.housekeeping as hk_mod
+    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "tok")
+    resp = client.patch("/housekeeping/schedule",
+                        json={"day_of_week": "xyz"},
+                        headers={"X-Capture-Token": "tok"})
+    assert resp.status_code == 400
+    assert "day_of_week" in resp.get_json()["error"]
+
+
+def test_patch_schedule_updates_and_returns_config(client, monkeypatch, tmp_path):
+    (tmp_path / "projects" / "claude-config" / "housekeeping").mkdir(parents=True)
+    monkeypatch.setenv("VAULT_PATH", str(tmp_path))
+    import app.routes.housekeeping as hk_mod
+    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "tok")
+    resp = client.patch("/housekeeping/schedule",
+                        json={"enabled": False, "hour": 4, "minute": 30, "day_of_week": "mon"},
+                        headers={"X-Capture-Token": "tok"})
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["hour"] == 4
+    assert data["minute"] == 30
+    assert data["day_of_week"] == "mon"
+    assert data["enabled"] is False

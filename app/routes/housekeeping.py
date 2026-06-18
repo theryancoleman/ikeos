@@ -45,17 +45,28 @@ def _widget_status(heartbeat: dict) -> str:
     return "ok"
 
 
+def _check_auth() -> tuple[bool, int]:
+    if not CAPTURE_TOKEN:
+        return False, 503
+    if request.headers.get("X-Capture-Token", "") != CAPTURE_TOKEN:
+        return False, 401
+    return True, 200
+
+
 @bp.route("/housekeeping")
 def index():
     from app.services.vault import read_housekeeping_tasks, read_housekeeping_heartbeat
+    from app.services.scheduler import get_config_with_next_run
     tasks = read_housekeeping_tasks("claude-config")
     heartbeat = read_housekeeping_heartbeat("claude-config")
+    schedule = get_config_with_next_run()
     return render_template(
         "housekeeping.html",
         tasks=tasks,
         heartbeat=heartbeat,
         hk_age=_age_str(heartbeat.get("last_run")),
         hk_status=_widget_status(heartbeat),
+        schedule=schedule,
     )
 
 
@@ -174,3 +185,31 @@ def run_task(filename: str):
         return jsonify({"error": "Session manager unreachable"}), 502
 
     return jsonify({"ok": True, "session_id": session_id}), 200
+
+
+@bp.route("/housekeeping/schedule", methods=["GET"])
+def get_schedule():
+    from app.services.scheduler import get_config_with_next_run
+    return jsonify(get_config_with_next_run()), 200
+
+
+@bp.route("/housekeeping/schedule", methods=["PATCH"])
+def patch_schedule():
+    ok, status = _check_auth()
+    if not ok:
+        return jsonify({"error": "Unauthorized" if status == 401 else "Service unavailable"}), status
+    if not request.is_json:
+        return jsonify({"error": "JSON body required"}), 400
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"error": "Invalid or empty JSON body"}), 400
+    allowed = {"enabled", "day_of_week", "hour", "minute"}
+    fields = {k: v for k, v in data.items() if k in allowed}
+    if not fields:
+        return jsonify({"error": "No valid fields provided"}), 400
+    try:
+        from app.services.scheduler import update_config, get_config_with_next_run
+        update_config(fields)
+        return jsonify(get_config_with_next_run()), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
