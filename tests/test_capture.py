@@ -729,6 +729,23 @@ def test_capture_json_housekeeping_task_defaults_interval_to_weekly(client, tmp_
     assert post.metadata["interval"] == "weekly"
 
 
+def test_capture_json_housekeeping_heartbeat(client, tmp_path, monkeypatch):
+    import app.services.vault as v
+    monkeypatch.setattr(v, "VAULT_PATH", tmp_path)
+    v._invalidate_cache()
+    (tmp_path / "projects" / "claude-config").mkdir(parents=True)
+
+    resp = client.post("/capture/json", json={
+        "type": "housekeeping-heartbeat",
+        "project": "claude-config",
+        "title": "Housekeeping Last Run",
+    })
+    assert resp.status_code == 200
+    assert resp.get_json()["ok"] is True
+    heartbeat = tmp_path / "projects" / "claude-config" / "housekeeping" / "last-run.md"
+    assert heartbeat.exists()
+
+
 # ============= PATCH /entries/housekeeping tests =============
 
 def test_patch_housekeeping_requires_token(client, tmp_path):
