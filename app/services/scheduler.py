@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import threading
 from datetime import datetime
 from pathlib import Path
 
@@ -111,6 +112,21 @@ def get_config_with_next_run() -> dict:
     return {**config, "next_run": next_run}
 
 
+def _schedule_command(sm_url: str, session_id: str, command: str, delay: float = 8.0) -> None:
+    def _send() -> None:
+        try:
+            requests.post(
+                f"{sm_url}/sessions/{session_id}/command",
+                json={"command": command},
+                timeout=5,
+            )
+        except Exception:
+            pass
+    t = threading.Timer(delay, _send)
+    t.daemon = True
+    t.start()
+
+
 def trigger_now() -> str | None:
     now = datetime.now()
     session_name = f"housekeeping-{now.strftime('%Y%m%d')}"
@@ -129,21 +145,19 @@ def trigger_now() -> str | None:
         if not session_id:
             logger.error("No session ID returned from session manager")
             return None
-        cmd_resp = requests.post(
-            f"{sm_url}/sessions/{session_id}/command",
-            json={"command": "/housekeeping — run in scheduled mode"},
-            timeout=5,
-        )
-        if not cmd_resp.ok:
-            logger.error("Failed to send housekeeping command: %s", cmd_resp.status_code)
-            return None
-        config = get_config()
-        config["last_triggered"] = now.isoformat(timespec="seconds")
-        _write_config(config)
-        return session_id
     except (requests.RequestException, OSError):
         logger.exception("Housekeeping trigger failed")
         return None
+
+    # Claude Code needs ~8 s to boot before it hears commands
+    _schedule_command(sm_url, session_id, "/housekeeping — run in scheduled mode")
+    config = get_config()
+    config["last_triggered"] = now.isoformat(timespec="seconds")
+    try:
+        _write_config(config)
+    except OSError:
+        logger.exception("Failed to write last_triggered after scheduling housekeeping session")
+    return session_id
 
 
 def _job() -> None:
