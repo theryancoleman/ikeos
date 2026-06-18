@@ -175,8 +175,10 @@ def delete_task(filename: str):
 
 @bp.route("/housekeeping/tasks/<filename>/run", methods=["POST"])
 def run_task(filename: str):
+    import re as _re
     session_name = f"housekeeping-{filename}"
-    command = f"/housekeeping run in scheduled mode {filename}"
+    slug = _re.sub(r"^\d{4}-\d{2}-\d{2}-", "", filename)
+    command = f"/housekeeping run {slug}"
     try:
         create_resp = requests.post(
             f"{SESSION_MANAGER_URL}/sessions",
