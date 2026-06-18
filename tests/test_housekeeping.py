@@ -192,3 +192,34 @@ def test_compute_next_run_weekly():
         task = {"last_run": "2026-06-10T12:00:00", "interval": "weekly"}
         result = _compute_next_run(task)
         assert result == "2026-06-16"  # 2026-06-10 + 6 days
+
+
+# ── Route tests ──
+
+def test_housekeeping_index_renders(client, tmp_path, monkeypatch):
+    import app.services.vault as v
+    monkeypatch.setattr(v, "VAULT_PATH", tmp_path)
+    (tmp_path / "projects" / "claude-config").mkdir(parents=True)
+    resp = client.get("/housekeeping")
+    assert resp.status_code == 200
+    assert b"Housekeeping" in resp.data
+
+
+def test_housekeeping_index_shows_tasks(client, tmp_path, monkeypatch):
+    import app.services.vault as v
+    monkeypatch.setattr(v, "VAULT_PATH", tmp_path)
+    folder = tmp_path / "projects" / "claude-config" / "housekeeping"
+    folder.mkdir(parents=True)
+    _write_task(folder, "2026-06-17-prune-vault.md")
+    resp = client.get("/housekeeping")
+    assert resp.status_code == 200
+    assert b"2026-06-17-prune-vault" in resp.data
+
+
+def test_housekeeping_index_empty_state(client, tmp_path, monkeypatch):
+    import app.services.vault as v
+    monkeypatch.setattr(v, "VAULT_PATH", tmp_path)
+    (tmp_path / "projects" / "claude-config").mkdir(parents=True)
+    resp = client.get("/housekeeping")
+    assert resp.status_code == 200
+    assert b"No tasks" in resp.data

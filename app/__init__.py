@@ -23,10 +23,12 @@ def create_app():
     from app.routes.capture import bp as capture_bp
     from app.routes.browse import bp as browse_bp
     from app.routes.agents import bp as agents_bp
+    from app.routes.housekeeping import bp as housekeeping_bp
 
     app.register_blueprint(capture_bp)
     app.register_blueprint(browse_bp)
     app.register_blueprint(agents_bp)
+    app.register_blueprint(housekeeping_bp)
 
     @app.template_filter("docker_image")
     def docker_image_filter(image: str) -> str:
