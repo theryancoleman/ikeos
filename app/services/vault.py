@@ -667,7 +667,8 @@ def read_housekeeping_tasks(project: str) -> list[dict]:
             task["status"] = _compute_task_status(task)
             task["next_run"] = _compute_next_run(task)
             tasks.append(task)
-        except Exception:
+        except Exception as e:
+            logger.warning("Failed to parse housekeeping task %s: %s", filepath, e)
             continue
     return tasks
 

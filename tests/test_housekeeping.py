@@ -1,5 +1,4 @@
 import pytest
-import requests
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 from datetime import datetime, timedelta
