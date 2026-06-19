@@ -190,6 +190,11 @@ def run_task(filename: str):
             },
             timeout=5,
         )
+        if create_resp.status_code == 409:
+            body = create_resp.json()
+            existing = body.get("session", {})
+            session_id = existing.get("id")
+            return jsonify({"ok": True, "session_id": session_id, "already_running": True}), 200
         if not create_resp.ok:
             return jsonify({"error": "Failed to create session"}), 502
         session_id = create_resp.json().get("id")
