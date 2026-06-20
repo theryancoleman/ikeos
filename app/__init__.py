@@ -1,3 +1,4 @@
+import logging
 import os
 import re
 import threading
@@ -16,6 +17,11 @@ def _warm_cache():
 
 
 def create_app(config: dict | None = None) -> Flask:
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    )
+
     app = Flask(__name__, template_folder="templates", static_folder="static")
     if config:
         app.config.update(config)
