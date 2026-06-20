@@ -198,6 +198,12 @@ a:hover { color: var(--brand-primary); text-decoration: underline; }
   font-size: var(--fs-caption);
   color: var(--text-tertiary);
 }
+.entry-summary {
+  font-size: var(--fs-body);
+  color: var(--text-secondary);
+  margin: calc(var(--space-2) * -1) 0 var(--space-3);
+  font-style: italic;
+}
 
 /* ── Eyebrow count (Phase 2) ─────────────────────────────────────────────── */
 .eyebrow-count {

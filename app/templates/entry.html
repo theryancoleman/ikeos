@@ -21,6 +21,9 @@
   <header class="page-header">
     <span class="ike-eyebrow">{{ entry.type | capitalize }}</span>
     <h1>{{ entry.title }}</h1>
+    {% if entry.description %}
+      <p class="entry-summary">{{ entry.description }}</p>
+    {% endif %}
   </header>
 
   {% if entry.type == 'bug' and entry.severity %}

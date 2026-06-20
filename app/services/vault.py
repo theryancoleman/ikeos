@@ -402,6 +402,9 @@ def write_entry(data: dict) -> str:
         }
         if component:
             metadata["component"] = component
+        description = data.get("description", "").strip()
+        if description:
+            metadata["description"] = description
 
         if entry_type == "idea":
             metadata["priority"] = data.get("priority", "medium")

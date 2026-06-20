@@ -43,6 +43,7 @@ def capture_submit():
     data = {
         "type": entry_type,
         "title": request.form["title"],
+        "description": request.form.get("description", ""),
         "body": request.form.get("body", ""),
         "domains": request.form.getlist("domains"),
     }
@@ -186,6 +187,7 @@ def capture_json():
         "type": entry_type,
         "project": project,
         "title": title,
+        "description": req.get("description", ""),
         "body": req.get("body", ""),
         "domains": [],
     }
