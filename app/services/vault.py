@@ -507,7 +507,7 @@ def update_entry_status(project: str, slug: str, new_status: str) -> bool:
 
 
 _HOUSEKEEPING_ALLOWED_FIELDS: dict[str, set[str]] = {
-    "housekeeping-task": {"enabled", "last_run", "last_error", "consecutive_failures"},
+    "housekeeping-task": {"enabled", "last_run", "last_error", "consecutive_failures", "success_definition"},
     "housekeeping-heartbeat": {"last_run", "tasks_run", "tasks_failed", "tasks_skipped"},
 }
 
