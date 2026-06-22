@@ -409,6 +409,9 @@ def write_entry(data: dict) -> str:
         if entry_type == "idea":
             metadata["priority"] = data.get("priority", "medium")
             metadata["effort"] = data.get("effort", "medium")
+            why = data.get("why", "").strip()
+            if why:
+                metadata["why"] = why
         elif entry_type == "bug":
             metadata["severity"] = data.get("severity", "medium")
 

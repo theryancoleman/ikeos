@@ -771,3 +771,56 @@ def test_update_housekeeping_fields_all_disallowed_fields_returns_false(vault):
             "housekeeping-task", "claude-config", "some-task", {"title": "HACKED"}
         )
         assert result is False
+
+
+def test_write_idea_includes_why_when_provided(tmp_vault):
+    data = {
+        "type": "idea",
+        "project": "testproject",
+        "title": "Add dark mode",
+        "body": "Users want it",
+        "priority": "medium",
+        "effort": "small",
+        "domains": [],
+        "why": "Users on mobile at night complained about eye strain in the survey",
+    }
+    slug = write_entry(data)
+    import frontmatter
+    post_file = tmp_vault / "projects" / "testproject" / "ideas" / f"{slug}.md"
+    post = frontmatter.load(post_file)
+    assert post.metadata.get("why") == "Users on mobile at night complained about eye strain in the survey"
+
+
+def test_write_idea_omits_why_when_empty(tmp_vault):
+    data = {
+        "type": "idea",
+        "project": "testproject",
+        "title": "Another feature",
+        "body": "",
+        "priority": "low",
+        "effort": "small",
+        "domains": [],
+        "why": "",
+    }
+    slug = write_entry(data)
+    import frontmatter
+    post_file = tmp_vault / "projects" / "testproject" / "ideas" / f"{slug}.md"
+    post = frontmatter.load(post_file)
+    assert "why" not in post.metadata
+
+
+def test_write_idea_omits_why_when_missing(tmp_vault):
+    data = {
+        "type": "idea",
+        "project": "testproject",
+        "title": "Yet another",
+        "body": "",
+        "priority": "low",
+        "effort": "small",
+        "domains": [],
+    }
+    slug = write_entry(data)
+    import frontmatter
+    post_file = tmp_vault / "projects" / "testproject" / "ideas" / f"{slug}.md"
+    post = frontmatter.load(post_file)
+    assert "why" not in post.metadata
