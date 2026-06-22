@@ -65,6 +65,7 @@ def capture_submit():
     if entry_type == "idea":
         data["priority"] = request.form.get("priority", "medium")
         data["effort"] = request.form.get("effort", "medium")
+        data["why"] = request.form.get("why", "").strip()
     elif entry_type == "bug":
         data["severity"] = request.form.get("severity", "medium")
         data["steps"] = request.form.get("steps", "")

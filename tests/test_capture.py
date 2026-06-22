@@ -881,3 +881,46 @@ def test_patch_housekeeping_malformed_json_returns_400(client, tmp_path, monkeyp
             headers={"X-Capture-Token": "test-token-secret"},
         )
     assert resp.status_code == 400
+
+
+def test_capture_idea_with_why_field(client, tmp_vault, monkeypatch):
+    """POST /capture with type=idea and why= passes why to vault."""
+    import frontmatter
+
+    resp = client.post("/capture", data={
+        "type": "idea",
+        "project": "testproject",
+        "title": "Test why field",
+        "body": "body text",
+        "why": "Because users need it for their workflow",
+        "priority": "medium",
+        "effort": "small",
+    }, follow_redirects=True)
+
+    assert resp.status_code == 200
+    ideas_dir = tmp_vault / "projects" / "testproject" / "ideas"
+    files = list(ideas_dir.glob("*.md"))
+    assert len(files) == 1
+    post = frontmatter.load(files[0])
+    assert post.metadata.get("why") == "Because users need it for their workflow"
+
+
+def test_capture_idea_without_why_field(client, tmp_vault):
+    """POST /capture with type=idea and no why= omits why from vault."""
+    import frontmatter
+
+    resp = client.post("/capture", data={
+        "type": "idea",
+        "project": "testproject",
+        "title": "No why test",
+        "body": "",
+        "priority": "low",
+        "effort": "small",
+    }, follow_redirects=True)
+
+    assert resp.status_code == 200
+    ideas_dir = tmp_vault / "projects" / "testproject" / "ideas"
+    files = list(ideas_dir.glob("*.md"))
+    assert len(files) == 1
+    post = frontmatter.load(files[0])
+    assert "why" not in post.metadata
