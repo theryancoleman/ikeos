@@ -263,3 +263,32 @@ def test_project_page_shows_component_pills_for_umbrella(client, tmp_path, monke
 
     assert resp.status_code == 200
     assert b"voice-bridge" in resp.data
+
+
+def test_dashboard_shows_blog_draft_ready(client, tmp_path):
+    """GET /tasks shows blog draft filename when a weekly draft exists."""
+    from unittest.mock import patch
+
+    draft_dir = tmp_path / "posts"
+    draft_dir.mkdir(parents=True)
+    (draft_dir / "2026-06-22-weekly-draft.md").write_text("# Draft")
+
+    with patch("app.routes.housekeeping.AIOS_BLOG_POSTS_DIR", str(draft_dir)):
+        resp = client.get("/tasks")
+
+    assert resp.status_code == 200
+    assert b"2026-06-22-weekly-draft.md" in resp.data
+
+
+def test_dashboard_shows_no_draft_when_absent(client, tmp_path):
+    """GET /tasks shows 'No draft' when no weekly draft exists."""
+    from unittest.mock import patch
+
+    empty_dir = tmp_path / "posts"
+    empty_dir.mkdir(parents=True)
+
+    with patch("app.routes.housekeeping.AIOS_BLOG_POSTS_DIR", str(empty_dir)):
+        resp = client.get("/tasks")
+
+    assert resp.status_code == 200
+    assert b"No draft" in resp.data

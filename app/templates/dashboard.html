@@ -104,6 +104,14 @@
           {{ housekeeping_heartbeat.tasks_failed }} failed ·
           {{ housekeeping_heartbeat.tasks_skipped }} skipped
         </div>
+        <div class="hk-widget-row hk-widget-row--blog">
+          <span class="hk-widget-label">Blog draft:</span>
+          {% if blog_draft %}
+            <span class="hk-widget-status hk-widget-status--ok">{{ blog_draft }}</span>
+          {% else %}
+            <span class="hk-widget-status hk-widget-status--pending">No draft this week</span>
+          {% endif %}
+        </div>
         <a href="{{ url_for('housekeeping.index') }}" class="hk-widget-link">Manage tasks →</a>
       </div>
     </section>

@@ -6,6 +6,7 @@ from app.services.vault import (
 )
 from app.services.umbrella import get_components
 from app.services.skills import get_skills_by_category
+from app.routes.housekeeping import _latest_blog_draft
 
 bp = Blueprint("browse", __name__)
 
@@ -36,6 +37,7 @@ def tasks():
     heartbeat = read_housekeeping_heartbeat("claude-config")
     hk_age = _age_str(heartbeat.get("last_run"))
     hk_status = _widget_status(heartbeat)
+    blog_draft = _latest_blog_draft()
 
     return render_template(
         "dashboard.html",
@@ -46,6 +48,7 @@ def tasks():
         housekeeping_heartbeat=heartbeat,
         hk_age=hk_age,
         hk_status=hk_status,
+        blog_draft=blog_draft,
     )
 
 
