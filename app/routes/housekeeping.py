@@ -1,6 +1,7 @@
 import os
 import requests
 from datetime import datetime
+from pathlib import Path
 
 from flask import Blueprint, render_template, request, jsonify
 
@@ -12,6 +13,19 @@ CAPTURE_URL = os.environ.get("CAPTURE_URL", "http://host.docker.internal:5009")
 CAPTURE_TOKEN = os.environ.get("CAPTURE_TOKEN", "")
 SESSION_MANAGER_URL = os.environ.get("SESSION_MANAGER_URL", "http://host.docker.internal:5010")
 HOUSEKEEPING_PROJECT_DIR = os.environ.get("HOUSEKEEPING_PROJECT_DIR", "/mnt/c/Server/claude-config")
+AIOS_BLOG_POSTS_DIR = os.environ.get(
+    "AIOS_BLOG_POSTS_DIR",
+    "/mnt/c/Server/projects/aios-blog/content/posts"
+)
+
+
+def _latest_blog_draft() -> str | None:
+    """Return filename of the most recent weekly-draft.md, or None if absent."""
+    posts_dir = Path(AIOS_BLOG_POSTS_DIR)
+    if not posts_dir.exists():
+        return None
+    drafts = sorted(posts_dir.glob("*-weekly-draft.md"), reverse=True)
+    return drafts[0].name if drafts else None
 
 
 def _capture_headers() -> dict:
@@ -70,6 +84,7 @@ def index():
         hk_status=_widget_status(heartbeat),
         schedule=schedule,
         capture_token=CAPTURE_TOKEN,
+        blog_draft=_latest_blog_draft(),
     )
 
 

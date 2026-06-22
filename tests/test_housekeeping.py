@@ -452,3 +452,33 @@ def test_patch_schedule_rejects_all_unrecognized_keys(client, monkeypatch, tmp_p
                         headers={"X-Capture-Token": "tok"})
     assert resp.status_code == 400
     assert "No valid fields" in resp.get_json()["error"]
+
+
+def test_blog_draft_status_present_when_draft_exists(client, tmp_path):
+    """GET /housekeeping shows blog draft status when draft file exists."""
+    from unittest.mock import patch
+
+    draft_dir = tmp_path / "posts"
+    draft_dir.mkdir(parents=True)
+    draft_file = draft_dir / "2026-06-22-weekly-draft.md"
+    draft_file.write_text("# Draft")
+
+    with patch("app.routes.housekeeping.AIOS_BLOG_POSTS_DIR", str(draft_dir)):
+        resp = client.get("/housekeeping")
+
+    assert resp.status_code == 200
+    assert b"2026-06-22-weekly-draft.md" in resp.data
+
+
+def test_blog_draft_status_no_draft(client, tmp_path):
+    """GET /housekeeping shows 'No draft' when posts dir is empty."""
+    from unittest.mock import patch
+
+    empty_dir = tmp_path / "posts"
+    empty_dir.mkdir(parents=True)
+
+    with patch("app.routes.housekeeping.AIOS_BLOG_POSTS_DIR", str(empty_dir)):
+        resp = client.get("/housekeeping")
+
+    assert resp.status_code == 200
+    assert b"No draft" in resp.data

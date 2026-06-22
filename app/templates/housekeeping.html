@@ -60,6 +60,18 @@
     </div>
   </section>
 
+  <!-- Blog draft status -->
+  <div class="hk-widget">
+    <span class="ike-eyebrow">Weekly Blog Draft</span>
+    {% if blog_draft %}
+      <p class="hk-status hk-status-ok">
+        Ready: <code>{{ blog_draft }}</code>
+      </p>
+    {% else %}
+      <p class="hk-status hk-status-pending">No draft yet this week</p>
+    {% endif %}
+  </div>
+
   <section>
     <div class="ike-eyebrow">Tasks <span class="eyebrow-count">/ {{ tasks | length }}</span></div>
     {% if tasks %}
