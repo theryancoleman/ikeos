@@ -102,24 +102,20 @@ def test_trigger_now_creates_session_and_sends_command(sched_vault, monkeypatch)
     mock_create.ok = True
     mock_create.json.return_value = {"id": "sess-abc"}
 
-    mock_cmd = MagicMock()
-    mock_cmd.ok = True
-
-    with patch("app.services.scheduler.requests.post",
-               side_effect=[mock_create, mock_cmd]) as mock_post:
+    # Command is dispatched asynchronously via _schedule_command (daemon thread, 8s delay).
+    # Patch it directly so we can assert it's called without waiting for the thread.
+    with patch("app.services.scheduler.requests.post", return_value=mock_create) as mock_post, \
+         patch("app.services.scheduler._schedule_command") as mock_schedule:
         from app.services.scheduler import trigger_now
         result = trigger_now()
 
     assert result == "sess-abc"
-    assert mock_post.call_count == 2
-    # first call: POST /sessions
+    assert mock_post.call_count == 1
     first_url = mock_post.call_args_list[0][0][0]
     assert first_url == "http://mock-sm/sessions"
-    # second call: POST /sessions/sess-abc/command
-    second_url = mock_post.call_args_list[1][0][0]
-    assert second_url == "http://mock-sm/sessions/sess-abc/command"
-    second_body = mock_post.call_args_list[1][1]["json"]
-    assert second_body["command"] == "/housekeeping — run in scheduled mode"
+    mock_schedule.assert_called_once_with(
+        "http://mock-sm", "sess-abc", "/housekeeping — run in scheduled mode"
+    )
 
 
 def test_trigger_now_session_name_starts_with_housekeeping(sched_vault, monkeypatch):
@@ -174,7 +170,10 @@ def test_trigger_now_returns_none_when_session_create_fails(sched_vault, monkeyp
     assert result is None
 
 
-def test_trigger_now_returns_none_when_command_send_fails(sched_vault, monkeypatch):
+def test_trigger_now_returns_session_id_when_command_will_fail(sched_vault, monkeypatch):
+    """trigger_now returns the session ID once the session is created. Command send
+    happens asynchronously in a daemon thread — failure there is logged silently and
+    does not change the return value or prevent last_triggered from being written."""
     monkeypatch.setenv("VAULT_PATH", str(sched_vault))
     monkeypatch.setenv("SESSION_MANAGER_URL", "http://mock-sm")
 
@@ -182,19 +181,14 @@ def test_trigger_now_returns_none_when_command_send_fails(sched_vault, monkeypat
     mock_create.ok = True
     mock_create.json.return_value = {"id": "sess-fail-cmd"}
 
-    mock_cmd = MagicMock()
-    mock_cmd.ok = False
-    mock_cmd.status_code = 500
-
-    with patch("app.services.scheduler.requests.post",
-               side_effect=[mock_create, mock_cmd]):
+    with patch("app.services.scheduler.requests.post", return_value=mock_create), \
+         patch("app.services.scheduler._schedule_command"):
         from app.services.scheduler import trigger_now, get_config
         result = trigger_now()
 
-    assert result is None
-    # last_triggered must NOT be written when command fails
+    assert result == "sess-fail-cmd"
     config = get_config()
-    assert config["last_triggered"] is None
+    assert config["last_triggered"] is not None
 
 
 def test_trigger_now_updates_last_triggered_in_config(sched_vault, monkeypatch):
