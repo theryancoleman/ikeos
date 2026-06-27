@@ -54,9 +54,9 @@ Before implementing any metric, answer: **"What question does this answer, and w
 | Field | Type | Description |
 |-------|------|-------------|
 | `task_size` | `"S"` \| `"M"` \| `"L"` | Size classification from TASK.md |
-| `duration_ms` | integer | Wall time from task start to commit |
+| `duration_ms` | integer | Wall time from task start to commit; start time recorded when task is set to in-progress in TASK.md |
 | `outcome` | `"success"` \| `"abandoned"` | Whether the task produced a commit |
-| `commit_sha` | string \| null | Git SHA if committed |
+| `commit_sha` | string \| null | Short SHA if committed, e.g., `"abc1234"` (minimum 7 chars, auto-expanded by git as repo grows) |
 | `files_changed` | integer | Number of files in the commit |
 
 ---
@@ -67,7 +67,8 @@ Before implementing any metric, answer: **"What question does this answer, and w
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `stage` | string | `"build"`, `"health_check"`, `"tests"`, `"lint"` |
+| `task_id` | string (optional) | Task label from TASK.md for attribution, e.g. `"Task 3: Metrics schema"` |
+| `stage` | `"build"` \| `"health_check"` \| `"tests"` \| `"lint"` | Verification stage where the failure occurred |
 | `error_summary` | string | One-line description of the failure |
 | `retry_count` | integer | How many times this verification was retried |
 | `resolved` | boolean | Whether the failure was resolved in the same session |
@@ -80,6 +81,7 @@ Before implementing any metric, answer: **"What question does this answer, and w
 
 | Field | Type | Description |
 |-------|------|-------------|
+| `task_id` | string (optional) | Task label from TASK.md for attribution, e.g. `"Task 3: Metrics schema"` |
 | `service` | string | Docker service name |
 | `outcome` | `"success"` \| `"failure"` | Result of `docker compose up --build` |
 | `duration_ms` | integer | Time to deploy |
@@ -135,8 +137,8 @@ Before implementing any metric, answer: **"What question does this answer, and w
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `reason` | string | Why the human had to intervene |
-| `context` | string | What the agent was doing when it needed help |
+| `reason` | string | Why the human had to intervene, e.g. `"Agent kept referencing a non-existent file path"` |
+| `context` | string | What the agent was doing when it needed help, e.g. `"Attempting Task 4, step 3: write failing test"` |
 | `blocker_type` | string | `"permission"`, `"ambiguity"`, `"error"`, `"design_decision"` |
 
 ---
