@@ -12,9 +12,9 @@ METRICS_PATH = Path(os.environ.get("METRICS_PATH", "/metrics/events.jsonl"))
 def append_event(event_type: str, payload: dict) -> bool:
     """Append a JSON-lines event to METRICS_PATH. Returns False on write failure."""
     event = {
+        **payload,
         "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "event": event_type,
-        **payload,
     }
     try:
         METRICS_PATH.parent.mkdir(parents=True, exist_ok=True)
