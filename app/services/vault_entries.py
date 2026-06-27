@@ -96,7 +96,7 @@ def write_entry(data: dict) -> str:
         target_dir.mkdir(parents=True, exist_ok=True)
 
         type_tag = _vc.TYPE_TAGS[entry_type]
-        initial_status = "running" if entry_type == "experiment" else "new"
+        initial_status = _vc.ENTRY_TYPE_CONFIG[entry_type]["initial_status"]
         tags = [type_tag, project, f"status/{initial_status}"]
         if entry_type == "idea":
             tags.append(f"urgency/{data.get('priority', 'medium')}")
@@ -200,8 +200,8 @@ def read_entries(project: str = None, status_filter: list = None, component: str
 
 def read_entry(project: str, slug: str) -> dict | None:
     proj_dir = _vc.VAULT_PATH / "projects" / project
-    for folder in ("bugs", "ideas", "notes", "grill-me", "experiments"):
-        filepath = proj_dir / folder / f"{slug}.md"
+    for cfg in _vc.ENTRY_TYPE_CONFIG.values():
+        filepath = proj_dir / cfg["folder"] / f"{slug}.md"
         if filepath.exists():
             post = frontmatter.load(filepath)
             entry = dict(post.metadata)
@@ -217,8 +217,8 @@ def update_entry_status(project: str, slug: str, new_status: str) -> bool:
     if new_status not in _vc.VALID_STATUSES:
         return False
     proj_dir = _vc.VAULT_PATH / "projects" / project
-    for folder in ("bugs", "ideas", "notes", "grill-me", "experiments"):
-        filepath = proj_dir / folder / f"{slug}.md"
+    for cfg in _vc.ENTRY_TYPE_CONFIG.values():
+        filepath = proj_dir / cfg["folder"] / f"{slug}.md"
         if filepath.exists():
             post = frontmatter.load(filepath)
             post.metadata["status"] = new_status
@@ -240,25 +240,15 @@ def update_entry_status_generic(entry_type: str, project: str | None, filename: 
         if new_status not in _vc.DECISION_STATUSES:
             return False
         base_path = _vc.VAULT_PATH / "decisions"
-    elif entry_type == "experiment":
-        if new_status not in _vc.EXPERIMENT_STATUSES:
+    elif entry_type in _vc.ENTRY_TYPE_CONFIG:
+        cfg = _vc.ENTRY_TYPE_CONFIG[entry_type]
+        if new_status not in cfg["valid_statuses"]:
             return False
         if not project:
             return False
-        base_path = _vc.VAULT_PATH / "projects" / project / "experiments"
+        base_path = _vc.VAULT_PATH / "projects" / project / cfg["folder"]
     else:
-        if new_status not in _vc.VALID_STATUSES:
-            return False
-        if not project:
-            return False
-        folder_map = {
-            "bug": "bugs", "idea": "ideas", "note": "notes",
-            "grill-me": "grill-me",
-        }
-        folder = folder_map.get(entry_type)
-        if folder is None:
-            return False
-        base_path = _vc.VAULT_PATH / "projects" / project / folder
+        return False
 
     if filename.endswith(".md"):
         filepath = base_path / filename

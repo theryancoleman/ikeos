@@ -155,3 +155,68 @@ def test_update_entry_status_generic_experiment_complete(tmp_path):
     post = fm.load(exp_dir / "2026-01-01-t.md")
     assert post.metadata["status"] == "complete"
     assert "status/complete" in post.metadata["tags"]
+
+
+def test_entry_type_config_defines_type_folders_and_tags():
+    """TYPE_FOLDERS and TYPE_TAGS must be derived from ENTRY_TYPE_CONFIG — not independent dicts."""
+    assert hasattr(_vc, "ENTRY_TYPE_CONFIG"), "ENTRY_TYPE_CONFIG not found in vault_cache"
+    assert _vc.TYPE_FOLDERS == {k: v["folder"] for k, v in _vc.ENTRY_TYPE_CONFIG.items()}
+    assert _vc.TYPE_TAGS == {k: v["tag"] for k, v in _vc.ENTRY_TYPE_CONFIG.items()}
+
+
+def test_read_entry_uses_entry_type_config(tmp_path):
+    """read_entry must find an entry whose type/folder comes only from ENTRY_TYPE_CONFIG."""
+    fake_config = {
+        **_vc.ENTRY_TYPE_CONFIG,
+        "widget": {
+            "folder": "widgets",
+            "tag": "widget",
+            "initial_status": "new",
+            "valid_statuses": _vc.VALID_STATUSES,
+        },
+    }
+    widget_dir = tmp_path / "projects" / "myproj" / "widgets"
+    widget_dir.mkdir(parents=True)
+    post = fm.Post(
+        "body",
+        type="widget", title="Widget", project="myproj",
+        status="new", created="2026-01-01T00:00:00",
+        tags=["widget", "myproj", "status/new"],
+    )
+    (widget_dir / "2026-01-01-widget.md").write_text(fm.dumps(post))
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path), \
+         patch("app.services.vault_cache.ENTRY_TYPE_CONFIG", fake_config):
+        from app.services.vault_entries import read_entry
+        result = read_entry("myproj", "2026-01-01-widget")
+    assert result is not None
+    assert result["title"] == "Widget"
+
+
+def test_update_entry_status_generic_uses_entry_type_config(tmp_path):
+    """update_entry_status_generic must route to a folder defined only in ENTRY_TYPE_CONFIG."""
+    fake_config = {
+        **_vc.ENTRY_TYPE_CONFIG,
+        "widget": {
+            "folder": "widgets",
+            "tag": "widget",
+            "initial_status": "new",
+            "valid_statuses": _vc.VALID_STATUSES,
+        },
+    }
+    widget_dir = tmp_path / "projects" / "myproj" / "widgets"
+    widget_dir.mkdir(parents=True)
+    post = fm.Post(
+        "body",
+        type="widget", title="W", project="myproj",
+        status="new", created="2026-01-01T00:00:00",
+        tags=["widget", "myproj", "status/new"],
+    )
+    (widget_dir / "2026-01-01-w.md").write_text(fm.dumps(post))
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path), \
+         patch("app.services.vault_cache.ENTRY_TYPE_CONFIG", fake_config):
+        from app.services.vault_entries import update_entry_status_generic
+        result = update_entry_status_generic("widget", "myproj", "2026-01-01-w", "done")
+    assert result is True
+    post = fm.load(widget_dir / "2026-01-01-w.md")
+    assert post.metadata["status"] == "done"
+    assert "status/done" in post.metadata["tags"]

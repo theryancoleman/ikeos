@@ -4,21 +4,23 @@ from pathlib import Path
 
 VAULT_PATH = Path(os.environ.get("VAULT_PATH", "/vault"))
 
-VALID_TYPES = {
-    "note", "idea", "bug", "decision",
-    "grill-me", "housekeeping-task", "housekeeping-heartbeat", "experiment",
-}
 VALID_STATUSES = {"new", "open", "in-progress", "done", "deferred"}
 DECISION_STATUSES = {"proposed", "accepted", "rejected", "superseded"}
 EXPERIMENT_STATUSES = {"running", "complete", "abandoned"}
-TYPE_FOLDERS = {"note": "notes", "idea": "ideas", "bug": "bugs", "grill-me": "grill-me", "experiment": "experiments"}
-TYPE_TAGS = {
-    "note": "documentation",
-    "idea": "enhancement",
-    "bug": "bug",
-    "decision": "decision",
-    "grill-me": "grill-me",
-    "experiment": "experiment",
+
+ENTRY_TYPE_CONFIG: dict[str, dict] = {
+    "note":       {"folder": "notes",       "tag": "documentation", "initial_status": "new",     "valid_statuses": VALID_STATUSES},
+    "idea":       {"folder": "ideas",       "tag": "enhancement",   "initial_status": "new",     "valid_statuses": VALID_STATUSES},
+    "bug":        {"folder": "bugs",        "tag": "bug",           "initial_status": "new",     "valid_statuses": VALID_STATUSES},
+    "grill-me":   {"folder": "grill-me",    "tag": "grill-me",      "initial_status": "new",     "valid_statuses": VALID_STATUSES},
+    "experiment": {"folder": "experiments", "tag": "experiment",    "initial_status": "running", "valid_statuses": EXPERIMENT_STATUSES},
+}
+
+TYPE_FOLDERS = {k: v["folder"] for k, v in ENTRY_TYPE_CONFIG.items()}
+TYPE_TAGS = {k: v["tag"] for k, v in ENTRY_TYPE_CONFIG.items()}
+
+VALID_TYPES = set(ENTRY_TYPE_CONFIG.keys()) | {
+    "decision", "housekeeping-task", "housekeeping-heartbeat",
 }
 
 _TTL = 600.0  # 10 minutes
