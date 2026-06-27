@@ -35,6 +35,9 @@ venv/
 # Build artifacts
 app/static/bundle.css
 
+# Personal project config — copy from umbrella_registry.yaml.example
+umbrella_registry.yaml
+
 # Claude internal
 .claude/agent-memory/
 .claude/settings.local.json

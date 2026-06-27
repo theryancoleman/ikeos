@@ -1,0 +1,32 @@
+# umbrella_registry.yaml
+# Maps project slugs to their component sub-projects.
+#
+# Copy this file to umbrella_registry.yaml and configure for your projects.
+# umbrella_registry.yaml is gitignored — your project config stays private.
+#
+# Umbrella projects: set components to a non-empty list.
+#   Components will be hidden from the top-level project picker and
+#   captured into the umbrella's vault folder.
+#
+# Flat projects: set components to an empty list [].
+#   These appear as normal projects with no component picker.
+#
+# codebases: absolute paths to the relevant source directories on disk.
+#   Used by housekeeping and session management to locate project files.
+
+# Example umbrella project with two components
+my-platform:
+  name: My Platform
+  codebases:
+    - /path/to/my-platform
+    - /path/to/my-platform-worker
+  components:
+    - web-app
+    - background-worker
+
+# Example flat project (no components)
+my-tool:
+  name: My Tool
+  codebases:
+    - /path/to/my-tool
+  components: []
