@@ -78,7 +78,8 @@ def create_app(config: dict | None = None) -> Flask:
     def health():
         return "ok", 200
 
-    threading.Thread(target=_warm_cache, daemon=True).start()
+    if not app.testing:
+        threading.Thread(target=_warm_cache, daemon=True).start()
 
     from app.services import scheduler as scheduler_svc
     scheduler_svc.start(app)
