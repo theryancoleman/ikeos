@@ -214,12 +214,12 @@ def read_entry(project: str, slug: str) -> dict | None:
 
 
 def update_entry_status(project: str, slug: str, new_status: str) -> bool:
-    if new_status not in _vc.VALID_STATUSES:
-        return False
     proj_dir = _vc.VAULT_PATH / "projects" / project
     for cfg in _vc.ENTRY_TYPE_CONFIG.values():
         filepath = proj_dir / cfg["folder"] / f"{slug}.md"
         if filepath.exists():
+            if new_status not in cfg["valid_statuses"]:
+                return False
             post = frontmatter.load(filepath)
             post.metadata["status"] = new_status
             post.metadata["updated"] = datetime.now().isoformat(timespec="seconds")

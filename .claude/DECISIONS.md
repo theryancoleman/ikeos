@@ -151,3 +151,7 @@ The root cause of vault bug 2026-06-21 (subagents stalling on Bash permission pr
 ## 2026-06-27: PATCH_VALID_TYPES and CAPTURE_JSON_VALID_TYPES named in vault_cache
 
 Two named frozenset constants (`PATCH_VALID_TYPES`, `CAPTURE_JSON_VALID_TYPES`) are derived from `ENTRY_TYPE_CONFIG` in `vault_cache.py` and re-exported through `vault.py`. `capture.py` imports them directly rather than computing equivalent sets locally on every request. This eliminates three overlapping set expressions that existed after the ENTRY_TYPE_CONFIG refactor (Session 6) and makes the type-set contract for each endpoint visible in one place. `_read_all_entries()` was also updated to iterate `ENTRY_TYPE_CONFIG.values()` directly rather than going through the `TYPE_FOLDERS` derived dict, completing the registry consolidation.
+
+## 2026-06-27: update_entry_status() validates against per-type lifecycle
+
+`update_entry_status()` (the web-UI status path, called by `POST /projects/<name>/<slug>/status`) previously validated `new_status` against `VALID_STATUSES` before finding the file. This meant experiments could be set to `done` (invalid) and could not be set to `complete` (valid). Fix: remove the upfront check; after finding the file by type folder, validate against `cfg["valid_statuses"]` from `ENTRY_TYPE_CONFIG`. This is the same pattern `update_entry_status_generic()` uses. The web UI status dropdown now correctly enforces per-type lifecycle rules without needing to know the entry type upfront.

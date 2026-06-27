@@ -232,3 +232,57 @@ def test_capture_json_valid_types_constant_exists_and_is_correct():
     assert _vc.CAPTURE_JSON_VALID_TYPES == (
         set(_vc.ENTRY_TYPE_CONFIG.keys()) | {"housekeeping-task", "housekeeping-heartbeat"}
     )
+
+
+def test_update_entry_status_rejects_standard_status_for_experiment(tmp_path):
+    """'done' is a valid VALID_STATUS but not a valid experiment status."""
+    exp_dir = tmp_path / "projects" / "myproj" / "experiments"
+    exp_dir.mkdir(parents=True)
+    entry = fm.Post(
+        "body",
+        type="experiment", title="E", project="myproj",
+        status="running", created="2026-01-01T00:00:00",
+        tags=["experiment", "myproj", "status/running"],
+    )
+    (exp_dir / "2026-01-01-e.md").write_text(fm.dumps(entry))
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
+        from app.services.vault_entries import update_entry_status
+        result = update_entry_status("myproj", "2026-01-01-e", "done")
+    assert result is False, "update_entry_status must reject 'done' for experiments"
+
+
+def test_update_entry_status_accepts_experiment_status_for_experiment(tmp_path):
+    """'complete' is a valid experiment status and must be accepted."""
+    exp_dir = tmp_path / "projects" / "myproj" / "experiments"
+    exp_dir.mkdir(parents=True)
+    entry = fm.Post(
+        "body",
+        type="experiment", title="E", project="myproj",
+        status="running", created="2026-01-01T00:00:00",
+        tags=["experiment", "myproj", "status/running"],
+    )
+    (exp_dir / "2026-01-01-e.md").write_text(fm.dumps(entry))
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
+        from app.services.vault_entries import update_entry_status
+        result = update_entry_status("myproj", "2026-01-01-e", "complete")
+    assert result is True
+    post = fm.load(exp_dir / "2026-01-01-e.md")
+    assert post.metadata["status"] == "complete"
+    assert "status/complete" in post.metadata["tags"]
+
+
+def test_update_entry_status_rejects_experiment_status_for_note(tmp_path):
+    """'running' is a valid experiment status but not valid for a note."""
+    note_dir = tmp_path / "projects" / "myproj" / "notes"
+    note_dir.mkdir(parents=True)
+    entry = fm.Post(
+        "body",
+        type="note", title="N", project="myproj",
+        status="new", created="2026-01-01T00:00:00",
+        tags=["documentation", "myproj", "status/new"],
+    )
+    (note_dir / "2026-01-01-n.md").write_text(fm.dumps(entry))
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
+        from app.services.vault_entries import update_entry_status
+        result = update_entry_status("myproj", "2026-01-01-n", "running")
+    assert result is False, "update_entry_status must reject 'running' for notes"
