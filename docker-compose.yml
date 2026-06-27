@@ -4,6 +4,8 @@ services:
     container_name: ikeos
     restart: unless-stopped
     env_file: .env
+    environment:
+      - VAULT_PATH=/vault
     ports:
       - "5009:5009"
     volumes:
