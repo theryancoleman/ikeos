@@ -107,3 +107,31 @@ Flask routes gated by `X-Capture-Token` cannot receive the token from browser JS
 ## 2026-06-15: bundle.css is generated — always edit style.css, never bundle.css
 
 `scripts/bundle_css.py` runs during `docker build` and overwrites `app/static/bundle.css` by inlining all `@import` chains from `app/static/style.css`. Edits made directly to `bundle.css` are silently discarded on the next build. The source of truth for all app CSS is `app/static/style.css` (and `app/static/ikeos/styles.css` for design-system tokens). The committed `bundle.css` in git reflects the last build output but is not the editing target.
+
+## 2026-06-27: Project 'Imi — public release target is Level B
+
+IkeOS will be released at Level B: someone can clone the repo, configure their own Obsidian vault path and token, and run `docker compose up -d` to get a working instance. Level C (general-purpose, tool-agnostic platform with no personal assumptions) is the acknowledged future horizon. All 'Imi decisions are evaluated against B while keeping C achievable.
+
+## 2026-06-27: Project 'Imi — IkeOS web app is the brain for v1
+
+The IkeOS Flask app is the platform brain in v1, not an adapter. Clean internal boundaries (named interfaces between the app and its dependencies) will be established during 'Imi. Actual repo restructuring — extracting components into separate repos — is deferred to a subsequent phase. Rationale: premature extraction stalls the public release without delivering value.
+
+## 2026-06-27: Project 'Imi — engineering metrics are schema-first
+
+The engineering metrics system (task completion time, verification failures, retry rate, deployment failures, housekeeping success, agent success rate, etc.) will have its schema and measurement intent defined during 'Imi. Write paths (instrumentation from agent sessions and hooks) are a separate phase. Rationale: reliable metric emission across sessions that can fail mid-run is an L-size distributed-observability problem — solving it before the schema is stable would produce an empty database nobody trusts.
+
+## 2026-06-27: Project 'Imi — docker-compose split into portable base + homelab override
+
+`docker-compose.yml` becomes a portable base with no external network dependencies (direct port binding only). `docker-compose.homelab.yml` is a gitignored or clearly-marked override that adds Traefik labels and the `traefik_network` external network. Traefik itself is flagged for evaluation in the platform audit (Adopt/Pilot/Defer/Reject) — port-based routing without HTTPS may not justify the infrastructure dependency.
+
+## 2026-06-27: Project 'Imi — .claude/ is the Claude Code adapter contract
+
+The `.claude/` directory is intentionally committed and public. It represents IkeOS's adapter configuration for Claude Code: how an AI coding engine must be configured to operate within IkeOS principles. `CLAUDE.md` is split into two layers: the project-level file (committed, public IkeOS platform instructions) and the user-level global `~/.claude/CLAUDE.md` (personal homelab config, never committed to any repo). Personal references (IPs, credentials, vault paths) must not appear in the project-level file.
+
+## 2026-06-27: Project 'Imi — X-Capture-Token auth model is a deliberate single-user choice
+
+The shared token protecting `POST /capture` and `PATCH /entries` is appropriate for IkeOS v1: single-user, trusted local network, not internet-facing. This is a documented architectural choice, not an oversight. Multi-user session-based auth is the natural next step if IkeOS becomes internet-facing or multi-tenant. Until then, the token model is correct for its threat surface.
+
+## 2026-06-27: Project 'Imi — Session 1 scope is philosophy + decisions only
+
+Session 1 produces PHILOSOPHY.md (the foundational document) and the above DECISIONS.md entries. No structural file changes. Session 2 begins the platform audit and cleanup using the philosophy as its north star, then determines subsequent phases.
