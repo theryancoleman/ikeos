@@ -7,15 +7,5 @@ services:
     ports:
       - "5009:5009"
     volumes:
-      - C:\Server\obsidian-vault:/vault:rw
-      - C:\Users\ServerAdmin\.claude\VERSION:/claude-config/VERSION:ro
-    networks:
-      - traefik_network
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.ikeos.rule=Host(`192.168.1.77`)"
-      - "traefik.http.services.ikeos.loadbalancer.server.port=5009"
-
-networks:
-  traefik_network:
-    external: true
+      - ${VAULT_PATH}:/vault:rw
+      - ${CLAUDE_VERSION_PATH}:/claude-config/VERSION:ro

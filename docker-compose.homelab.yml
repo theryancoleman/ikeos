@@ -1,0 +1,22 @@
+# Homelab overlay — adds Traefik routing for homelab deployments.
+# Usage: docker compose -f docker-compose.yml -f docker-compose.homelab.yml up -d
+#
+# Requires traefik_network to exist on the host:
+#   docker network create traefik_network
+#
+# Note: Traefik is under evaluation (see docs/imi-audit.md). This overlay
+# exists so the base compose works without Traefik while the homelab
+# deployment continues unchanged.
+
+services:
+  ikeos:
+    networks:
+      - traefik_network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ikeos.rule=Host(`homeautomation`)"
+      - "traefik.http.services.ikeos.loadbalancer.server.port=5009"
+
+networks:
+  traefik_network:
+    external: true
