@@ -47,9 +47,9 @@ Otherwise, invoke the Implementer directly.
 
 - [ ] `docker compose up --build` completes without error
 - [ ] `docker ps` shows container status as healthy (or running, if no healthcheck)
-- [ ] `docker compose logs --tail=50 obsidian-capture` — no ERROR lines
+- [ ] `docker compose logs --tail=50 ikeos` — no ERROR lines
 - [ ] <!-- Add endpoint / behaviour check, e.g.: `curl -sf http://localhost:5009/health` returns 200 -->
-- [ ] <!-- Add any test command, e.g.: `docker exec obsidian-capture pytest` -->
+- [ ] <!-- Add any test command, e.g.: `docker exec ikeos pytest` -->
 
 ---
 
@@ -61,7 +61,7 @@ Otherwise, invoke the Implementer directly.
 
 ## If verification fails
 
-1. Run `docker compose logs obsidian-capture` — identify the failure
+1. Run `docker compose logs ikeos` — identify the failure
 2. Apply fix and re-run verification once
 3. If still failing: **stop**. Do not commit. Document in Notes:
    - Root cause hypothesis

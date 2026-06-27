@@ -4,7 +4,6 @@
 
 from app.services.vault_cache import (  # noqa: F401
     VAULT_PATH,
-    VALID_TYPES,
     VALID_STATUSES,
     DECISION_STATUSES,
     EXPERIMENT_STATUSES,

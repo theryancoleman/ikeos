@@ -4,9 +4,9 @@ from pathlib import Path
 
 VAULT_PATH = Path(os.environ.get("VAULT_PATH", "/vault"))
 
-VALID_STATUSES = {"new", "open", "in-progress", "done", "deferred"}
-DECISION_STATUSES = {"proposed", "accepted", "rejected", "superseded"}
-EXPERIMENT_STATUSES = {"running", "complete", "abandoned"}
+VALID_STATUSES: frozenset[str] = frozenset({"new", "open", "in-progress", "done", "deferred"})
+DECISION_STATUSES: frozenset[str] = frozenset({"proposed", "accepted", "rejected", "superseded"})
+EXPERIMENT_STATUSES: frozenset[str] = frozenset({"running", "complete", "abandoned"})
 
 ENTRY_TYPE_CONFIG: dict[str, dict] = {
     "note":       {"folder": "notes",       "tag": "documentation", "initial_status": "new",     "valid_statuses": VALID_STATUSES},
@@ -18,10 +18,6 @@ ENTRY_TYPE_CONFIG: dict[str, dict] = {
 
 TYPE_FOLDERS = {k: v["folder"] for k, v in ENTRY_TYPE_CONFIG.items()}
 TYPE_TAGS = {k: v["tag"] for k, v in ENTRY_TYPE_CONFIG.items()}
-
-VALID_TYPES = set(ENTRY_TYPE_CONFIG.keys()) | {
-    "decision", "housekeeping-task", "housekeeping-heartbeat",
-}
 
 PATCH_VALID_TYPES: frozenset[str] = frozenset(ENTRY_TYPE_CONFIG.keys()) | {"decision"}
 CAPTURE_JSON_VALID_TYPES: frozenset[str] = (
