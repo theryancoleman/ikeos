@@ -955,3 +955,4 @@ def test_capture_json_experiment(client, tmp_vault):
     assert post.metadata["status"] == "running"
     assert post.metadata["hypothesis"] == "Caching will be faster"
     assert post.metadata["timebox"] == "one session"
+    assert "status/running" in post.metadata["tags"]

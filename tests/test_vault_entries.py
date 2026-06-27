@@ -120,6 +120,24 @@ def test_write_entry_experiment_sets_status_running(tmp_path):
     assert post.metadata["decision"] == ""
 
 
+def test_read_entry_finds_experiment_by_slug(tmp_path):
+    exp_dir = tmp_path / "projects" / "myproj" / "experiments"
+    exp_dir.mkdir(parents=True)
+    entry = fm.Post(
+        "## Context\nbody\n",
+        type="experiment", title="My Experiment", project="myproj",
+        status="running", created="2026-01-01T00:00:00",
+        tags=["experiment", "myproj", "status/running"],
+    )
+    (exp_dir / "2026-01-01-my-experiment.md").write_text(fm.dumps(entry))
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
+        from app.services.vault_entries import read_entry
+        result = read_entry("myproj", "2026-01-01-my-experiment")
+    assert result is not None
+    assert result["title"] == "My Experiment"
+    assert result["status"] == "running"
+
+
 def test_update_entry_status_generic_experiment_complete(tmp_path):
     exp_dir = tmp_path / "projects" / "myproj" / "experiments"
     exp_dir.mkdir(parents=True)

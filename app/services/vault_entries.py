@@ -132,7 +132,6 @@ def write_entry(data: dict) -> str:
         elif entry_type == "bug":
             metadata["severity"] = data.get("severity", "medium")
         elif entry_type == "experiment":
-            metadata["status"] = "running"
             metadata["hypothesis"] = data.get("hypothesis", "")
             metadata["expected_outcome"] = data.get("expected_outcome", "")
             metadata["measurement"] = data.get("measurement", "")
