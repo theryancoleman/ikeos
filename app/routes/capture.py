@@ -1,6 +1,9 @@
 import os
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
-from app.services.vault import get_projects_with_meta, write_entry, update_entry_status_generic, update_housekeeping_fields
+from app.services.vault import (
+    get_projects_with_meta, write_entry, update_entry_status_generic,
+    update_housekeeping_fields, ENTRY_TYPE_CONFIG, DECISION_STATUSES,
+)
 from app.services.umbrella import get_components
 
 bp = Blueprint("capture", __name__)
@@ -110,15 +113,15 @@ def patch_entries():
         return jsonify({"error": "Invalid filename"}), 400
 
     # Validate entry_type
-    if entry_type not in ("bug", "idea", "note", "decision", "grill-me", "experiment"):
+    _patch_valid_types = set(ENTRY_TYPE_CONFIG.keys()) | {"decision"}
+    if entry_type not in _patch_valid_types:
         return jsonify({"error": "Invalid entry type"}), 400
 
     # Validate status against the lifecycle for this entry type
-    valid_statuses = (
-        ("proposed", "accepted", "rejected", "superseded") if entry_type == "decision"
-        else ("running", "complete", "abandoned") if entry_type == "experiment"
-        else ("new", "open", "in-progress", "done", "deferred")
-    )
+    if entry_type == "decision":
+        valid_statuses = DECISION_STATUSES
+    else:
+        valid_statuses = ENTRY_TYPE_CONFIG[entry_type]["valid_statuses"]
     if status not in valid_statuses:
         return jsonify({"error": f"Invalid status for {entry_type}"}), 400
 
@@ -185,8 +188,10 @@ def capture_json():
 
     if not title:
         return jsonify({"error": "title is required"}), 400
-    if entry_type not in ("note", "idea", "bug", "grill-me", "housekeeping-task", "housekeeping-heartbeat", "experiment"):
-        return jsonify({"error": "type must be note, idea, bug, grill-me, housekeeping-task, housekeeping-heartbeat, or experiment"}), 400
+    _capture_json_valid_types = set(ENTRY_TYPE_CONFIG.keys()) | {"housekeeping-task", "housekeeping-heartbeat"}
+    if entry_type not in _capture_json_valid_types:
+        valid_list = ", ".join(sorted(_capture_json_valid_types))
+        return jsonify({"error": f"type must be one of: {valid_list}"}), 400
     if not project:
         return jsonify({"error": "project is required"}), 400
 
