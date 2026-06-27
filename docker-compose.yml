@@ -6,8 +6,10 @@ services:
     env_file: .env
     environment:
       - VAULT_PATH=/vault
+      - METRICS_PATH=/metrics/events.jsonl
     ports:
       - "5009:5009"
     volumes:
       - ${VAULT_PATH}:/vault:rw
+      - ${METRICS_PATH_HOST}:/metrics:rw
       - ${CLAUDE_VERSION_PATH}:/claude-config/VERSION:ro

@@ -157,6 +157,14 @@ def trigger_now() -> str | None:
         _write_config(config)
     except OSError:
         logger.exception("Failed to write last_triggered after scheduling housekeeping session")
+
+    from app.services.metrics import append_event
+    append_event("housekeeping.trigger", {
+        "trigger": "scheduled" if _scheduler else "manual",
+        "session_id": session_id,
+        "project": "claude-config",
+    })
+
     return session_id
 
 
