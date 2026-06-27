@@ -135,3 +135,11 @@ The shared token protecting `POST /capture` and `PATCH /entries` is appropriate 
 ## 2026-06-27: Project 'Imi — Session 1 scope is philosophy + decisions only
 
 Session 1 produces PHILOSOPHY.md (the foundational document) and the above DECISIONS.md entries. No structural file changes. Session 2 begins the platform audit and cleanup using the philosophy as its north star, then determines subsequent phases.
+
+## 2026-06-27: Experiment entry type uses separate status lifecycle
+
+Experiments use `running → complete | abandoned` rather than the standard `new → open → in-progress → done | deferred`. Added `EXPERIMENT_STATUSES` constant to `vault_cache.py` and branched `update_entry_status_generic()` to validate against the right set per type. The PATCH /entries endpoint mirrors this branch. Standard status fields (`new`, `open`, etc.) were not extended — experiment statuses are isolated to prevent contaminating the triage flow (which looks for `status: new`).
+
+## 2026-06-27: Housekeeping permission bug fix deferred to claude-config
+
+The root cause of vault bug 2026-06-21 (subagents stalling on Bash permission prompts in unattended housekeeping sessions) is not fixable from the IkeOS app layer. IkeOS dispatches a Claude Code session; permission grants are governed by `claude-config/global/settings.json`. The chosen fix: add `Bash(python3 *)` and `Bash(python *)` to the allowlist in `claude-config/global/settings.json`, scoped to the claude-config project context. An idea entry has been created in the claude-config vault project tracking this work. IkeOS side: the `housekeeping.trigger` metrics event (Task 2, Session 5) provides the observability needed to detect failed or stalled runs.
