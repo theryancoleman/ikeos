@@ -25,7 +25,7 @@
 </div>
 {% endif %}
 
-{% for section_label, section_entries in [('Bugs', bugs), ('Ideas', ideas), ('Notes', notes)] %}
+{% for section_label, section_entries in [('Bugs', bugs), ('Ideas', ideas), ('Notes', notes), ('Grill Me', grill_me)] %}
   {% if section_entries %}
     <div class="ike-eyebrow">{{ section_label }} <span class="eyebrow-count">/ {{ section_entries | length }}</span></div>
     <ul class="entry-group">
@@ -57,7 +57,7 @@
   {% endif %}
 {% endfor %}
 
-{% if not bugs and not ideas and not notes %}
+{% if not bugs and not ideas and not notes and not grill_me %}
   <p class="empty">Nothing active here. <a href="{{ url_for('browse.project', name=name, show_all='true') }}">Show all entries</a> or <a href="{{ url_for('capture.capture_form') }}">capture one</a>.</p>
 {% endif %}
 {% endblock %}

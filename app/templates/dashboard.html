@@ -79,7 +79,10 @@
                 {% if project_stats[p.slug].notes > 0 %}
                   <span class="count-chip chip-note">{{ project_stats[p.slug].notes }} note{{ 's' if project_stats[p.slug].notes != 1 }}</span>
                 {% endif %}
-                {% if project_stats[p.slug].bugs == 0 and project_stats[p.slug].ideas == 0 and project_stats[p.slug].notes == 0 %}
+                {% if project_stats[p.slug].grill_me > 0 %}
+                  <span class="count-chip chip-grillme">{{ project_stats[p.slug].grill_me }} grill-me</span>
+                {% endif %}
+                {% if project_stats[p.slug].bugs == 0 and project_stats[p.slug].ideas == 0 and project_stats[p.slug].notes == 0 and project_stats[p.slug].grill_me == 0 %}
                   <span class="count-chip chip-empty">no open items</span>
                 {% endif %}
               </div>

@@ -471,7 +471,8 @@ button[type="submit"] { margin-top: var(--space-3); }
 .count-chip::before { content: ""; width: 4px; height: 4px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
 .chip-bug   { color: var(--sem-insight);       background: rgba(255,120,73,0.08); }
 .chip-idea  { color: var(--ike-soft-lavender); background: rgba(180,151,255,0.08); }
-.chip-note  { color: var(--sem-knowledge);     background: rgba(59,130,246,0.08); }
+.chip-note    { color: var(--sem-knowledge);     background: rgba(59,130,246,0.08); }
+.chip-grillme { color: #f59e0b;                 background: rgba(245,158,11,0.08); }
 .chip-empty { background: transparent; color: var(--text-muted); font-weight: 400; }
 .chip-empty::before { display: none; }
 

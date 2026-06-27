@@ -27,6 +27,7 @@ def tasks():
             "bugs": len([e for e in active if e.get("type") == "bug"]),
             "ideas": len([e for e in active if e.get("type") == "idea"]),
             "notes": len([e for e in active if e.get("type") == "note"]),
+            "grill_me": len([e for e in active if e.get("type") == "grill-me"]),
             "new": len([e for e in p_entries if e.get("status") == "new"]),
         }
 
@@ -62,6 +63,7 @@ def project(name):
     bugs = [e for e in entries if e.get("type") == "bug"]
     ideas = [e for e in entries if e.get("type") == "idea"]
     notes = [e for e in entries if e.get("type") == "note"]
+    grill_me = [e for e in entries if e.get("type") == "grill-me"]
 
     all_projects = get_projects_with_meta(include_hidden=True)
     project_meta = next((p for p in all_projects if p["slug"] == name), None)
@@ -76,6 +78,7 @@ def project(name):
         bugs=bugs,
         ideas=ideas,
         notes=notes,
+        grill_me=grill_me,
         show_all=show_all,
         projects=visible_projects,
         components=components,
