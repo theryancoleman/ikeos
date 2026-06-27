@@ -17,7 +17,7 @@ vault/
         ├── ideas/
         ├── notes/
         ├── grill-me/
-        └── experiments/   (planned)
+        └── experiments/
 ```
 
 Each entry is a Markdown file with YAML frontmatter. Required frontmatter fields:
@@ -25,8 +25,8 @@ Each entry is a Markdown file with YAML frontmatter. Required frontmatter fields
 ```yaml
 ---
 title: "Entry title"
-type: bug          # bug | idea | note | grill-me
-status: new        # new | open | in-progress | done | deferred
+type: bug          # bug | idea | note | grill-me | experiment
+status: new        # new | open | in-progress | done | deferred (or running | complete | abandoned for experiments)
 project: my-project
 created: '2026-06-27T14:00:00'
 ---
@@ -63,7 +63,7 @@ docker compose logs -f ikeos
 docker exec ikeos pytest
 
 # Run a specific test
-docker exec ikeos pytest tests/test_vault.py -v
+docker exec ikeos pytest tests/test_vault_entries.py -v
 ```
 
 **Never test by running code on the host.** Always run inside the container — the container has the vault mount and environment variables the app depends on.
@@ -75,12 +75,13 @@ docker exec ikeos pytest tests/test_vault.py -v
 Tests use pytest. The vault tests create a temporary directory — never the real vault.
 
 ```bash
-docker exec ikeos pytest                    # all tests
-docker exec ikeos pytest tests/ -v          # verbose
-docker exec ikeos pytest tests/test_vault.py::test_name -v  # single test
+docker exec ikeos pytest                              # all tests
+docker exec ikeos pytest tests/ -v                    # verbose
+docker exec ikeos pytest tests/test_vault_entries.py  # single file
+docker exec ikeos pytest tests/test_vault_entries.py::test_name -v  # single test
 ```
 
-Tests are in `tests/`. They mirror the source structure: `tests/test_vault.py` tests `app/services/vault.py`.
+Tests are in `tests/`. Vault tests use `tmp_path` and patch `vault_cache.VAULT_PATH` — they never touch the real vault.
 
 ---
 
@@ -100,6 +101,22 @@ curl -X POST http://localhost:5009/capture \
 ```
 
 The vault directory for the project is created automatically on first write.
+
+---
+
+## Adding a new entry type
+
+Entry types are registered in `ENTRY_TYPE_CONFIG` in `app/services/vault_cache.py`. To add a new project-scoped type:
+
+1. Add an entry to `ENTRY_TYPE_CONFIG`:
+   ```python
+   "my-type": {"folder": "my-types", "tag": "my-type", "initial_status": "new", "valid_statuses": VALID_STATUSES},
+   ```
+2. Add an `elif entry_type == "my-type":` block in `write_entry()` in `vault_entries.py` for type-specific metadata fields
+3. Add a radio button to `app/templates/capture.html`
+4. Add the type to `capture_json()` in `app/routes/capture.py` if it should be capturable via the JSON API
+
+See the `DECISIONS.md` entry "ENTRY_TYPE_CONFIG is the single registry" for the full rationale.
 
 ---
 
