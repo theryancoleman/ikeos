@@ -40,7 +40,10 @@ app/
 │   ├── capture.py       # /capture, /capture/json, /entries (PATCH)
 │   └── housekeeping.py  # /housekeeping
 ├── services/
-│   └── vault.py         # All vault file I/O — no Flask imports
+│   ├── vault.py         # All vault file I/O — no Flask imports
+│   ├── scheduler.py     # APScheduler housekeeping job setup and management
+│   ├── skills.py        # Reads skills_registry.yaml, groups skills by category
+│   └── umbrella.py      # Reads umbrella_registry.yaml, resolves project component trees
 ├── templates/           # Jinja2 templates
 └── static/              # CSS, JS — no build pipeline
 run.py
