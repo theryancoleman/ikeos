@@ -28,5 +28,5 @@ def client():
 def tmp_vault(tmp_path):
     """Vault fixture that patches VAULT_PATH and creates a testproject directory."""
     (tmp_path / "projects" / "testproject").mkdir(parents=True)
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         yield tmp_path

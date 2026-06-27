@@ -21,7 +21,7 @@ def vault(tmp_path):
 def client(vault):
     os.environ["FLASK_SECRET_KEY"] = "test-secret-key"
     app = create_app({"TESTING": True})
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         with app.test_client() as client:
             yield client
 
@@ -62,7 +62,7 @@ def test_entry_view_404_for_missing(client):
 
 
 def test_post_update_status_redirects(client, vault):
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         slug = write_entry({
             "type": "idea", "project": "bcr-waivers", "title": "Update me",
             "body": "", "priority": "medium", "effort": "medium",
@@ -76,7 +76,7 @@ def test_post_update_status_redirects(client, vault):
 
 
 def test_post_update_status_persists_to_vault(client, vault):
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         slug = write_entry({
             "type": "idea", "project": "bcr-waivers", "title": "Update me",
             "body": "", "priority": "medium", "effort": "medium",
@@ -104,14 +104,14 @@ def vault_with_projects(tmp_path):
 def settings_client(vault_with_projects):
     os.environ["FLASK_SECRET_KEY"] = "test-secret-key"
     app = create_app({"TESTING": True})
-    with patch("app.services.vault.VAULT_PATH", vault_with_projects):
+    with patch("app.services.vault_cache.VAULT_PATH", vault_with_projects):
         with app.test_client() as c:
             yield c, vault_with_projects
 
 
 def test_settings_page_renders(settings_client):
     client, vault = settings_client
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         resp = client.get("/settings")
     assert resp.status_code == 200
     assert b"Alpha Project" in resp.data
@@ -120,7 +120,7 @@ def test_settings_page_renders(settings_client):
 
 def test_settings_page_shows_slugs(settings_client):
     client, vault = settings_client
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         resp = client.get("/settings")
     assert b"alpha" in resp.data
     assert b"beta" in resp.data
@@ -128,7 +128,7 @@ def test_settings_page_shows_slugs(settings_client):
 
 def test_update_project_settings_redirects(settings_client):
     client, vault = settings_client
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         resp = client.post(
             "/projects/alpha/settings",
             data={"name": "Alpha Renamed", "description": "A desc", "hidden": ""},
@@ -139,7 +139,7 @@ def test_update_project_settings_redirects(settings_client):
 
 def test_update_project_settings_persists(settings_client):
     client, vault = settings_client
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         client.post(
             "/projects/alpha/settings",
             data={"name": "Alpha Renamed", "description": "A new desc", "hidden": ""},
@@ -153,7 +153,7 @@ def test_update_project_settings_persists(settings_client):
 
 def test_update_project_settings_hidden_toggle(settings_client):
     client, vault = settings_client
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         client.post(
             "/projects/alpha/settings",
             data={"name": "Alpha", "description": "", "hidden": "on"},
@@ -184,7 +184,7 @@ def graph_client(graph_vault):
     _invalidate_cache()
     os.environ["FLASK_SECRET_KEY"] = "test-secret-key"
     app = create_app({"TESTING": True})
-    with patch("app.services.vault.VAULT_PATH", graph_vault):
+    with patch("app.services.vault_cache.VAULT_PATH", graph_vault):
         with app.test_client() as client:
             yield client
 
@@ -219,7 +219,8 @@ def test_project_page_filters_by_component(client, tmp_path, monkeypatch):
 
     import app.services.umbrella as u
     import app.services.vault as v
-    monkeypatch.setattr(v, "VAULT_PATH", tmp_path)
+    import app.services.vault_cache as vc
+    monkeypatch.setattr(vc, "VAULT_PATH", tmp_path)
     v._invalidate_cache()
     (tmp_path / "projects" / "ikeos").mkdir(parents=True)
 
@@ -253,7 +254,8 @@ def test_project_page_shows_component_pills_for_umbrella(client, tmp_path, monke
 
     import app.services.umbrella as u
     import app.services.vault as v
-    monkeypatch.setattr(v, "VAULT_PATH", tmp_path)
+    import app.services.vault_cache as vc
+    monkeypatch.setattr(vc, "VAULT_PATH", tmp_path)
     v._invalidate_cache()
     (tmp_path / "projects" / "ikeos").mkdir(parents=True)
 

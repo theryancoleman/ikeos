@@ -13,19 +13,19 @@ def vault(tmp_path):
 
 
 def test_get_projects_returns_sorted_list(vault):
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         from app.services.vault import get_projects
         assert get_projects() == ["bcr-waivers", "worldwardle"]
 
 
 def test_get_projects_empty_when_no_projects_dir(tmp_path):
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         from app.services.vault import get_projects
         assert get_projects() == []
 
 
 def test_write_entry_creates_file_in_correct_folder(vault):
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         from app.services.vault import write_entry
         write_entry({"type": "note", "project": "bcr-waivers", "title": "Test note", "body": "Body text"})
 
@@ -34,7 +34,7 @@ def test_write_entry_creates_file_in_correct_folder(vault):
 
 
 def test_write_entry_sets_status_new(vault):
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         from app.services.vault import write_entry
         write_entry({"type": "note", "project": "bcr-waivers", "title": "Test", "body": ""})
 
@@ -44,7 +44,7 @@ def test_write_entry_sets_status_new(vault):
 
 
 def test_write_entry_includes_bug_fields(vault):
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         from app.services.vault import write_entry
         write_entry({
             "type": "bug", "project": "bcr-waivers",
@@ -59,7 +59,7 @@ def test_write_entry_includes_bug_fields(vault):
 
 
 def test_write_entry_includes_idea_fields(vault):
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         from app.services.vault import write_entry
         write_entry({
             "type": "idea", "project": "bcr-waivers",
@@ -80,7 +80,7 @@ def test_read_entries_returns_newest_first(vault):
     older.write_text("---\ntype: note\ntitle: Old\nproject: bcr-waivers\nstatus: new\ncreated: 2026-05-25T10:00:00\ntags: [note]\n---\n## Description\nOld\n")
     newer.write_text("---\ntype: note\ntitle: New\nproject: bcr-waivers\nstatus: new\ncreated: 2026-05-26T10:00:00\ntags: [note]\n---\n## Description\nNew\n")
 
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         from app.services.vault import read_entries
         entries = read_entries()
     assert entries[0]["title"] == "New"
@@ -96,7 +96,7 @@ def test_read_entries_filters_by_status(vault):
         "---\ntype: note\ntitle: New\nproject: bcr-waivers\nstatus: new\ncreated: 2026-05-26T11:00:00\ntags: [note]\n---\n## Description\nNew\n"
     )
 
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         from app.services.vault import read_entries
         entries = read_entries(status_filter=["new"])
     assert len(entries) == 1
@@ -109,7 +109,7 @@ def test_read_entry_returns_correct_entry(vault):
         "---\ntype: bug\ntitle: Crash\nproject: bcr-waivers\nstatus: new\nseverity: high\ncreated: 2026-05-26T10:00:00\ntags: [bug]\n---\n## Description\nIt crashes\n"
     )
 
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         from app.services.vault import read_entry
         entry = read_entry("bcr-waivers", "2026-05-26-crash")
     assert entry["title"] == "Crash"
@@ -117,13 +117,13 @@ def test_read_entry_returns_correct_entry(vault):
 
 
 def test_read_entry_returns_none_for_missing(vault):
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         from app.services.vault import read_entry
         assert read_entry("bcr-waivers", "nonexistent") is None
 
 
 def test_update_entry_status_changes_status_and_tag(vault):
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         from app.services.vault import update_entry_status
         slug = write_entry({
             "type": "idea", "project": "bcr-waivers", "title": "My idea",
@@ -138,14 +138,14 @@ def test_update_entry_status_changes_status_and_tag(vault):
 
 
 def test_update_entry_status_returns_false_for_missing_entry(vault):
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         from app.services.vault import update_entry_status
         result = update_entry_status("bcr-waivers", "no-such-slug", "open")
         assert result is False
 
 
 def test_update_entry_status_returns_false_for_invalid_status(vault):
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         from app.services.vault import write_entry, update_entry_status, read_entry
         slug = write_entry({
             "type": "idea", "project": "bcr-waivers", "title": "My idea",
@@ -163,7 +163,7 @@ def test_read_project_meta_returns_description(tmp_path):
     (proj / "project.md").write_text(
         "---\nname: My Project\ndescription: A test project\nhidden: false\n---\n"
     )
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         from app.services.vault import _read_project_meta
         meta = _read_project_meta("my-project")
     assert meta["description"] == "A test project"
@@ -173,7 +173,7 @@ def test_read_project_meta_description_defaults_to_empty(tmp_path):
     proj = tmp_path / "projects" / "my-project"
     proj.mkdir(parents=True)
     (proj / "project.md").write_text("---\nname: My Project\nhidden: false\n---\n")
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         from app.services.vault import _read_project_meta
         meta = _read_project_meta("my-project")
     assert meta["description"] == ""
@@ -182,7 +182,7 @@ def test_read_project_meta_description_defaults_to_empty(tmp_path):
 def test_write_project_meta_creates_project_md(tmp_path):
     proj = tmp_path / "projects" / "my-project"
     proj.mkdir(parents=True)
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         result = write_project_meta("my-project", "My Project", "A description", False)
     assert result is True
     meta_file = proj / "project.md"
@@ -197,7 +197,7 @@ def test_write_project_meta_updates_existing(tmp_path):
     proj = tmp_path / "projects" / "my-project"
     proj.mkdir(parents=True)
     (proj / "project.md").write_text("---\nname: Old Name\nhidden: false\n---\n")
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         write_project_meta("my-project", "New Name", "Updated desc", True)
         from app.services.vault import _read_project_meta
         meta = _read_project_meta("my-project")
@@ -208,7 +208,7 @@ def test_write_project_meta_updates_existing(tmp_path):
 
 def test_write_project_meta_returns_false_for_missing_slug(tmp_path):
     (tmp_path / "projects").mkdir(parents=True)
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         result = write_project_meta("nonexistent", "Name", "", False)
     assert result is False
 
@@ -220,7 +220,7 @@ def test_get_projects_with_meta_includes_hidden_when_requested(tmp_path):
         (d / "project.md").write_text(
             f"---\nname: {name}\nhidden: {str(hidden).lower()}\n---\n"
         )
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         from app.services.vault import get_projects_with_meta
         visible_only = get_projects_with_meta(include_hidden=False)
         all_projects = get_projects_with_meta(include_hidden=True)
@@ -248,7 +248,7 @@ def _make_entry(path, slug, type_, status, project, body="", urgency=None):
 def test_get_vault_graph_returns_structure(tmp_path):
     bugs = tmp_path / "projects" / "proj-a" / "bugs"
     _make_entry(bugs, "2026-01-01-bug-one", "bug", "open", "proj-a")
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         from app.services.vault import get_vault_graph, _invalidate_cache
         _invalidate_cache()
         result = get_vault_graph()
@@ -267,7 +267,7 @@ def test_get_vault_graph_detects_wikilinks(tmp_path):
     _make_entry(bugs, "2026-01-01-bug-a", "bug", "open", "proj-a",
                 body="See [[2026-01-01-note-b]]")
     _make_entry(notes, "2026-01-01-note-b", "note", "open", "proj-a")
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         from app.services.vault import get_vault_graph, _invalidate_cache
         _invalidate_cache()
         result = get_vault_graph()
@@ -280,7 +280,7 @@ def test_get_vault_graph_detects_broken_links(tmp_path):
     notes = tmp_path / "projects" / "proj-a" / "notes"
     _make_entry(notes, "2026-01-01-note-x", "note", "open", "proj-a",
                 body="See [[nonexistent-slug]]")
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         from app.services.vault import get_vault_graph, _invalidate_cache
         _invalidate_cache()
         result = get_vault_graph()
@@ -294,7 +294,7 @@ def test_get_vault_graph_detects_broken_links(tmp_path):
 def test_get_vault_graph_detects_untriaged(tmp_path):
     notes = tmp_path / "projects" / "proj-a" / "notes"
     _make_entry(notes, "2026-01-01-untriaged", "note", "new", "proj-a")
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         from app.services.vault import get_vault_graph, _invalidate_cache
         _invalidate_cache()
         result = get_vault_graph()
@@ -313,7 +313,7 @@ def test_get_vault_graph_detects_stale(tmp_path):
         "updated: 2024-08-15T10:00:00\ntags: [documentation]\n---\n"
         "## Description\nContent\n"
     )
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         from app.services.vault import get_vault_graph, _invalidate_cache
         _invalidate_cache()
         result = get_vault_graph()
@@ -325,7 +325,7 @@ def test_get_vault_graph_detects_stale(tmp_path):
 def test_get_vault_graph_node_urgency_from_tag(tmp_path):
     bugs = tmp_path / "projects" / "proj-a" / "bugs"
     _make_entry(bugs, "2026-01-01-high-bug", "bug", "open", "proj-a", urgency="high")
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         from app.services.vault import get_vault_graph, _invalidate_cache
         _invalidate_cache()
         result = get_vault_graph()
@@ -343,7 +343,7 @@ def test_get_vault_graph_node_urgency_fallback_to_severity(tmp_path):
         "updated: 2026-01-01T10:00:00\ntags: [documentation]\n---\n"
         "## Description\nContent\n"
     )
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         from app.services.vault import get_vault_graph, _invalidate_cache
         _invalidate_cache()
         result = get_vault_graph()
@@ -359,27 +359,29 @@ def test_read_hub_pages_caches_result_on_second_call(tmp_path):
         "---\ntype: hub\ntitle: My Project\nproject: myproject\n---\n"
     )
 
-    from app.services import vault as vault_mod
+    import app.services.vault_cache as vault_cache_mod
+    from app.services.vault_graph import _read_hub_pages
+    from app.services.vault_cache import _invalidate_cache
 
-    vault_mod._invalidate_cache()
+    _invalidate_cache()
 
-    with patch.object(vault_mod, "VAULT_PATH", tmp_path):
-        result1 = vault_mod._read_hub_pages()
-        ts_after_first = vault_mod._hub_pages_cache_ts
-        result2 = vault_mod._read_hub_pages()
-        ts_after_second = vault_mod._hub_pages_cache_ts
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
+        result1 = _read_hub_pages()
+        ts_after_first = vault_cache_mod._hub_pages_cache_ts
+        result2 = _read_hub_pages()
+        ts_after_second = vault_cache_mod._hub_pages_cache_ts
 
     assert len(result1) == 1
     assert result1[0]["title"] == "My Project"
     assert result1 == result2
     assert ts_after_first == ts_after_second  # cache was hit, timestamp unchanged
-    assert vault_mod._hub_pages_cache is not None
+    assert vault_cache_mod._hub_pages_cache is not None
 
 
 # ── component / umbrella ─────────────────────────────────────────────────────
 
 def test_write_entry_with_component_sets_component_tag(vault):
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         from app.services.vault import write_entry
         write_entry({
             "type": "bug", "project": "ikeos", "title": "Boot crash",
@@ -394,7 +396,7 @@ def test_write_entry_with_component_sets_component_tag(vault):
 
 
 def test_write_entry_with_component_appends_wikilink(vault):
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         from app.services.vault import write_entry
         write_entry({
             "type": "note", "project": "ikeos", "title": "Arch notes",
@@ -406,7 +408,7 @@ def test_write_entry_with_component_appends_wikilink(vault):
 
 
 def test_write_entry_without_component_no_wikilink(vault):
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         from app.services.vault import write_entry
         write_entry({
             "type": "note", "project": "ikeos", "title": "Standalone",
@@ -427,7 +429,7 @@ def test_read_entries_filters_by_component(vault):
         "---\ntype: bug\ntitle: Bug B\nproject: ikeos\ncomponent: display\n"
         "status: new\ncreated: 2026-06-13T11:00:00\ntags: [bug]\n---\n## Description\nB\n"
     )
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         from app.services.vault import read_entries, _invalidate_cache
         _invalidate_cache()
         entries = read_entries(project="ikeos", component="voice-bridge")
@@ -438,7 +440,7 @@ def test_read_entries_filters_by_component(vault):
 # ── hub pages and graph integration ─────────────────────────────────────────
 
 def test_write_hub_page_creates_file(vault):
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         from app.services.vault import write_hub_page
         write_hub_page("ikeos", "IkeOS", ["voice-bridge", "display"])
     hub = vault / "projects" / "ikeos" / "IkeOS.md"
@@ -451,7 +453,7 @@ def test_write_hub_page_creates_file(vault):
 
 
 def test_write_hub_page_no_components(vault):
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         from app.services.vault import write_hub_page
         write_hub_page("wayvr", "Wayvr", [])
     hub = vault / "projects" / "wayvr" / "Wayvr.md"
@@ -460,7 +462,7 @@ def test_write_hub_page_no_components(vault):
 
 def test_write_component_stub_creates_file(vault):
     (vault / "projects" / "ikeos").mkdir(parents=True)
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         from app.services.vault import write_component_stub
         write_component_stub("ikeos", "voice-bridge")
     stub = vault / "projects" / "ikeos" / "components" / "voice-bridge.md"
@@ -484,7 +486,7 @@ def test_get_vault_graph_includes_hub_nodes(tmp_path):
         "---\ntype: component\nproject: ikeos\ntitle: voice-bridge\ntags: [component]\n---\n"
         "[[ikeos]]\n"
     )
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         from app.services.vault import get_vault_graph, _invalidate_cache
         _invalidate_cache()
         result = get_vault_graph()
@@ -505,7 +507,7 @@ def test_get_vault_graph_wikilink_resolves_to_hub(tmp_path):
     (tmp_path / "projects" / "ikeos" / "ikeos.md").write_text(
         "---\ntype: hub\nproject: ikeos\ntitle: IkeOS\ntags: [hub]\n---\nHub page.\n"
     )
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         from app.services.vault import get_vault_graph, _invalidate_cache
         _invalidate_cache()
         result = get_vault_graph()
@@ -515,7 +517,7 @@ def test_get_vault_graph_wikilink_resolves_to_hub(tmp_path):
 
 
 def test_write_entry_creates_grill_me_in_correct_folder(vault):
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         from app.services.vault import write_entry
         write_entry({"type": "grill-me", "project": "bcr-waivers", "title": "Half baked idea", "body": "Not sure yet"})
 
@@ -534,7 +536,7 @@ def test_read_entries_includes_grill_me_folder(vault):
         "---\ntype: grill-me\ntitle: Half formed\nproject: bcr-waivers\nstatus: new\n"
         "created: 2026-06-14T10:00:00\ntags: [grill-me]\n---\n## Description\nNeeds work\n"
     )
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         from app.services.vault import read_entries, _invalidate_cache
         _invalidate_cache()
         entries = read_entries(project="bcr-waivers")
@@ -548,7 +550,7 @@ def test_update_entry_status_generic_grill_me(vault):
         "---\ntype: grill-me\ntitle: Test\nproject: bcr-waivers\nstatus: new\n"
         "created: 2026-06-14T10:00:00\ntags: [grill-me, status/new]\n---\n## Description\ntest\n"
     )
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         from app.services.vault import update_entry_status_generic
         result = update_entry_status_generic("grill-me", "bcr-waivers", "2026-06-14-test", "open")
     assert result is True
@@ -560,7 +562,7 @@ def test_update_entry_status_generic_grill_me(vault):
 # ============= housekeeping-task write tests =============
 
 def test_write_entry_housekeeping_task_creates_file_in_housekeeping_folder(vault):
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         (vault / "projects" / "claude-config").mkdir(parents=True)
         from app.services.vault import write_entry
         slug = write_entry({
@@ -577,7 +579,7 @@ def test_write_entry_housekeeping_task_creates_file_in_housekeeping_folder(vault
 
 
 def test_write_entry_housekeeping_task_frontmatter(vault):
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         (vault / "projects" / "claude-config").mkdir(parents=True)
         from app.services.vault import write_entry
         write_entry({
@@ -606,7 +608,7 @@ def test_write_entry_housekeeping_task_frontmatter(vault):
 
 
 def test_write_entry_housekeeping_task_defaults_interval_to_weekly(vault):
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         (vault / "projects" / "claude-config").mkdir(parents=True)
         from app.services.vault import write_entry
         write_entry({
@@ -625,7 +627,7 @@ def test_write_entry_housekeeping_task_defaults_interval_to_weekly(vault):
 # ============= housekeeping-heartbeat write tests =============
 
 def test_write_entry_housekeeping_heartbeat_creates_last_run_md(vault):
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         (vault / "projects" / "claude-config").mkdir(parents=True)
         from app.services.vault import write_entry
         slug = write_entry({
@@ -639,7 +641,7 @@ def test_write_entry_housekeeping_heartbeat_creates_last_run_md(vault):
 
 
 def test_write_entry_housekeeping_heartbeat_frontmatter(vault):
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         (vault / "projects" / "claude-config").mkdir(parents=True)
         from app.services.vault import write_entry
         write_entry({
@@ -657,7 +659,7 @@ def test_write_entry_housekeeping_heartbeat_frontmatter(vault):
 
 def test_write_entry_housekeeping_heartbeat_is_singleton(vault):
     """Writing heartbeat twice overwrites, never duplicates."""
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         (vault / "projects" / "claude-config").mkdir(parents=True)
         from app.services.vault import write_entry
         write_entry({"type": "housekeeping-heartbeat", "project": "claude-config", "title": "HB"})
@@ -669,7 +671,7 @@ def test_write_entry_housekeeping_heartbeat_is_singleton(vault):
 # ============= update_housekeeping_fields tests =============
 
 def test_update_housekeeping_fields_task_enabled_toggle(vault):
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         (vault / "projects" / "claude-config").mkdir(parents=True)
         from app.services.vault import write_entry, update_housekeeping_fields
         slug = write_entry({
@@ -689,7 +691,7 @@ def test_update_housekeeping_fields_task_enabled_toggle(vault):
 
 
 def test_update_housekeeping_fields_heartbeat(vault):
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         (vault / "projects" / "claude-config").mkdir(parents=True)
         from app.services.vault import write_entry, update_housekeeping_fields
         write_entry({"type": "housekeeping-heartbeat", "project": "claude-config", "title": "HB"})
@@ -706,7 +708,7 @@ def test_update_housekeeping_fields_heartbeat(vault):
 
 
 def test_update_housekeeping_fields_ignores_disallowed_fields(vault):
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         (vault / "projects" / "claude-config").mkdir(parents=True)
         from app.services.vault import write_entry, update_housekeeping_fields
         slug = write_entry({
@@ -729,14 +731,14 @@ def test_update_housekeeping_fields_ignores_disallowed_fields(vault):
 
 
 def test_update_housekeeping_fields_invalid_type_returns_false(vault):
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         from app.services.vault import update_housekeeping_fields
         result = update_housekeeping_fields("bug", "claude-config", "any", {"last_run": "2026-06-17"})
         assert result is False
 
 
 def test_update_housekeeping_fields_missing_file_returns_false(vault):
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         (vault / "projects" / "claude-config").mkdir(parents=True)
         from app.services.vault import update_housekeeping_fields
         result = update_housekeeping_fields(
@@ -746,7 +748,7 @@ def test_update_housekeeping_fields_missing_file_returns_false(vault):
 
 
 def test_update_housekeeping_fields_path_traversal_returns_false(vault):
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         from app.services.vault import update_housekeeping_fields
         result = update_housekeeping_fields(
             "housekeeping-task", "claude-config", "../../etc/passwd", {"enabled": "false"}
@@ -755,7 +757,7 @@ def test_update_housekeeping_fields_path_traversal_returns_false(vault):
 
 
 def test_update_housekeeping_fields_project_traversal_returns_false(vault):
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         from app.services.vault import update_housekeeping_fields
         result = update_housekeeping_fields(
             "housekeeping-task", "../../etc", "some-task", {"enabled": "false"}
@@ -764,7 +766,7 @@ def test_update_housekeeping_fields_project_traversal_returns_false(vault):
 
 
 def test_update_housekeeping_fields_all_disallowed_fields_returns_false(vault):
-    with patch("app.services.vault.VAULT_PATH", vault):
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
         from app.services.vault import update_housekeeping_fields
         # title is not in the allowed set for housekeeping-task
         result = update_housekeeping_fields(

@@ -10,7 +10,7 @@ def client(tmp_path, monkeypatch):
     os.environ["FLASK_SECRET_KEY"] = "test-secret-key"
     monkeypatch.setenv("CAPTURE_TOKEN", "test-token-secret")
     app = create_app({"TESTING": True})
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         (tmp_path / "projects" / "bcr-waivers").mkdir(parents=True)
         with app.test_client() as client:
             yield client
@@ -22,7 +22,7 @@ def client_no_token(tmp_path):
     os.environ.pop("CAPTURE_TOKEN", None)
     os.environ["FLASK_SECRET_KEY"] = "test-secret-key"
     app = create_app({"TESTING": True})
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         (tmp_path / "projects" / "bcr-waivers").mkdir(parents=True)
         with app.test_client() as client:
             yield client
@@ -67,7 +67,7 @@ def test_capture_form_preselects_project_from_query_param(client):
 
 
 def test_capture_submit_stay_redirects_back_to_capture(client, tmp_path):
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         response = client.post(
             "/capture",
             data={
@@ -86,7 +86,7 @@ def test_capture_submit_stay_redirects_back_to_capture(client, tmp_path):
 
 
 def test_capture_submit_without_stay_redirects_to_dashboard(client, tmp_path):
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         response = client.post(
             "/capture",
             data={
@@ -117,7 +117,7 @@ def test_capture_form_contains_stay_persistence_js(client):
 
 def test_capture_post_decision_creates_file_in_decisions(client, tmp_path):
     """POST /capture with type=decision should create file in vault root decisions/."""
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         client.post("/capture", data={
             "type": "decision",
             "title": "Use PostgreSQL",
@@ -129,7 +129,7 @@ def test_capture_post_decision_creates_file_in_decisions(client, tmp_path):
 
 def test_capture_post_decision_without_project(client, tmp_path):
     """POST /capture with type=decision should work without project field."""
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         response = client.post("/capture", data={
             "type": "decision",
             "title": "Test decision",
@@ -141,7 +141,7 @@ def test_capture_post_decision_without_project(client, tmp_path):
 
 def test_capture_post_decision_with_optional_project(client, tmp_path):
     """POST /capture with type=decision can include optional project field."""
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         client.post("/capture", data={
             "type": "decision",
             "project": "bcr-waivers",
@@ -157,7 +157,7 @@ def test_capture_post_decision_with_optional_project(client, tmp_path):
 
 def test_capture_post_decision_has_correct_frontmatter(client, tmp_path):
     """Decision entries should have correct initial frontmatter."""
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         client.post("/capture", data={
             "type": "decision",
             "title": "Use Postgres",
@@ -174,7 +174,7 @@ def test_capture_post_decision_has_correct_frontmatter(client, tmp_path):
 
 def test_capture_post_decision_body_structure(client, tmp_path):
     """Decision entry body should have Context/Decision/Consequences sections."""
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         client.post("/capture", data={
             "type": "decision",
             "title": "ADR-001",
@@ -192,7 +192,7 @@ def test_capture_post_decision_body_structure(client, tmp_path):
 
 def test_patch_entries_requires_token(client, tmp_path):
     """PATCH /entries without token should return 401."""
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         response = client.patch("/entries", json={
             "project": "bcr-waivers",
             "type": "bug",
@@ -204,7 +204,7 @@ def test_patch_entries_requires_token(client, tmp_path):
 
 def test_patch_entries_with_correct_token(client, tmp_path):
     """PATCH /entries with correct token should update status."""
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         # First create an entry
         from app.services.vault import write_entry
         slug = write_entry({
@@ -231,7 +231,7 @@ def test_patch_entries_with_correct_token(client, tmp_path):
 
 def test_patch_entries_wrong_token_returns_401(client, tmp_path):
     """PATCH /entries with wrong token should return 401."""
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         response = client.patch("/entries",
             json={
                 "project": "bcr-waivers",
@@ -246,7 +246,7 @@ def test_patch_entries_wrong_token_returns_401(client, tmp_path):
 
 def test_patch_entries_missing_token_env_returns_503(client_no_token, tmp_path):
     """PATCH /entries without CAPTURE_TOKEN env should return 503."""
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         response = client_no_token.patch("/entries",
             json={
                 "project": "bcr-waivers",
@@ -261,7 +261,7 @@ def test_patch_entries_missing_token_env_returns_503(client_no_token, tmp_path):
 
 def test_patch_entries_form_data(client, tmp_path):
     """PATCH /entries should accept form data in addition to JSON."""
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         from app.services.vault import write_entry
         slug = write_entry({
             "type": "idea",
@@ -285,7 +285,7 @@ def test_patch_entries_form_data(client, tmp_path):
 
 def test_patch_entries_invalid_status(client, tmp_path):
     """PATCH /entries with invalid status should return 400."""
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         from app.services.vault import write_entry
         slug = write_entry({
             "type": "note",
@@ -307,7 +307,7 @@ def test_patch_entries_invalid_status(client, tmp_path):
 
 def test_patch_entries_missing_entry(client, tmp_path):
     """PATCH /entries for non-existent entry should return 404."""
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         response = client.patch("/entries",
             json={
                 "project": "bcr-waivers",
@@ -322,7 +322,7 @@ def test_patch_entries_missing_entry(client, tmp_path):
 
 def test_patch_entries_invalid_type(client, tmp_path):
     """PATCH /entries with invalid type should return 400."""
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         response = client.patch("/entries",
             json={
                 "project": "bcr-waivers",
@@ -337,7 +337,7 @@ def test_patch_entries_invalid_type(client, tmp_path):
 
 def test_patch_entries_path_traversal_rejection(client, tmp_path):
     """PATCH /entries should reject filenames with path traversal patterns."""
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         response = client.patch("/entries",
             json={
                 "project": "bcr-waivers",
@@ -352,7 +352,7 @@ def test_patch_entries_path_traversal_rejection(client, tmp_path):
 
 def test_patch_entries_path_traversal_double_dot(client, tmp_path):
     """PATCH /entries should reject filenames with .. patterns."""
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         response = client.patch("/entries",
             json={
                 "project": "bcr-waivers",
@@ -367,7 +367,7 @@ def test_patch_entries_path_traversal_double_dot(client, tmp_path):
 
 def test_patch_entries_status_tag_updated(client, tmp_path):
     """PATCH /entries should update the status/* tag correctly."""
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         from app.services.vault import write_entry, read_entry
         slug = write_entry({
             "type": "bug",
@@ -394,7 +394,7 @@ def test_patch_entries_status_tag_updated(client, tmp_path):
 
 def test_patch_entries_body_byte_identical(client, tmp_path):
     """PATCH /entries should preserve body content exactly (byte-identical)."""
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         from app.services.vault import write_entry
         slug = write_entry({
             "type": "note",
@@ -427,7 +427,7 @@ def test_patch_entries_body_byte_identical(client, tmp_path):
 
 def test_patch_entries_updated_field_added(client, tmp_path):
     """PATCH /entries should add/update the 'updated' field."""
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         from app.services.vault import write_entry, read_entry
         slug = write_entry({
             "type": "bug",
@@ -452,7 +452,7 @@ def test_patch_entries_updated_field_added(client, tmp_path):
 
 def test_patch_entries_decision_type(client, tmp_path):
     """PATCH /entries should support decision type with decision/* tags."""
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         from app.services.vault import write_entry, read_entry
         slug = write_entry({
             "type": "decision",
@@ -472,7 +472,7 @@ def test_patch_entries_decision_type(client, tmp_path):
 
 def test_patch_entries_decision_valid_statuses(client, tmp_path):
     """PATCH /entries for decisions should only accept valid decision statuses."""
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         from app.services.vault import write_entry
         slug = write_entry({
             "type": "decision",
@@ -561,8 +561,9 @@ def test_capture_form_includes_components_for_umbrella(client, tmp_path, monkeyp
 
     import app.services.umbrella as u
     import app.services.vault as v
+    import app.services.vault_cache as vc
     u._registry = None
-    monkeypatch.setattr(v, "VAULT_PATH", tmp_path)
+    monkeypatch.setattr(vc, "VAULT_PATH", tmp_path)
     v._invalidate_cache()
     (tmp_path / "projects" / "ikeos").mkdir(parents=True)
 
@@ -586,7 +587,8 @@ def test_capture_submit_stores_component(client, tmp_path, monkeypatch):
 
     import app.services.umbrella as u
     import app.services.vault as v
-    monkeypatch.setattr(v, "VAULT_PATH", tmp_path)
+    import app.services.vault_cache as vc
+    monkeypatch.setattr(vc, "VAULT_PATH", tmp_path)
     v._invalidate_cache()
     (tmp_path / "projects" / "ikeos").mkdir(parents=True)
 
@@ -611,7 +613,8 @@ def test_capture_json_stores_component(client, tmp_path, monkeypatch):
     """POST /capture/json with component stores component field."""
     import frontmatter as fm_lib
     import app.services.vault as v
-    monkeypatch.setattr(v, "VAULT_PATH", tmp_path)
+    import app.services.vault_cache as vc
+    monkeypatch.setattr(vc, "VAULT_PATH", tmp_path)
     v._invalidate_cache()
     (tmp_path / "projects" / "ikeos").mkdir(parents=True)
 
@@ -634,8 +637,9 @@ def test_capture_json_stores_component(client, tmp_path, monkeypatch):
 
 def test_patch_entries_accepts_grill_me_type(client, tmp_path, monkeypatch):
     """PATCH /entries should accept grill-me type."""
+    import app.services.vault_cache as vault_cache_mod
     import app.services.vault as vault_mod
-    monkeypatch.setattr(vault_mod, "VAULT_PATH", tmp_path)
+    monkeypatch.setattr(vault_cache_mod, "VAULT_PATH", tmp_path)
     vault_mod._invalidate_cache()
     grill_dir = tmp_path / "projects" / "bcr-waivers" / "grill-me"
     grill_dir.mkdir(parents=True)
@@ -653,8 +657,9 @@ def test_patch_entries_accepts_grill_me_type(client, tmp_path, monkeypatch):
 
 def test_capture_json_accepts_grill_me_type(client, tmp_path, monkeypatch):
     """POST /capture/json should accept grill-me type."""
+    import app.services.vault_cache as vault_cache_mod
     import app.services.vault as vault_mod
-    monkeypatch.setattr(vault_mod, "VAULT_PATH", tmp_path)
+    monkeypatch.setattr(vault_cache_mod, "VAULT_PATH", tmp_path)
     vault_mod._invalidate_cache()
     (tmp_path / "projects" / "bcr-waivers").mkdir(parents=True, exist_ok=True)
     resp = client.post(
@@ -670,7 +675,8 @@ def test_capture_json_accepts_grill_me_type(client, tmp_path, monkeypatch):
 
 def test_capture_json_housekeeping_task(client, tmp_path, monkeypatch):
     import app.services.vault as v
-    monkeypatch.setattr(v, "VAULT_PATH", tmp_path)
+    import app.services.vault_cache as vc
+    monkeypatch.setattr(vc, "VAULT_PATH", tmp_path)
     v._invalidate_cache()
     (tmp_path / "projects" / "claude-config").mkdir(parents=True)
 
@@ -709,7 +715,8 @@ def test_capture_json_housekeeping_task_missing_project(client):
 
 def test_capture_json_housekeeping_task_defaults_interval_to_weekly(client, tmp_path, monkeypatch):
     import app.services.vault as v
-    monkeypatch.setattr(v, "VAULT_PATH", tmp_path)
+    import app.services.vault_cache as vc
+    monkeypatch.setattr(vc, "VAULT_PATH", tmp_path)
     v._invalidate_cache()
     (tmp_path / "projects" / "claude-config").mkdir(parents=True)
 
@@ -729,7 +736,8 @@ def test_capture_json_housekeeping_task_defaults_interval_to_weekly(client, tmp_
 
 def test_capture_json_housekeeping_heartbeat(client, tmp_path, monkeypatch):
     import app.services.vault as v
-    monkeypatch.setattr(v, "VAULT_PATH", tmp_path)
+    import app.services.vault_cache as vc
+    monkeypatch.setattr(vc, "VAULT_PATH", tmp_path)
     v._invalidate_cache()
     (tmp_path / "projects" / "claude-config").mkdir(parents=True)
 
@@ -747,7 +755,7 @@ def test_capture_json_housekeeping_heartbeat(client, tmp_path, monkeypatch):
 # ============= PATCH /entries/housekeeping tests =============
 
 def test_patch_housekeeping_requires_token(client, tmp_path):
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         resp = client.patch("/entries/housekeeping", json={
             "project": "claude-config",
             "type": "housekeeping-task",
@@ -759,7 +767,7 @@ def test_patch_housekeeping_requires_token(client, tmp_path):
 
 def test_patch_housekeeping_task_enabled(client, tmp_path, monkeypatch):
     monkeypatch.setenv("CAPTURE_TOKEN", "test-token-secret")
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         (tmp_path / "projects" / "claude-config").mkdir(parents=True)
         from app.services.vault import write_entry
         slug = write_entry({
@@ -782,7 +790,7 @@ def test_patch_housekeeping_task_enabled(client, tmp_path, monkeypatch):
 
 def test_patch_housekeeping_heartbeat(client, tmp_path, monkeypatch):
     monkeypatch.setenv("CAPTURE_TOKEN", "test-token-secret")
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         (tmp_path / "projects" / "claude-config").mkdir(parents=True)
         from app.services.vault import write_entry
         write_entry({"type": "housekeeping-heartbeat", "project": "claude-config", "title": "HB"})
@@ -799,7 +807,7 @@ def test_patch_housekeeping_heartbeat(client, tmp_path, monkeypatch):
 
 def test_patch_housekeeping_invalid_type_returns_400(client, tmp_path, monkeypatch):
     monkeypatch.setenv("CAPTURE_TOKEN", "test-token-secret")
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         resp = client.patch(
             "/entries/housekeeping",
             json={"project": "claude-config", "type": "bug",
@@ -811,7 +819,7 @@ def test_patch_housekeeping_invalid_type_returns_400(client, tmp_path, monkeypat
 
 def test_patch_housekeeping_missing_entry_returns_404(client, tmp_path, monkeypatch):
     monkeypatch.setenv("CAPTURE_TOKEN", "test-token-secret")
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         (tmp_path / "projects" / "claude-config").mkdir(parents=True)
         resp = client.patch(
             "/entries/housekeeping",
@@ -824,7 +832,7 @@ def test_patch_housekeeping_missing_entry_returns_404(client, tmp_path, monkeypa
 
 def test_patch_housekeeping_path_traversal_returns_400(client, tmp_path, monkeypatch):
     monkeypatch.setenv("CAPTURE_TOKEN", "test-token-secret")
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         resp = client.patch(
             "/entries/housekeeping",
             json={"project": "claude-config", "type": "housekeeping-task",
@@ -837,7 +845,7 @@ def test_patch_housekeeping_path_traversal_returns_400(client, tmp_path, monkeyp
 def test_patch_housekeeping_requires_json_body(client, tmp_path, monkeypatch):
     """PATCH /entries/housekeeping rejects form data — JSON body only."""
     monkeypatch.setenv("CAPTURE_TOKEN", "test-token-secret")
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         resp = client.patch(
             "/entries/housekeeping",
             data={"project": "claude-config", "type": "housekeeping-task",
@@ -849,7 +857,7 @@ def test_patch_housekeeping_requires_json_body(client, tmp_path, monkeypatch):
 
 def test_patch_housekeeping_wrong_token_returns_401(client, tmp_path, monkeypatch):
     monkeypatch.setenv("CAPTURE_TOKEN", "test-token-secret")
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         resp = client.patch(
             "/entries/housekeeping",
             json={"project": "claude-config", "type": "housekeeping-task",
@@ -861,7 +869,7 @@ def test_patch_housekeeping_wrong_token_returns_401(client, tmp_path, monkeypatc
 
 def test_patch_housekeeping_empty_fields_returns_400(client, tmp_path, monkeypatch):
     monkeypatch.setenv("CAPTURE_TOKEN", "test-token-secret")
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         resp = client.patch(
             "/entries/housekeeping",
             json={"project": "claude-config", "type": "housekeeping-task",
@@ -873,7 +881,7 @@ def test_patch_housekeeping_empty_fields_returns_400(client, tmp_path, monkeypat
 
 def test_patch_housekeeping_malformed_json_returns_400(client, tmp_path, monkeypatch):
     monkeypatch.setenv("CAPTURE_TOKEN", "test-token-secret")
-    with patch("app.services.vault.VAULT_PATH", tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
         resp = client.patch(
             "/entries/housekeeping",
             data=b"{not valid json",
