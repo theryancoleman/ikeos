@@ -3,6 +3,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from app.services.vault import (
     get_projects_with_meta, write_entry, update_entry_status_generic,
     update_housekeeping_fields, ENTRY_TYPE_CONFIG, DECISION_STATUSES,
+    PATCH_VALID_TYPES, CAPTURE_JSON_VALID_TYPES,
 )
 from app.services.umbrella import get_components
 
@@ -113,8 +114,7 @@ def patch_entries():
         return jsonify({"error": "Invalid filename"}), 400
 
     # Validate entry_type
-    _patch_valid_types = set(ENTRY_TYPE_CONFIG.keys()) | {"decision"}
-    if entry_type not in _patch_valid_types:
+    if entry_type not in PATCH_VALID_TYPES:
         return jsonify({"error": "Invalid entry type"}), 400
 
     # Validate status against the lifecycle for this entry type
@@ -188,9 +188,8 @@ def capture_json():
 
     if not title:
         return jsonify({"error": "title is required"}), 400
-    _capture_json_valid_types = set(ENTRY_TYPE_CONFIG.keys()) | {"housekeeping-task", "housekeeping-heartbeat"}
-    if entry_type not in _capture_json_valid_types:
-        valid_list = ", ".join(sorted(_capture_json_valid_types))
+    if entry_type not in CAPTURE_JSON_VALID_TYPES:
+        valid_list = ", ".join(sorted(CAPTURE_JSON_VALID_TYPES))
         return jsonify({"error": f"type must be one of: {valid_list}"}), 400
     if not project:
         return jsonify({"error": "project is required"}), 400

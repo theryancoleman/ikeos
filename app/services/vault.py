@@ -9,6 +9,8 @@ from app.services.vault_cache import (  # noqa: F401
     DECISION_STATUSES,
     EXPERIMENT_STATUSES,
     ENTRY_TYPE_CONFIG,
+    PATCH_VALID_TYPES,
+    CAPTURE_JSON_VALID_TYPES,
     TYPE_FOLDERS,
     TYPE_TAGS,
     _TTL,

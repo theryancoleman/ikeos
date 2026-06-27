@@ -23,6 +23,11 @@ VALID_TYPES = set(ENTRY_TYPE_CONFIG.keys()) | {
     "decision", "housekeeping-task", "housekeeping-heartbeat",
 }
 
+PATCH_VALID_TYPES: frozenset[str] = frozenset(ENTRY_TYPE_CONFIG.keys()) | {"decision"}
+CAPTURE_JSON_VALID_TYPES: frozenset[str] = (
+    frozenset(ENTRY_TYPE_CONFIG.keys()) | {"housekeeping-task", "housekeeping-heartbeat"}
+)
+
 _TTL = 600.0  # 10 minutes
 
 _projects_cache: list | None = None

@@ -220,3 +220,15 @@ def test_update_entry_status_generic_uses_entry_type_config(tmp_path):
     post = fm.load(widget_dir / "2026-01-01-w.md")
     assert post.metadata["status"] == "done"
     assert "status/done" in post.metadata["tags"]
+
+
+def test_patch_valid_types_constant_exists_and_is_correct():
+    assert hasattr(_vc, "PATCH_VALID_TYPES"), "PATCH_VALID_TYPES not found in vault_cache"
+    assert _vc.PATCH_VALID_TYPES == set(_vc.ENTRY_TYPE_CONFIG.keys()) | {"decision"}
+
+
+def test_capture_json_valid_types_constant_exists_and_is_correct():
+    assert hasattr(_vc, "CAPTURE_JSON_VALID_TYPES"), "CAPTURE_JSON_VALID_TYPES not found in vault_cache"
+    assert _vc.CAPTURE_JSON_VALID_TYPES == (
+        set(_vc.ENTRY_TYPE_CONFIG.keys()) | {"housekeeping-task", "housekeeping-heartbeat"}
+    )

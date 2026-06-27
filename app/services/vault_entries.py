@@ -161,8 +161,8 @@ def _read_all_entries() -> list[dict]:
     entries = []
     for proj in get_projects():
         proj_dir = _vc.VAULT_PATH / "projects" / proj
-        for folder in set(_vc.TYPE_FOLDERS.values()):
-            type_dir = proj_dir / folder
+        for cfg in _vc.ENTRY_TYPE_CONFIG.values():
+            type_dir = proj_dir / cfg["folder"]
             if not type_dir.exists():
                 continue
             for filepath in type_dir.glob("*.md"):
