@@ -96,7 +96,8 @@ def write_entry(data: dict) -> str:
         target_dir.mkdir(parents=True, exist_ok=True)
 
         type_tag = _vc.TYPE_TAGS[entry_type]
-        tags = [type_tag, project, "status/new"]
+        initial_status = "running" if entry_type == "experiment" else "new"
+        tags = [type_tag, project, f"status/{initial_status}"]
         if entry_type == "idea":
             tags.append(f"urgency/{data.get('priority', 'medium')}")
         elif entry_type == "bug":
@@ -112,7 +113,7 @@ def write_entry(data: dict) -> str:
             "type": entry_type,
             "title": title,
             "project": project,
-            "status": "new",
+            "status": initial_status,
             "created": datetime.now().isoformat(timespec="seconds"),
             "tags": tags,
         }
@@ -130,6 +131,15 @@ def write_entry(data: dict) -> str:
                 metadata["why"] = why
         elif entry_type == "bug":
             metadata["severity"] = data.get("severity", "medium")
+        elif entry_type == "experiment":
+            metadata["status"] = "running"
+            metadata["hypothesis"] = data.get("hypothesis", "")
+            metadata["expected_outcome"] = data.get("expected_outcome", "")
+            metadata["measurement"] = data.get("measurement", "")
+            metadata["success_criteria"] = data.get("success_criteria", "")
+            metadata["timebox"] = data.get("timebox", "")
+            metadata["result"] = ""
+            metadata["decision"] = ""
 
         content = f"## Description\n{body}\n"
         if entry_type == "bug" and data.get("steps"):
@@ -191,7 +201,7 @@ def read_entries(project: str = None, status_filter: list = None, component: str
 
 def read_entry(project: str, slug: str) -> dict | None:
     proj_dir = _vc.VAULT_PATH / "projects" / project
-    for folder in ("bugs", "ideas", "notes", "grill-me"):
+    for folder in ("bugs", "ideas", "notes", "grill-me", "experiments"):
         filepath = proj_dir / folder / f"{slug}.md"
         if filepath.exists():
             post = frontmatter.load(filepath)
@@ -208,7 +218,7 @@ def update_entry_status(project: str, slug: str, new_status: str) -> bool:
     if new_status not in _vc.VALID_STATUSES:
         return False
     proj_dir = _vc.VAULT_PATH / "projects" / project
-    for folder in ("bugs", "ideas", "notes", "grill-me"):
+    for folder in ("bugs", "ideas", "notes", "grill-me", "experiments"):
         filepath = proj_dir / folder / f"{slug}.md"
         if filepath.exists():
             post = frontmatter.load(filepath)
@@ -231,21 +241,25 @@ def update_entry_status_generic(entry_type: str, project: str | None, filename: 
         if new_status not in _vc.DECISION_STATUSES:
             return False
         base_path = _vc.VAULT_PATH / "decisions"
+    elif entry_type == "experiment":
+        if new_status not in _vc.EXPERIMENT_STATUSES:
+            return False
+        if not project:
+            return False
+        base_path = _vc.VAULT_PATH / "projects" / project / "experiments"
     else:
         if new_status not in _vc.VALID_STATUSES:
             return False
         if not project:
             return False
-        if entry_type == "bug":
-            base_path = _vc.VAULT_PATH / "projects" / project / "bugs"
-        elif entry_type == "idea":
-            base_path = _vc.VAULT_PATH / "projects" / project / "ideas"
-        elif entry_type == "note":
-            base_path = _vc.VAULT_PATH / "projects" / project / "notes"
-        elif entry_type == "grill-me":
-            base_path = _vc.VAULT_PATH / "projects" / project / "grill-me"
-        else:
+        folder_map = {
+            "bug": "bugs", "idea": "ideas", "note": "notes",
+            "grill-me": "grill-me",
+        }
+        folder = folder_map.get(entry_type)
+        if folder is None:
             return False
+        base_path = _vc.VAULT_PATH / "projects" / project / folder
 
     if filename.endswith(".md"):
         filepath = base_path / filename

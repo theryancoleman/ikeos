@@ -6,17 +6,19 @@ VAULT_PATH = Path(os.environ.get("VAULT_PATH", "/vault"))
 
 VALID_TYPES = {
     "note", "idea", "bug", "decision",
-    "grill-me", "housekeeping-task", "housekeeping-heartbeat",
+    "grill-me", "housekeeping-task", "housekeeping-heartbeat", "experiment",
 }
 VALID_STATUSES = {"new", "open", "in-progress", "done", "deferred"}
 DECISION_STATUSES = {"proposed", "accepted", "rejected", "superseded"}
-TYPE_FOLDERS = {"note": "notes", "idea": "ideas", "bug": "bugs", "grill-me": "grill-me"}
+EXPERIMENT_STATUSES = {"running", "complete", "abandoned"}
+TYPE_FOLDERS = {"note": "notes", "idea": "ideas", "bug": "bugs", "grill-me": "grill-me", "experiment": "experiments"}
 TYPE_TAGS = {
     "note": "documentation",
     "idea": "enhancement",
     "bug": "bug",
     "decision": "decision",
     "grill-me": "grill-me",
+    "experiment": "experiment",
 }
 
 _TTL = 600.0  # 10 minutes

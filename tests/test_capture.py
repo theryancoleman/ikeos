@@ -932,3 +932,26 @@ def test_capture_idea_without_why_field(client, tmp_vault):
     assert len(files) == 1
     post = frontmatter.load(files[0])
     assert "why" not in post.metadata
+
+
+def test_capture_json_experiment(client, tmp_vault):
+    resp = client.post("/capture/json", json={
+        "type": "experiment",
+        "project": "testproject",
+        "title": "Cache Experiment",
+        "body": "Testing cache",
+        "hypothesis": "Caching will be faster",
+        "expected_outcome": "Sub-50ms reads",
+        "measurement": "Response time",
+        "success_criteria": "< 50ms",
+        "timebox": "one session",
+    })
+    assert resp.status_code == 200
+    files = list((tmp_vault / "projects" / "testproject" / "experiments").glob("*.md"))
+    assert len(files) == 1
+    import frontmatter as fm
+    post = fm.load(files[0])
+    assert post.metadata["type"] == "experiment"
+    assert post.metadata["status"] == "running"
+    assert post.metadata["hypothesis"] == "Caching will be faster"
+    assert post.metadata["timebox"] == "one session"

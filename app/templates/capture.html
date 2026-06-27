@@ -39,6 +39,7 @@
       <label class="type-radio-label"><input type="radio" name="type" id="type-idea" value="idea" checked> Feature Request</label>
       <label class="type-radio-label"><input type="radio" name="type" id="type-bug" value="bug"> Bug</label>
       <label class="type-radio-label"><input type="radio" name="type" id="type-grill-me" value="grill-me"> Grill Me</label>
+      <label class="type-radio-label"><input type="radio" name="type" id="type-experiment" value="experiment"> Experiment</label>
     </div>
   </div>
 
@@ -98,6 +99,30 @@
     </div>
   </div>
 
+  <!-- Experiment fields -->
+  <div id="experiment-fields" class="conditional hidden">
+    <div class="ike-field">
+      <label class="ike-eyebrow" for="hypothesis">Hypothesis</label>
+      <input id="hypothesis" name="hypothesis" type="text" placeholder="If we do X, then Y will happen">
+    </div>
+    <div class="ike-field">
+      <label class="ike-eyebrow" for="expected_outcome">Expected Outcome</label>
+      <input id="expected_outcome" name="expected_outcome" type="text" placeholder="Specific, measurable result if hypothesis is correct">
+    </div>
+    <div class="ike-field">
+      <label class="ike-eyebrow" for="measurement">Measurement</label>
+      <input id="measurement" name="measurement" type="text" placeholder="How will we know — what will we observe">
+    </div>
+    <div class="ike-field">
+      <label class="ike-eyebrow" for="success_criteria">Success Criteria</label>
+      <input id="success_criteria" name="success_criteria" type="text" placeholder="The threshold that counts as success">
+    </div>
+    <div class="ike-field">
+      <label class="ike-eyebrow" for="timebox">Timebox</label>
+      <input id="timebox" name="timebox" type="text" placeholder="e.g. one session, 1 week">
+    </div>
+  </div>
+
   <div class="field">
     <label class="ike-eyebrow">Domain <span class="field-optional">(optional — select all that apply)</span></label>
     <div class="domain-checkboxes">
@@ -129,8 +154,10 @@
 function updateFields(type) {
   document.getElementById('idea-fields').classList.add('hidden');
   document.getElementById('bug-fields').classList.add('hidden');
+  document.getElementById('experiment-fields').classList.add('hidden');
   if (type === 'idea') document.getElementById('idea-fields').classList.remove('hidden');
   if (type === 'bug') document.getElementById('bug-fields').classList.remove('hidden');
+  if (type === 'experiment') document.getElementById('experiment-fields').classList.remove('hidden');
 }
 
 function updateProject(sel) {

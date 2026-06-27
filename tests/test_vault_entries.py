@@ -75,3 +75,65 @@ def test_update_entry_status_generic_changes_status(tmp_path):
     post = fm.load(notes_dir / "2026-01-01-t.md")
     assert post.metadata["status"] == "open"
     assert "status/open" in post.metadata["tags"]
+
+
+def test_write_entry_experiment_creates_in_experiments_folder(tmp_path):
+    (tmp_path / "projects" / "myproj").mkdir(parents=True)
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
+        from app.services.vault_entries import write_entry
+        write_entry({
+            "type": "experiment",
+            "project": "myproj",
+            "title": "Cache vs No Cache",
+            "body": "Testing the in-process cache.",
+            "hypothesis": "If we cache, then reads are faster",
+            "expected_outcome": "Sub-50ms warm reads",
+            "measurement": "DevTools network timing",
+            "success_criteria": "Warm cache < 50ms",
+            "timebox": "one session",
+        })
+    files = list((tmp_path / "projects" / "myproj" / "experiments").glob("*.md"))
+    assert len(files) == 1
+
+
+def test_write_entry_experiment_sets_status_running(tmp_path):
+    (tmp_path / "projects" / "myproj").mkdir(parents=True)
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
+        from app.services.vault_entries import write_entry
+        write_entry({
+            "type": "experiment",
+            "project": "myproj",
+            "title": "My Experiment",
+            "body": "",
+            "hypothesis": "H",
+            "expected_outcome": "O",
+            "measurement": "M",
+            "success_criteria": "S",
+            "timebox": "1 week",
+        })
+    files = list((tmp_path / "projects" / "myproj" / "experiments").glob("*.md"))
+    post = fm.load(files[0])
+    assert post.metadata["status"] == "running"
+    assert post.metadata["hypothesis"] == "H"
+    assert post.metadata["timebox"] == "1 week"
+    assert post.metadata["result"] == ""
+    assert post.metadata["decision"] == ""
+
+
+def test_update_entry_status_generic_experiment_complete(tmp_path):
+    exp_dir = tmp_path / "projects" / "myproj" / "experiments"
+    exp_dir.mkdir(parents=True)
+    entry = fm.Post(
+        "## Context\nbody\n",
+        type="experiment", title="T", project="myproj",
+        status="running", created="2026-01-01T00:00:00",
+        tags=["experiment", "myproj", "status/running"],
+    )
+    (exp_dir / "2026-01-01-t.md").write_text(fm.dumps(entry))
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
+        from app.services.vault_entries import update_entry_status_generic
+        result = update_entry_status_generic("experiment", "myproj", "2026-01-01-t", "complete")
+    assert result is True
+    post = fm.load(exp_dir / "2026-01-01-t.md")
+    assert post.metadata["status"] == "complete"
+    assert "status/complete" in post.metadata["tags"]

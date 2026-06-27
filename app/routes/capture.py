@@ -69,6 +69,12 @@ def capture_submit():
     elif entry_type == "bug":
         data["severity"] = request.form.get("severity", "medium")
         data["steps"] = request.form.get("steps", "")
+    elif entry_type == "experiment":
+        data["hypothesis"] = request.form.get("hypothesis", "").strip()
+        data["expected_outcome"] = request.form.get("expected_outcome", "").strip()
+        data["measurement"] = request.form.get("measurement", "").strip()
+        data["success_criteria"] = request.form.get("success_criteria", "").strip()
+        data["timebox"] = request.form.get("timebox", "").strip()
 
     write_entry(data)
     flash("Saved. The vault remembers.")
@@ -104,13 +110,13 @@ def patch_entries():
         return jsonify({"error": "Invalid filename"}), 400
 
     # Validate entry_type
-    if entry_type not in ("bug", "idea", "note", "decision", "grill-me"):
+    if entry_type not in ("bug", "idea", "note", "decision", "grill-me", "experiment"):
         return jsonify({"error": "Invalid entry type"}), 400
 
     # Validate status against the lifecycle for this entry type
     valid_statuses = (
-        ("proposed", "accepted", "rejected", "superseded")
-        if entry_type == "decision"
+        ("proposed", "accepted", "rejected", "superseded") if entry_type == "decision"
+        else ("running", "complete", "abandoned") if entry_type == "experiment"
         else ("new", "open", "in-progress", "done", "deferred")
     )
     if status not in valid_statuses:
@@ -179,8 +185,8 @@ def capture_json():
 
     if not title:
         return jsonify({"error": "title is required"}), 400
-    if entry_type not in ("note", "idea", "bug", "grill-me", "housekeeping-task", "housekeeping-heartbeat"):
-        return jsonify({"error": "type must be note, idea, bug, grill-me, housekeeping-task, or housekeeping-heartbeat"}), 400
+    if entry_type not in ("note", "idea", "bug", "grill-me", "housekeeping-task", "housekeeping-heartbeat", "experiment"):
+        return jsonify({"error": "type must be note, idea, bug, grill-me, housekeeping-task, housekeeping-heartbeat, or experiment"}), 400
     if not project:
         return jsonify({"error": "project is required"}), 400
 
@@ -204,6 +210,12 @@ def capture_json():
     elif entry_type == "housekeeping-task":
         data["interval"] = req.get("interval", "weekly")
         data["success_definition"] = req.get("success_definition", "")
+    elif entry_type == "experiment":
+        data["hypothesis"] = req.get("hypothesis", "")
+        data["expected_outcome"] = req.get("expected_outcome", "")
+        data["measurement"] = req.get("measurement", "")
+        data["success_criteria"] = req.get("success_criteria", "")
+        data["timebox"] = req.get("timebox", "")
 
     write_entry(data)
     return jsonify({"ok": True}), 200
