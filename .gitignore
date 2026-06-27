@@ -32,5 +32,9 @@ build/
 .venv/
 venv/
 
+# Build artifacts
+app/static/bundle.css
+
 # Claude internal
 .claude/agent-memory/
+.claude/settings.local.json

@@ -1,4 +1,4 @@
-# Architectural Decisions — Obsidian Capture
+# Architectural Decisions — IkeOS
 
 > Append-only. Add an entry when a non-obvious decision is made.
 > Format: `## YYYY-MM-DD: Title` followed by a brief explanation of *why*.
