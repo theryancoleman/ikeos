@@ -102,20 +102,16 @@ def test_trigger_now_creates_session_and_sends_command(sched_vault, monkeypatch)
     mock_create.ok = True
     mock_create.json.return_value = {"id": "sess-abc"}
 
-    # Command is dispatched asynchronously via _schedule_command (daemon thread, 8s delay).
-    # Patch it directly so we can assert it's called without waiting for the thread.
-    with patch("app.services.scheduler.requests.post", return_value=mock_create) as mock_post, \
-         patch("app.services.scheduler._schedule_command") as mock_schedule:
+    with patch("app.services.scheduler.requests.post", return_value=mock_create) as mock_post:
         from app.services.scheduler import trigger_now
         result = trigger_now()
 
     assert result == "sess-abc"
     assert mock_post.call_count == 1
-    first_url = mock_post.call_args_list[0][0][0]
-    assert first_url == "http://mock-sm/sessions"
-    mock_schedule.assert_called_once_with(
-        "http://mock-sm", "sess-abc", "/housekeeping — run in scheduled mode"
-    )
+    call = mock_post.call_args_list[0]
+    assert call[0][0] == "http://mock-sm/sessions"
+    body = call[1]["json"]
+    assert body["initial_command"] == "/housekeeping — run in scheduled mode"
 
 
 def test_trigger_now_session_name_starts_with_housekeeping(sched_vault, monkeypatch):
@@ -170,10 +166,9 @@ def test_trigger_now_returns_none_when_session_create_fails(sched_vault, monkeyp
     assert result is None
 
 
-def test_trigger_now_returns_session_id_when_command_will_fail(sched_vault, monkeypatch):
-    """trigger_now returns the session ID once the session is created. Command send
-    happens asynchronously in a daemon thread — failure there is logged silently and
-    does not change the return value or prevent last_triggered from being written."""
+def test_trigger_now_returns_session_id_on_success(sched_vault, monkeypatch):
+    """trigger_now returns the session ID once the session is created and
+    last_triggered is persisted to the schedule config."""
     monkeypatch.setenv("VAULT_PATH", str(sched_vault))
     monkeypatch.setenv("SESSION_MANAGER_URL", "http://mock-sm")
 
@@ -181,8 +176,7 @@ def test_trigger_now_returns_session_id_when_command_will_fail(sched_vault, monk
     mock_create.ok = True
     mock_create.json.return_value = {"id": "sess-fail-cmd"}
 
-    with patch("app.services.scheduler.requests.post", return_value=mock_create), \
-         patch("app.services.scheduler._schedule_command"):
+    with patch("app.services.scheduler.requests.post", return_value=mock_create):
         from app.services.scheduler import trigger_now, get_config
         result = trigger_now()
 

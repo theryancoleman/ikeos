@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-import threading
 from datetime import datetime
 from pathlib import Path
 
@@ -112,21 +111,6 @@ def get_config_with_next_run() -> dict:
     return {**config, "next_run": next_run}
 
 
-def _schedule_command(sm_url: str, session_id: str, command: str, delay: float = 8.0) -> None:
-    def _send() -> None:
-        try:
-            requests.post(
-                f"{sm_url}/sessions/{session_id}/command",
-                json={"command": command},
-                timeout=5,
-            )
-        except Exception:
-            pass
-    t = threading.Timer(delay, _send)
-    t.daemon = True
-    t.start()
-
-
 def trigger_now() -> str | None:
     now = datetime.now()
     session_name = f"housekeeping-{now.strftime('%Y%m%d')}"
@@ -135,7 +119,12 @@ def trigger_now() -> str | None:
     try:
         create_resp = requests.post(
             f"{sm_url}/sessions",
-            json={"name": session_name, "project": "claude-config", "project_dir": project_dir},
+            json={
+                "name": session_name,
+                "project": "claude-config",
+                "project_dir": project_dir,
+                "initial_command": "/housekeeping — run in scheduled mode",
+            },
             timeout=5,
         )
         if not create_resp.ok:
@@ -148,9 +137,6 @@ def trigger_now() -> str | None:
     except (requests.RequestException, OSError):
         logger.exception("Housekeeping trigger failed")
         return None
-
-    # Claude Code needs ~8 s to boot before it hears commands
-    _schedule_command(sm_url, session_id, "/housekeeping — run in scheduled mode")
     config = get_config()
     config["last_triggered"] = now.isoformat(timespec="seconds")
     try:
