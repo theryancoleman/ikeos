@@ -17,6 +17,16 @@
     </div>
   </header>
 
+  <!-- Session status bar (shown while a rewrite/publish session is running) -->
+  <div class="blog-draft-session-bar" id="session-bar" hidden>
+    <span class="blog-draft-session-spinner" id="session-spinner">⟳</span>
+    <span id="session-bar-label">Session running…</span>
+    <a href="/agents" target="_blank" class="blog-draft-session-link" id="session-link">View in Sessions ↗</a>
+    <button class="btn-ghost blog-draft-session-refresh" id="btn-reload-draft" hidden>
+      Reload draft ↺
+    </button>
+  </div>
+
   <!-- Rewrite feedback panel -->
   <div class="blog-draft-rewrite-panel" id="rewrite-panel" hidden>
     <label class="ike-eyebrow" for="rewrite-feedback">Feedback for rewrite</label>
@@ -105,8 +115,8 @@
       const resp = await fetch('/housekeeping/blog-draft/publish', { method: 'POST' });
       const data = await resp.json();
       if (data.ok) {
-        btn.textContent = 'Session launched ✓';
-        setTimeout(() => { btn.textContent = 'Publish'; btn.disabled = false; }, 4000);
+        startSessionPoll(data.session_id, 'Publish');
+        btn.textContent = 'Publish'; btn.disabled = false;
       } else {
         alert(data.error || 'Failed to launch publish session.');
         btn.textContent = 'Publish'; btn.disabled = false;
@@ -115,6 +125,63 @@
       alert('Network error.');
       btn.textContent = 'Publish'; btn.disabled = false;
     }
+  });
+
+  // Session status bar polling
+  let _pollTimer = null;
+
+  function startSessionPoll(sessionId, label) {
+    const bar = document.getElementById('session-bar');
+    const barLabel = document.getElementById('session-bar-label');
+    const spinner = document.getElementById('session-spinner');
+    const reloadBtn = document.getElementById('btn-reload-draft');
+    const sessionLink = document.getElementById('session-link');
+
+    bar.hidden = false;
+    bar.classList.remove('blog-draft-session-bar--done');
+    spinner.textContent = '⟳';
+    barLabel.textContent = label + ' — running…';
+    reloadBtn.hidden = true;
+    sessionLink.href = '/agents';
+
+    if (_pollTimer) clearInterval(_pollTimer);
+    _pollTimer = setInterval(async () => {
+      try {
+        const resp = await fetch(`/housekeeping/blog-draft/session-status?session_id=${encodeURIComponent(sessionId)}`);
+        const data = await resp.json();
+        if (!data.active) {
+          clearInterval(_pollTimer);
+          _pollTimer = null;
+          bar.classList.add('blog-draft-session-bar--done');
+          spinner.textContent = '✓';
+          barLabel.textContent = label + ' — done';
+          reloadBtn.hidden = false;
+        }
+      } catch { /* network blip — keep polling */ }
+    }, 5000);
+  }
+
+  document.getElementById('btn-reload-draft').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-reload-draft');
+    btn.textContent = 'Loading…';
+    try {
+      const resp = await fetch('/housekeeping/blog-draft/content');
+      const data = await resp.json();
+      if (data.content !== undefined) {
+        editor.value = data.content;
+        renderPreview();
+      }
+      if (data.bluesky_text !== undefined) {
+        bskyEditor.value = data.bluesky_text;
+        updateBskyCount();
+      }
+      document.getElementById('session-bar').hidden = true;
+      saveStatus.textContent = 'Draft reloaded.';
+      setTimeout(() => { saveStatus.textContent = ''; }, 3000);
+    } catch {
+      saveStatus.textContent = 'Reload failed.';
+    }
+    btn.textContent = 'Reload draft ↺';
   });
 
   // Rewrite panel
@@ -139,8 +206,7 @@
       if (data.ok) {
         document.getElementById('rewrite-panel').hidden = true;
         document.getElementById('rewrite-feedback').value = '';
-        saveStatus.textContent = 'Rewrite session launched — refresh when done.';
-        setTimeout(() => { saveStatus.textContent = ''; }, 6000);
+        startSessionPoll(data.session_id, 'Rewrite');
       } else {
         alert(data.error || 'Failed to launch rewrite session.');
       }
