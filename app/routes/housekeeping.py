@@ -13,19 +13,26 @@ CAPTURE_URL = os.environ.get("CAPTURE_URL", "http://host.docker.internal:5009")
 CAPTURE_TOKEN = os.environ.get("CAPTURE_TOKEN", "")
 SESSION_MANAGER_URL = os.environ.get("SESSION_MANAGER_URL", "http://host.docker.internal:5010")
 HOUSEKEEPING_PROJECT_DIR = os.environ.get("HOUSEKEEPING_PROJECT_DIR", "/mnt/c/Server/claude-config")
-AIOS_BLOG_POSTS_DIR = os.environ.get(
-    "AIOS_BLOG_POSTS_DIR",
-    "/mnt/c/Server/projects/aios-blog/content/posts"
-)
+AIOS_BLOG_POSTS_DIR = os.environ.get("AIOS_BLOG_POSTS_DIR", "")
+AIOS_BLOG_PROJECT_DIR = os.environ.get("AIOS_BLOG_PROJECT_DIR", "")
+
+
+def _blog_draft_paths() -> tuple[Path | None, Path | None]:
+    """Return (draft_path, bluesky_path) for the latest weekly draft."""
+    posts_dir = Path(AIOS_BLOG_POSTS_DIR)
+    if not posts_dir.exists():
+        return None, None
+    drafts = sorted(posts_dir.glob("*-weekly-draft.md"), reverse=True)
+    if not drafts:
+        return None, None
+    draft = drafts[0]
+    bluesky = draft.with_name(draft.stem.replace("-weekly-draft", "-weekly-bluesky") + ".txt")
+    return draft, bluesky if bluesky.exists() else None
 
 
 def _latest_blog_draft() -> str | None:
-    """Return filename of the most recent weekly-draft.md, or None if absent."""
-    posts_dir = Path(AIOS_BLOG_POSTS_DIR)
-    if not posts_dir.exists():
-        return None
-    drafts = sorted(posts_dir.glob("*-weekly-draft.md"), reverse=True)
-    return drafts[0].name if drafts else None
+    draft, _ = _blog_draft_paths()
+    return draft.name if draft else None
 
 
 def _capture_headers() -> dict:
@@ -72,20 +79,7 @@ def _check_auth() -> tuple[bool, int]:
 
 @bp.route("/housekeeping")
 def index():
-    from app.services.vault import read_housekeeping_tasks, read_housekeeping_heartbeat
-    tasks = read_housekeeping_tasks()
-    heartbeat = read_housekeeping_heartbeat("claude-config")
-    schedule = get_config_with_next_run()
-    return render_template(
-        "housekeeping.html",
-        tasks=tasks,
-        heartbeat=heartbeat,
-        hk_age=_age_str(heartbeat.get("last_run")),
-        hk_status=_widget_status(heartbeat),
-        schedule=schedule,
-        capture_token=CAPTURE_TOKEN,
-        blog_draft=_latest_blog_draft(),
-    )
+    return render_template("housekeeping.html", **_housekeeping_context())
 
 
 @bp.route("/housekeeping/tasks", methods=["POST"])
@@ -223,6 +217,116 @@ def run_task(filename: str):
         return jsonify({"error": "Session manager unreachable"}), 502
 
     return jsonify({"ok": True, "session_id": session_id}), 200
+
+
+@bp.route("/housekeeping/blog-draft")
+def blog_draft_editor():
+    draft, bluesky = _blog_draft_paths()
+    if not draft:
+        return render_template("housekeeping.html", **_housekeeping_context(), no_draft=True)
+    return render_template(
+        "blog_draft.html",
+        filename=draft.name,
+        content=draft.read_text(encoding="utf-8"),
+        bluesky_text=(bluesky.read_text(encoding="utf-8") if bluesky else ""),
+        bluesky_filename=(bluesky.name if bluesky else ""),
+    )
+
+
+@bp.route("/housekeeping/blog-draft/save", methods=["POST"])
+def blog_draft_save():
+    draft, bluesky = _blog_draft_paths()
+    if not draft:
+        return jsonify({"error": "No draft found"}), 404
+    content = request.form.get("content", "")
+    bluesky_text = request.form.get("bluesky_text", "")
+    try:
+        draft.write_text(content, encoding="utf-8")
+        if bluesky and bluesky_text:
+            bluesky.write_text(bluesky_text, encoding="utf-8")
+    except OSError as e:
+        return jsonify({"error": str(e)}), 500
+    return jsonify({"ok": True, "filename": draft.name}), 200
+
+
+@bp.route("/housekeeping/blog-draft/publish", methods=["POST"])
+def blog_draft_publish():
+    draft, bluesky = _blog_draft_paths()
+    if not draft:
+        return jsonify({"error": "No draft found"}), 404
+    if not AIOS_BLOG_PROJECT_DIR:
+        return jsonify({"error": "AIOS_BLOG_PROJECT_DIR not configured"}), 503
+    bluesky_file = bluesky.name if bluesky else ""
+    command = (
+        f"Run `bash deploy.sh content/posts/{draft.name}` in {AIOS_BLOG_PROJECT_DIR}. "
+        f"The Bluesky companion text is in content/posts/{bluesky_file}. "
+        "Build the Hugo site, deploy via rsync, and post to Bluesky."
+    )
+    try:
+        resp = requests.post(
+            f"{SESSION_MANAGER_URL}/sessions",
+            json={
+                "name": f"blog-publish-{draft.stem[:30]}",
+                "project": "aios-blog",
+                "project_dir": AIOS_BLOG_PROJECT_DIR,
+                "initial_command": command,
+            },
+            timeout=5,
+        )
+        if not resp.ok:
+            return jsonify({"error": "Failed to create publish session"}), 502
+        return jsonify({"ok": True, "session_id": resp.json().get("id")}), 200
+    except requests.RequestException:
+        return jsonify({"error": "Session manager unreachable"}), 502
+
+
+@bp.route("/housekeeping/blog-draft/rewrite", methods=["POST"])
+def blog_draft_rewrite():
+    draft, _ = _blog_draft_paths()
+    if not draft:
+        return jsonify({"error": "No draft found"}), 404
+    if not AIOS_BLOG_PROJECT_DIR:
+        return jsonify({"error": "AIOS_BLOG_PROJECT_DIR not configured"}), 503
+    feedback = request.form.get("feedback", "").strip()
+    if not feedback:
+        return jsonify({"error": "Feedback is required"}), 400
+    command = (
+        f"Rewrite the blog draft at content/posts/{draft.name} based on this feedback: "
+        f"{feedback} — keep the same frontmatter, voice, and section structure from the /blog skill. "
+        "Overwrite the file in place when done."
+    )
+    try:
+        resp = requests.post(
+            f"{SESSION_MANAGER_URL}/sessions",
+            json={
+                "name": f"blog-rewrite-{draft.stem[:30]}",
+                "project": "aios-blog",
+                "project_dir": AIOS_BLOG_PROJECT_DIR,
+                "initial_command": command,
+            },
+            timeout=5,
+        )
+        if not resp.ok:
+            return jsonify({"error": "Failed to create rewrite session"}), 502
+        return jsonify({"ok": True, "session_id": resp.json().get("id")}), 200
+    except requests.RequestException:
+        return jsonify({"error": "Session manager unreachable"}), 502
+
+
+def _housekeeping_context() -> dict:
+    from app.services.vault import read_housekeeping_tasks, read_housekeeping_heartbeat
+    tasks = read_housekeeping_tasks()
+    heartbeat = read_housekeeping_heartbeat("claude-config")
+    schedule = get_config_with_next_run()
+    return dict(
+        tasks=tasks,
+        heartbeat=heartbeat,
+        hk_age=_age_str(heartbeat.get("last_run")),
+        hk_status=_widget_status(heartbeat),
+        schedule=schedule,
+        capture_token=CAPTURE_TOKEN,
+        blog_draft=_latest_blog_draft(),
+    )
 
 
 @bp.route("/housekeeping/schedule", methods=["GET"])

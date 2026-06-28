@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}Blog Draft — {{ filename }}{% endblock %}
+
+{% block content %}
+<div class="settings-page blog-draft-page">
+
+  <header class="page-header">
+    <span class="ike-eyebrow">
+      <a href="{{ url_for('housekeeping.index') }}">Housekeeping</a> / Blog Draft
+    </span>
+    <h1>{{ filename }}</h1>
+    <div class="blog-draft-actions">
+      <button class="btn" id="btn-save">Save</button>
+      <button class="btn btn-secondary" id="btn-publish">Publish</button>
+      <button class="btn btn-secondary" id="btn-rewrite-toggle">Request Rewrite</button>
+      <span class="blog-draft-save-status" id="save-status"></span>
+    </div>
+  </header>
+
+  <!-- Rewrite feedback panel -->
+  <div class="blog-draft-rewrite-panel" id="rewrite-panel" hidden>
+    <label class="ike-eyebrow" for="rewrite-feedback">Feedback for rewrite</label>
+    <textarea id="rewrite-feedback" class="blog-draft-feedback-input"
+              placeholder="e.g. Make the intro punchier, cut the Skills Stack section, expand the Challenges section…"></textarea>
+    <div class="blog-draft-rewrite-actions">
+      <button class="btn" id="btn-rewrite-submit">Send to Claude</button>
+      <button class="btn btn-ghost" id="btn-rewrite-cancel">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Main editor / preview split -->
+  <div class="blog-draft-split">
+    <section class="blog-draft-pane blog-draft-pane--editor">
+      <div class="ike-eyebrow">Markdown</div>
+      <textarea id="draft-editor" class="blog-draft-textarea">{{ content }}</textarea>
+    </section>
+    <section class="blog-draft-pane blog-draft-pane--preview">
+      <div class="ike-eyebrow">Preview</div>
+      <div id="draft-preview" class="blog-draft-preview-content"></div>
+    </section>
+  </div>
+
+  <!-- Bluesky section -->
+  <section class="blog-draft-bluesky">
+    <div class="blog-draft-bluesky-header">
+      <span class="ike-eyebrow">Bluesky</span>
+      <span class="blog-draft-charcount" id="bsky-charcount">0 / 300</span>
+    </div>
+    <textarea id="bluesky-editor" class="blog-draft-bluesky-textarea"
+              maxlength="300">{{ bluesky_text }}</textarea>
+  </section>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+  // Preview rendering
+  const editor = document.getElementById('draft-editor');
+  const preview = document.getElementById('draft-preview');
+  const bskyEditor = document.getElementById('bluesky-editor');
+  const bskyCount = document.getElementById('bsky-charcount');
+  const saveStatus = document.getElementById('save-status');
+
+  function renderPreview() {
+    if (typeof marked !== 'undefined') {
+      preview.innerHTML = marked.parse(editor.value);
+    }
+  }
+
+  function updateBskyCount() {
+    const n = bskyEditor.value.length;
+    bskyCount.textContent = `${n} / 300`;
+    bskyCount.classList.toggle('blog-draft-charcount--warn', n > 280);
+    bskyCount.classList.toggle('blog-draft-charcount--over', n > 300);
+  }
+
+  editor.addEventListener('input', renderPreview);
+  bskyEditor.addEventListener('input', updateBskyCount);
+  renderPreview();
+  updateBskyCount();
+
+  // Save
+  document.getElementById('btn-save').addEventListener('click', async () => {
+    saveStatus.textContent = 'Saving…';
+    const body = new FormData();
+    body.append('content', editor.value);
+    body.append('bluesky_text', bskyEditor.value);
+    try {
+      const resp = await fetch('/housekeeping/blog-draft/save', { method: 'POST', body });
+      const data = await resp.json();
+      saveStatus.textContent = data.ok ? 'Saved.' : (data.error || 'Error.');
+    } catch {
+      saveStatus.textContent = 'Network error.';
+    }
+    setTimeout(() => { saveStatus.textContent = ''; }, 3000);
+  });
+
+  // Publish
+  document.getElementById('btn-publish').addEventListener('click', async () => {
+    if (!confirm('Build and deploy the Hugo site, then post to Bluesky?')) return;
+    const btn = document.getElementById('btn-publish');
+    btn.disabled = true;
+    btn.textContent = 'Launching…';
+    try {
+      const resp = await fetch('/housekeeping/blog-draft/publish', { method: 'POST' });
+      const data = await resp.json();
+      if (data.ok) {
+        btn.textContent = 'Session launched ✓';
+        setTimeout(() => { btn.textContent = 'Publish'; btn.disabled = false; }, 4000);
+      } else {
+        alert(data.error || 'Failed to launch publish session.');
+        btn.textContent = 'Publish'; btn.disabled = false;
+      }
+    } catch {
+      alert('Network error.');
+      btn.textContent = 'Publish'; btn.disabled = false;
+    }
+  });
+
+  // Rewrite panel
+  document.getElementById('btn-rewrite-toggle').addEventListener('click', () => {
+    document.getElementById('rewrite-panel').hidden = false;
+    document.getElementById('rewrite-feedback').focus();
+  });
+  document.getElementById('btn-rewrite-cancel').addEventListener('click', () => {
+    document.getElementById('rewrite-panel').hidden = true;
+  });
+  document.getElementById('btn-rewrite-submit').addEventListener('click', async () => {
+    const feedback = document.getElementById('rewrite-feedback').value.trim();
+    if (!feedback) { alert('Please enter feedback first.'); return; }
+    const btn = document.getElementById('btn-rewrite-submit');
+    btn.disabled = true;
+    btn.textContent = 'Launching…';
+    const body = new FormData();
+    body.append('feedback', feedback);
+    try {
+      const resp = await fetch('/housekeeping/blog-draft/rewrite', { method: 'POST', body });
+      const data = await resp.json();
+      if (data.ok) {
+        document.getElementById('rewrite-panel').hidden = true;
+        document.getElementById('rewrite-feedback').value = '';
+        saveStatus.textContent = 'Rewrite session launched — refresh when done.';
+        setTimeout(() => { saveStatus.textContent = ''; }, 6000);
+      } else {
+        alert(data.error || 'Failed to launch rewrite session.');
+      }
+    } catch {
+      alert('Network error.');
+    }
+    btn.textContent = 'Send to Claude'; btn.disabled = false;
+  });
+</script>
+{% endblock %}

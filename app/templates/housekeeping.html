@@ -65,7 +65,10 @@
     <span class="ike-eyebrow">Weekly Blog Draft</span>
     {% if blog_draft %}
       <p class="hk-status hk-status-ok">
-        Ready: <code>{{ blog_draft }}</code>
+        <a href="{{ url_for('housekeeping.blog_draft_editor') }}" class="hk-draft-link">
+          {{ blog_draft }}
+        </a>
+        — ready for review
       </p>
     {% else %}
       <p class="hk-status hk-status-pending">No draft yet this week</p>
