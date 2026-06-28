@@ -306,6 +306,18 @@ def blog_draft_rewrite():
             },
             timeout=5,
         )
+        if resp.status_code == 409:
+            # Session already running — send feedback directly to it
+            existing = resp.json().get("session", {})
+            session_id = existing.get("id")
+            cmd_resp = requests.post(
+                f"{SESSION_MANAGER_URL}/sessions/{session_id}/command",
+                json={"command": command},
+                timeout=5,
+            )
+            if not cmd_resp.ok:
+                return jsonify({"error": "Rewrite session running but failed to send command"}), 502
+            return jsonify({"ok": True, "session_id": session_id}), 200
         if not resp.ok:
             return jsonify({"error": "Failed to create rewrite session"}), 502
         return jsonify({"ok": True, "session_id": resp.json().get("id")}), 200
@@ -327,6 +339,34 @@ def _housekeeping_context() -> dict:
         capture_token=CAPTURE_TOKEN,
         blog_draft=_latest_blog_draft(),
     )
+
+
+@bp.route("/housekeeping/blog-draft/content")
+def blog_draft_content():
+    """Return current draft file content as JSON — used by JS to reload after rewrite."""
+    draft, bluesky = _blog_draft_paths()
+    if not draft:
+        return jsonify({"error": "No draft found"}), 404
+    return jsonify({
+        "content": draft.read_text(encoding="utf-8"),
+        "bluesky_text": bluesky.read_text(encoding="utf-8") if bluesky else "",
+    })
+
+
+@bp.route("/housekeeping/blog-draft/session-status")
+def blog_draft_session_status():
+    """Proxy session manager status for a given session_id."""
+    session_id = request.args.get("session_id", "").strip()
+    if not session_id or not SESSION_MANAGER_URL:
+        return jsonify({"active": False}), 200
+    try:
+        resp = requests.get(f"{SESSION_MANAGER_URL}/sessions/{session_id}", timeout=3)
+        if resp.status_code == 404:
+            return jsonify({"active": False})
+        data = resp.json()
+        return jsonify({"active": data.get("status") == "active"})
+    except requests.RequestException:
+        return jsonify({"active": False})
 
 
 @bp.route("/housekeeping/schedule", methods=["GET"])
