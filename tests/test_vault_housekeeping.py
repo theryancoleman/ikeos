@@ -11,12 +11,12 @@ def reset_cache():
     _vc._invalidate_cache()
 
 
-def _write_task(path, filename, enabled="true", last_run="null", failures="0", interval="weekly"):
+def _write_task(path, filename, enabled="true", last_run="null", failures="0", interval="weekly", project="myproj"):
     task = fm.Post(
         "## Instructions\nDo the thing.\n",
         title="Test Task",
         type="housekeeping-task",
-        project="myproj",
+        project=project,
         interval=interval,
         enabled=enabled,
         success_definition="",
@@ -52,6 +52,33 @@ def test_compute_task_status_disabled(tmp_path):
         from app.services.vault_housekeeping import _compute_task_status
         status = _compute_task_status({"enabled": "false", "last_run": "null", "interval": "weekly"})
     assert status == "disabled"
+
+
+def test_compute_task_status_ok_when_consecutive_failures_is_int_zero(tmp_path):
+    """PATCH sets consecutive_failures as int 0; must not be treated as error."""
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
+        from app.services.vault_housekeeping import _compute_task_status
+        status = _compute_task_status({
+            "enabled": "true",
+            "last_run": "2026-06-28",
+            "interval": "weekly",
+            "consecutive_failures": 0,
+        })
+    assert status == "ok"
+
+
+def test_read_housekeeping_tasks_scans_all_projects(tmp_path):
+    """No project arg returns tasks from every project's housekeeping folder."""
+    hk_a = tmp_path / "projects" / "proj-a" / "housekeeping"
+    hk_b = tmp_path / "projects" / "proj-b" / "housekeeping"
+    _write_task(hk_a, "2026-01-01-task-a.md", project="proj-a")
+    _write_task(hk_b, "2026-01-02-task-b.md", project="proj-b")
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
+        from app.services.vault_housekeeping import read_housekeeping_tasks
+        result = read_housekeeping_tasks()
+    assert len(result) == 2
+    projects = {t["project"] for t in result}
+    assert projects == {"proj-a", "proj-b"}
 
 
 def test_update_housekeeping_fields_updates_last_run(tmp_path):

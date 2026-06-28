@@ -70,7 +70,7 @@ def update_housekeeping_fields(
 def _compute_task_status(task: dict) -> str:
     if task.get("enabled") != "true":
         return "disabled"
-    if task.get("consecutive_failures", "0") != "0":
+    if int(task.get("consecutive_failures", 0) or 0) != 0:
         return "error"
     last_run = task.get("last_run", "null")
     if last_run == "null" or last_run is None:
@@ -100,27 +100,39 @@ def _compute_next_run(task: dict) -> str | None:
         return None
 
 
-def read_housekeeping_tasks(project: str) -> list[dict]:
-    """Read all housekeeping-task entries. Uncached — state changes frequently."""
-    folder = _vc.VAULT_PATH / "projects" / project / "housekeeping"
-    if not folder.exists():
-        return []
+def read_housekeeping_tasks(project: str | None = None) -> list[dict]:
+    """Read housekeeping-task entries across all projects (or one if specified).
+
+    Each task dict includes a ``project`` key taken from the file's frontmatter,
+    falling back to the directory name if the field is absent.
+    """
+    projects_root = _vc.VAULT_PATH / "projects"
+    if project:
+        folders = [projects_root / project / "housekeeping"]
+    else:
+        folders = sorted(projects_root.glob("*/housekeeping"))
+
     tasks = []
-    for filepath in sorted(folder.glob("*.md")):
-        if filepath.name == "last-run.md":
+    for folder in folders:
+        if not folder.exists():
             continue
-        try:
-            post = frontmatter.load(filepath)
-            if post.metadata.get("type") != "housekeeping-task":
+        project_name = folder.parent.name
+        for filepath in sorted(folder.glob("*.md")):
+            if filepath.name == "last-run.md":
                 continue
-            task = dict(post.metadata)
-            task["filename"] = filepath.stem
-            task["status"] = _compute_task_status(task)
-            task["next_run"] = _compute_next_run(task)
-            tasks.append(task)
-        except Exception as e:
-            logger.warning("Failed to parse housekeeping task %s: %s", filepath, e)
-            continue
+            try:
+                post = frontmatter.load(filepath)
+                if post.metadata.get("type") != "housekeeping-task":
+                    continue
+                task = dict(post.metadata)
+                task["filename"] = filepath.stem
+                task.setdefault("project", project_name)
+                task["status"] = _compute_task_status(task)
+                task["next_run"] = _compute_next_run(task)
+                tasks.append(task)
+            except Exception as e:
+                logger.warning("Failed to parse housekeeping task %s: %s", filepath, e)
+                continue
     return tasks
 
 

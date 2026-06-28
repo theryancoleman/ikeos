@@ -73,7 +73,7 @@ def _check_auth() -> tuple[bool, int]:
 @bp.route("/housekeeping")
 def index():
     from app.services.vault import read_housekeeping_tasks, read_housekeeping_heartbeat
-    tasks = read_housekeeping_tasks("claude-config")
+    tasks = read_housekeeping_tasks()
     heartbeat = read_housekeeping_heartbeat("claude-config")
     schedule = get_config_with_next_run()
     return render_template(
@@ -122,7 +122,7 @@ def create_task():
 @bp.route("/housekeeping/tasks/<filename>/toggle", methods=["POST"])
 def toggle_task(filename: str):
     from app.services.vault import read_housekeeping_tasks
-    tasks = read_housekeeping_tasks("claude-config")
+    tasks = read_housekeeping_tasks()
     task = next((t for t in tasks if t.get("filename") == filename), None)
     if not task:
         return jsonify({"error": "Task not found"}), 404
@@ -132,7 +132,7 @@ def toggle_task(filename: str):
         resp = requests.patch(
             f"{CAPTURE_URL}/entries/housekeeping",
             json={
-                "project": "claude-config",
+                "project": task.get("project", "claude-config"),
                 "type": "housekeeping-task",
                 "filename": filename,
                 "fields": {"enabled": new_enabled},
@@ -151,7 +151,7 @@ def toggle_task(filename: str):
 @bp.route("/housekeeping/tasks/<filename>/reset", methods=["POST"])
 def reset_task(filename: str):
     from app.services.vault import read_housekeeping_tasks
-    tasks = read_housekeeping_tasks("claude-config")
+    tasks = read_housekeeping_tasks()
     task = next((t for t in tasks if t.get("filename") == filename), None)
     if not task:
         return jsonify({"error": "Task not found"}), 404
@@ -160,7 +160,7 @@ def reset_task(filename: str):
         resp = requests.patch(
             f"{CAPTURE_URL}/entries/housekeeping",
             json={
-                "project": "claude-config",
+                "project": task.get("project", "claude-config"),
                 "type": "housekeeping-task",
                 "filename": filename,
                 "fields": {"last_run": "null", "consecutive_failures": "0"},
@@ -181,8 +181,12 @@ def delete_task(filename: str):
     ok, status = _check_auth()
     if not ok:
         return jsonify({"error": "Unauthorized" if status == 401 else "Service unavailable"}), status
-    from app.services.vault import delete_housekeeping_task
-    deleted = delete_housekeeping_task("claude-config", filename)
+    from app.services.vault import read_housekeeping_tasks, delete_housekeeping_task
+    tasks = read_housekeeping_tasks()
+    task = next((t for t in tasks if t.get("filename") == filename), None)
+    if not task:
+        return jsonify({"error": "Task not found"}), 404
+    deleted = delete_housekeeping_task(task.get("project", "claude-config"), filename)
     if not deleted:
         return jsonify({"error": "Task not found"}), 404
     return jsonify({"ok": True}), 200
