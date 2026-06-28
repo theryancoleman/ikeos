@@ -312,7 +312,7 @@ def blog_draft_rewrite():
             session_id = existing.get("id")
             cmd_resp = requests.post(
                 f"{SESSION_MANAGER_URL}/sessions/{session_id}/command",
-                json={"command": command},
+                json={"command": command, "escape_first": True},
                 timeout=5,
             )
             if not cmd_resp.ok:
