@@ -1567,3 +1567,24 @@ button[type="submit"] { margin-top: var(--space-3); }
   padding: 0.2rem 0.5rem;
   border-radius: 4px;
 }
+
+/* Publishing tab */
+.publishing-page { padding: 1.5rem; max-width: 860px; }
+.publishing-section { margin-bottom: 2.5rem; }
+.publishing-card { background: var(--surface-1, #1a1a2e); border: 1px solid var(--border, rgba(255,255,255,.12)); border-radius: 8px; padding: 1rem 1.25rem; }
+.publishing-card.is-draft { border-left: 3px solid #f59e0b; }
+.publishing-card-header { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; margin-bottom: .5rem; }
+.publishing-title { font-weight: 600; font-size: 1.05em; }
+.publishing-date { margin-left: auto; font-size: .8em; }
+.publishing-description { font-size: .9em; margin: 0 0 .75rem; }
+.publishing-actions { display: flex; gap: .5rem; margin-top: .5rem; }
+.publishing-posts-list { display: flex; flex-direction: column; gap: 0; }
+.publishing-post-row { display: flex; align-items: center; gap: .75rem; padding: .45rem 0; border-bottom: 1px solid var(--border, rgba(255,255,255,.08)); }
+.publishing-post-date { font-size: .8em; min-width: 88px; }
+.publishing-post-title { flex: 1; }
+.publishing-older summary { cursor: pointer; font-size: .85em; padding: .4rem 0; }
+.publishing-social-list { display: flex; flex-direction: column; gap: .75rem; }
+.publishing-social-row { background: var(--surface-1, #1a1a2e); border: 1px solid var(--border, rgba(255,255,255,.12)); border-radius: 6px; padding: .75rem 1rem; }
+.publishing-social-text { margin: 0 0 .4rem; white-space: pre-wrap; font-size: .95em; }
+.publishing-social-meta { display: flex; gap: 1rem; font-size: .8em; align-items: center; }
+.publishing-social-meta a { text-decoration: none; }

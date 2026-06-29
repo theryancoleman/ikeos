@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Publishing — ʻIkeOS{% endblock %}
+
+{% block content %}
+<div class="publishing-page">
+
+  {# ── Latest post ── #}
+  <section class="publishing-section">
+    <h2 class="section-title">Latest</h2>
+    {% if posts %}
+      {% set latest = posts[0] %}
+      <div class="publishing-card {% if latest.draft %}is-draft{% endif %}">
+        <div class="publishing-card-header">
+          <span class="publishing-title">{{ latest.title }}</span>
+          {% if latest.draft %}
+            <span class="pill pill-warning">Draft</span>
+          {% else %}
+            <span class="pill pill-ok">Published</span>
+          {% endif %}
+          <span class="publishing-date muted">{{ latest.date }}</span>
+        </div>
+        {% if latest.description %}
+          <p class="publishing-description">{{ latest.description }}</p>
+        {% endif %}
+        <div class="publishing-actions">
+          {% if latest.draft %}
+            <a href="{{ url_for('housekeeping.blog_draft_editor') }}" class="btn">Edit / Re-prompt</a>
+            <button class="btn btn-primary" onclick="publishPost()">Publish</button>
+          {% endif %}
+        </div>
+      </div>
+    {% else %}
+      <p class="muted">No blog posts found. Configure <code>AIOS_BLOG_POSTS_DIR</code> to show posts here.</p>
+    {% endif %}
+  </section>
+
+  {# ── All posts ── #}
+  <section class="publishing-section">
+    <h2 class="section-title">Posts</h2>
+    {% if posts %}
+      <div class="publishing-posts-list">
+        {% for post in posts %}
+          {% if loop.index == 11 %}<details class="publishing-older"><summary>Show {{ posts|length - 10 }} older posts</summary>{% endif %}
+          <div class="publishing-post-row">
+            <span class="publishing-post-date muted">{{ post.date }}</span>
+            <span class="publishing-post-title">{{ post.title }}</span>
+            <span class="pill {% if post.draft %}pill-warning{% else %}pill-ok{% endif %}">{% if post.draft %}Draft{% else %}Published{% endif %}</span>
+          </div>
+        {% endfor %}
+        {% if posts|length > 10 %}</details>{% endif %}
+      </div>
+    {% else %}
+      <p class="muted">No posts yet.</p>
+    {% endif %}
+  </section>
+
+  {# ── Bluesky ── #}
+  {% if bluesky_handle %}
+  <section class="publishing-section">
+    <h2 class="section-title">Bluesky <span class="muted" style="font-size:0.8em;font-weight:400">@{{ bluesky_handle }}</span></h2>
+    {% if bluesky_posts %}
+      <div class="publishing-social-list">
+        {% for bpost in bluesky_posts %}
+          <div class="publishing-social-row">
+            <p class="publishing-social-text">{{ bpost.text }}</p>
+            <div class="publishing-social-meta muted">
+              <span title="Likes">♥ {{ bpost.likes }}</span>
+              <span title="Reposts">↺ {{ bpost.reposts }}</span>
+              <span title="Replies">💬 {{ bpost.replies }}</span>
+              <span style="margin-left:auto">{{ bpost.created_at[:10] }}</span>
+              {% if bpost.url %}<a href="{{ bpost.url }}" target="_blank" rel="noopener">View ↗</a>{% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="muted">No recent Bluesky posts found.</p>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  {# ── Voice prompt (placeholder) ── #}
+  <section class="publishing-section" style="opacity:0.55">
+    <h2 class="section-title">Voice Prompt <span class="pill">Coming soon</span></h2>
+    <p class="muted">Voice prompt editor and version history — planned for a follow-up session.</p>
+  </section>
+
+</div>
+
+<script>
+async function publishPost() {
+  if (!confirm('Publish this draft?')) return;
+  const r = await fetch('/housekeeping/blog-draft/publish', {method: 'POST'});
+  const data = await r.json().catch(() => ({}));
+  if (r.ok) {
+    alert(data.message || 'Publish triggered.');
+    location.reload();
+  } else {
+    alert('Publish failed: ' + (data.error || r.status));
+  }
+}
+</script>
+{% endblock %}
