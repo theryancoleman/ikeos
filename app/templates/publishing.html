@@ -89,9 +89,10 @@
 </div>
 
 <script>
+window.PUBLISH_URL = '{{ url_for("housekeeping.blog_draft_publish") }}';
 async function publishPost() {
   if (!confirm('Publish this draft?')) return;
-  const r = await fetch('/housekeeping/blog-draft/publish', {method: 'POST'});
+  const r = await fetch(window.PUBLISH_URL, {method: 'POST'});
   const data = await r.json().catch(() => ({}));
   if (r.ok) {
     alert(data.message || 'Publish triggered.');

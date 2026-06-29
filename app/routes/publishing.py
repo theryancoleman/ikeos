@@ -14,11 +14,9 @@ BLUESKY_HANDLE = os.environ.get("BLUESKY_HANDLE", "")
 def index():
     posts = read_blog_posts(AIOS_BLOG_POSTS_DIR) if AIOS_BLOG_POSTS_DIR else []
     bluesky_posts = read_bluesky_posts(BLUESKY_HANDLE) if BLUESKY_HANDLE else []
-    latest_draft_slug = posts[0]["slug"] if posts and posts[0]["draft"] else None
     return render_template(
         "publishing.html",
         posts=posts,
         bluesky_posts=bluesky_posts,
-        latest_draft_slug=latest_draft_slug,
         bluesky_handle=BLUESKY_HANDLE,
     )

@@ -96,3 +96,42 @@ def test_read_bluesky_posts_returns_empty_on_non_ok_response(mocker):
     mocker.patch("app.services.publishing.requests.get", return_value=mock_resp)
     posts = read_bluesky_posts("ikeos.bsky.social")
     assert posts == []
+
+
+def test_read_blog_posts_date_sort_uses_datetime_not_string(tmp_path):
+    """Dates must sort by calendar value, not lexicographic string order."""
+    (tmp_path / "post-a.md").write_text(
+        "---\ntitle: Post A\ndate: 2026-02-01\ndraft: false\n---\nBody."
+    )
+    (tmp_path / "post-b.md").write_text(
+        "---\ntitle: Post B\ndate: 2026-10-01\ndraft: false\n---\nBody."
+    )
+    posts = read_blog_posts(tmp_path)
+    # October (10) must come before February (02) — string sort would put "2026-10" < "2026-02" incorrectly
+    assert posts[0]["date"] == "2026-10-01"
+    assert posts[1]["date"] == "2026-02-01"
+
+
+def test_read_bluesky_posts_created_at_is_always_string(mocker):
+    """created_at must be a str regardless of what the API returns."""
+    mock_resp = MagicMock()
+    mock_resp.ok = True
+    mock_resp.json.return_value = {
+        "feed": [
+            {
+                "post": {
+                    "uri": "at://did:plc:abc/app.bsky.feed.post/abc",
+                    "record": {
+                        "text": "Test post",
+                        "createdAt": "2026-06-28T12:00:00Z",
+                    },
+                    "likeCount": 0,
+                    "repostCount": 0,
+                    "replyCount": 0,
+                }
+            }
+        ]
+    }
+    mocker.patch("app.services.publishing.requests.get", return_value=mock_resp)
+    posts = read_bluesky_posts("ikeos.bsky.social")
+    assert isinstance(posts[0]["created_at"], str)
