@@ -46,3 +46,53 @@ def test_read_blog_posts_excludes_bluesky_companion_files(posts_dir):
 def test_read_blog_posts_returns_empty_for_missing_dir():
     posts = read_blog_posts(Path("/nonexistent/path"))
     assert posts == []
+
+
+from unittest.mock import MagicMock, patch
+from app.services.publishing import read_bluesky_posts
+
+
+def test_read_bluesky_posts_returns_formatted_posts(mocker):
+    mock_resp = MagicMock()
+    mock_resp.ok = True
+    mock_resp.json.return_value = {
+        "feed": [
+            {
+                "post": {
+                    "uri": "at://did:plc:abc/app.bsky.feed.post/xyz123",
+                    "record": {
+                        "text": "Hello from IkeOS!",
+                        "createdAt": "2026-06-28T12:00:00Z",
+                    },
+                    "likeCount": 5,
+                    "repostCount": 2,
+                    "replyCount": 1,
+                }
+            }
+        ]
+    }
+    mocker.patch("app.services.publishing.requests.get", return_value=mock_resp)
+
+    posts = read_bluesky_posts("ikeos.bsky.social", limit=5)
+    assert len(posts) == 1
+    assert posts[0]["text"] == "Hello from IkeOS!"
+    assert posts[0]["likes"] == 5
+    assert posts[0]["reposts"] == 2
+    assert posts[0]["replies"] == 1
+    assert "ikeos.bsky.social" in posts[0]["url"]
+    assert "xyz123" in posts[0]["url"]
+
+
+def test_read_bluesky_posts_returns_empty_on_error(mocker):
+    mocker.patch("app.services.publishing.requests.get",
+                 side_effect=Exception("network error"))
+    posts = read_bluesky_posts("ikeos.bsky.social")
+    assert posts == []
+
+
+def test_read_bluesky_posts_returns_empty_on_non_ok_response(mocker):
+    mock_resp = MagicMock()
+    mock_resp.ok = False
+    mocker.patch("app.services.publishing.requests.get", return_value=mock_resp)
+    posts = read_bluesky_posts("ikeos.bsky.social")
+    assert posts == []

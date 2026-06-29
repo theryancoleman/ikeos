@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import frontmatter
+import requests
 
 
 def read_blog_posts(posts_dir: str | Path) -> list[dict]:
@@ -30,3 +31,37 @@ def read_blog_posts(posts_dir: str | Path) -> list[dict]:
         })
 
     return sorted(posts, key=lambda p: p["date"], reverse=True)
+
+
+def read_bluesky_posts(handle: str, *, limit: int = 5) -> list[dict]:
+    """Fetch recent posts for a Bluesky handle using the public API.
+
+    Returns empty list on any error (network failure, API change, bad handle).
+    """
+    try:
+        resp = requests.get(
+            "https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed",
+            params={"actor": handle, "limit": limit},
+            timeout=5,
+        )
+        if not resp.ok:
+            return []
+        feed = resp.json().get("feed", [])
+        posts = []
+        for item in feed:
+            p = item.get("post", {})
+            record = p.get("record", {})
+            uri = p.get("uri", "")
+            rkey = uri.split("/")[-1] if "/" in uri else ""
+            url = f"https://bsky.app/profile/{handle}/post/{rkey}" if rkey else ""
+            posts.append({
+                "text": record.get("text", ""),
+                "created_at": record.get("createdAt", ""),
+                "likes": p.get("likeCount", 0),
+                "reposts": p.get("repostCount", 0),
+                "replies": p.get("replyCount", 0),
+                "url": url,
+            })
+        return posts
+    except Exception:
+        return []
