@@ -40,16 +40,28 @@
     <h2 class="section-title">Posts</h2>
     {% if posts %}
       <div class="publishing-posts-list">
-        {% for post in posts %}
-          {% if loop.index == 11 %}<details class="publishing-older"><summary>Show {{ posts|length - 10 }} older posts</summary>{% endif %}
+        {% for post in visible_posts %}
           <div class="publishing-post-row">
             <span class="publishing-post-date muted">{{ post.date }}</span>
             <span class="publishing-post-title">{{ post.title }}</span>
             <span class="pill {% if post.draft %}pill-warning{% else %}pill-ok{% endif %}">{% if post.draft %}Draft{% else %}Published{% endif %}</span>
           </div>
         {% endfor %}
-        {% if posts|length > 10 %}</details>{% endif %}
       </div>
+      {% if older_posts %}
+        <details class="publishing-older">
+          <summary>Show {{ older_posts|length }} older posts</summary>
+          <div class="publishing-posts-list">
+            {% for post in older_posts %}
+              <div class="publishing-post-row">
+                <span class="publishing-post-date muted">{{ post.date }}</span>
+                <span class="publishing-post-title">{{ post.title }}</span>
+                <span class="pill {% if post.draft %}pill-warning{% else %}pill-ok{% endif %}">{% if post.draft %}Draft{% else %}Published{% endif %}</span>
+              </div>
+            {% endfor %}
+          </div>
+        </details>
+      {% endif %}
     {% else %}
       <p class="muted">No posts yet.</p>
     {% endif %}
@@ -63,12 +75,12 @@
       <div class="publishing-social-list">
         {% for bpost in bluesky_posts %}
           <div class="publishing-social-row">
-            <p class="publishing-social-text">{{ bpost.text }}</p>
+            <p class="publishing-social-text">{{ bpost.text | e }}</p>
             <div class="publishing-social-meta muted">
               <span title="Likes">♥ {{ bpost.likes }}</span>
               <span title="Reposts">↺ {{ bpost.reposts }}</span>
               <span title="Replies">💬 {{ bpost.replies }}</span>
-              <span style="margin-left:auto">{{ bpost.created_at[:10] }}</span>
+              <span style="margin-left:auto">{{ bpost.created_at }}</span>
               {% if bpost.url %}<a href="{{ bpost.url }}" target="_blank" rel="noopener">View ↗</a>{% endif %}
             </div>
           </div>

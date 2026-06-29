@@ -1,6 +1,7 @@
 import pytest
 from pathlib import Path
-from app.services.publishing import read_blog_posts
+from unittest.mock import MagicMock, patch
+from app.services.publishing import read_blog_posts, read_bluesky_posts
 
 
 @pytest.fixture
@@ -48,8 +49,11 @@ def test_read_blog_posts_returns_empty_for_missing_dir():
     assert posts == []
 
 
-from unittest.mock import MagicMock, patch
-from app.services.publishing import read_bluesky_posts
+def test_read_blog_posts_fallback_title(tmp_path):
+    post = tmp_path / "my-post.md"
+    post.write_text("---\ndraft: false\n---\nNo title here.")
+    posts = read_blog_posts(tmp_path)
+    assert posts[0]["title"] == "my-post"
 
 
 def test_read_bluesky_posts_returns_formatted_posts(mocker):

@@ -68,7 +68,7 @@ def read_bluesky_posts(handle: str, *, limit: int = 5) -> list[dict]:
             url = f"https://bsky.app/profile/{handle}/post/{rkey}" if rkey else ""
             posts.append({
                 "text": record.get("text", ""),
-                "created_at": str(record.get("createdAt", "")),
+                "created_at": str(record.get("createdAt", ""))[:10],
                 "likes": p.get("likeCount", 0),
                 "reposts": p.get("repostCount", 0),
                 "replies": p.get("replyCount", 0),
