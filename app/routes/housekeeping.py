@@ -230,11 +230,15 @@ def blog_draft_editor():
         content=draft.read_text(encoding="utf-8"),
         bluesky_text=(bluesky.read_text(encoding="utf-8") if bluesky else ""),
         bluesky_filename=(bluesky.name if bluesky else ""),
+        capture_token=CAPTURE_TOKEN,
     )
 
 
 @bp.route("/housekeeping/blog-draft/save", methods=["POST"])
 def blog_draft_save():
+    ok, status = _check_auth()
+    if not ok:
+        return jsonify({"error": "Unauthorized" if status == 401 else "Service unavailable"}), status
     draft, bluesky = _blog_draft_paths()
     if not draft:
         return jsonify({"error": "No draft found"}), 404
@@ -251,6 +255,9 @@ def blog_draft_save():
 
 @bp.route("/housekeeping/blog-draft/publish", methods=["POST"])
 def blog_draft_publish():
+    ok, status = _check_auth()
+    if not ok:
+        return jsonify({"error": "Unauthorized" if status == 401 else "Service unavailable"}), status
     draft, bluesky = _blog_draft_paths()
     if not draft:
         return jsonify({"error": "No draft found"}), 404
@@ -282,6 +289,9 @@ def blog_draft_publish():
 
 @bp.route("/housekeeping/blog-draft/rewrite", methods=["POST"])
 def blog_draft_rewrite():
+    ok, status = _check_auth()
+    if not ok:
+        return jsonify({"error": "Unauthorized" if status == 401 else "Service unavailable"}), status
     draft, _ = _blog_draft_paths()
     if not draft:
         return jsonify({"error": "No draft found"}), 404

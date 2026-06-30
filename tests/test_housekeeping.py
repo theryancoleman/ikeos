@@ -491,3 +491,60 @@ def test_blog_draft_status_no_draft(client, tmp_path):
 
     assert resp.status_code == 200
     assert b"No draft" in resp.data
+
+
+# ── blog-draft auth guard ──
+
+def test_blog_draft_save_rejects_missing_token(client, tmp_path, monkeypatch):
+    import app.routes.housekeeping as hk_mod
+    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "secret-token")
+    monkeypatch.setattr(hk_mod, "AIOS_BLOG_POSTS_DIR", str(tmp_path))
+    draft = tmp_path / "2026-06-30-weekly-draft.md"
+    draft.write_text("# Hello")
+    resp = client.post("/housekeeping/blog-draft/save",
+                       data={"content": "new", "bluesky_text": ""})
+    assert resp.status_code == 401
+
+
+def test_blog_draft_save_rejects_wrong_token(client, tmp_path, monkeypatch):
+    import app.routes.housekeeping as hk_mod
+    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "secret-token")
+    monkeypatch.setattr(hk_mod, "AIOS_BLOG_POSTS_DIR", str(tmp_path))
+    draft = tmp_path / "2026-06-30-weekly-draft.md"
+    draft.write_text("# Hello")
+    resp = client.post("/housekeeping/blog-draft/save",
+                       data={"content": "new", "bluesky_text": ""},
+                       headers={"X-Capture-Token": "wrong"})
+    assert resp.status_code == 401
+
+
+def test_blog_draft_save_accepts_correct_token(client, tmp_path, monkeypatch):
+    import app.routes.housekeeping as hk_mod
+    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "secret-token")
+    monkeypatch.setattr(hk_mod, "AIOS_BLOG_POSTS_DIR", str(tmp_path))
+    draft = tmp_path / "2026-06-30-weekly-draft.md"
+    draft.write_text("# Hello")
+    resp = client.post("/housekeeping/blog-draft/save",
+                       data={"content": "updated", "bluesky_text": ""},
+                       headers={"X-Capture-Token": "secret-token"})
+    assert resp.status_code == 200
+    assert resp.get_json()["ok"] is True
+
+
+def test_blog_draft_publish_rejects_missing_token(client, tmp_path, monkeypatch):
+    import app.routes.housekeeping as hk_mod
+    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "secret-token")
+    monkeypatch.setattr(hk_mod, "AIOS_BLOG_POSTS_DIR", str(tmp_path))
+    (tmp_path / "2026-06-30-weekly-draft.md").write_text("# Hello")
+    resp = client.post("/housekeeping/blog-draft/publish")
+    assert resp.status_code == 401
+
+
+def test_blog_draft_rewrite_rejects_missing_token(client, tmp_path, monkeypatch):
+    import app.routes.housekeeping as hk_mod
+    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "secret-token")
+    monkeypatch.setattr(hk_mod, "AIOS_BLOG_POSTS_DIR", str(tmp_path))
+    (tmp_path / "2026-06-30-weekly-draft.md").write_text("# Hello")
+    resp = client.post("/housekeeping/blog-draft/rewrite",
+                       data={"feedback": "make it better"})
+    assert resp.status_code == 401

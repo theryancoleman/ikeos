@@ -64,6 +64,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
+  const _captureToken = {{ capture_token | tojson }};
+
   // Preview rendering
   const editor = document.getElementById('draft-editor');
   const preview = document.getElementById('draft-preview');
@@ -96,7 +98,7 @@
     body.append('content', editor.value);
     body.append('bluesky_text', bskyEditor.value);
     try {
-      const resp = await fetch('/housekeeping/blog-draft/save', { method: 'POST', body });
+      const resp = await fetch('/housekeeping/blog-draft/save', { method: 'POST', body, headers: { 'X-Capture-Token': _captureToken } });
       const data = await resp.json();
       saveStatus.textContent = data.ok ? 'Saved.' : (data.error || 'Error.');
     } catch {
@@ -112,7 +114,7 @@
     btn.disabled = true;
     btn.textContent = 'Launching…';
     try {
-      const resp = await fetch('/housekeeping/blog-draft/publish', { method: 'POST' });
+      const resp = await fetch('/housekeeping/blog-draft/publish', { method: 'POST', headers: { 'X-Capture-Token': _captureToken } });
       const data = await resp.json();
       if (data.ok) {
         startSessionPoll(data.session_id, 'Publish');
@@ -201,7 +203,7 @@
     const body = new FormData();
     body.append('feedback', feedback);
     try {
-      const resp = await fetch('/housekeeping/blog-draft/rewrite', { method: 'POST', body });
+      const resp = await fetch('/housekeeping/blog-draft/rewrite', { method: 'POST', body, headers: { 'X-Capture-Token': _captureToken } });
       const data = await resp.json();
       if (data.ok) {
         document.getElementById('rewrite-panel').hidden = true;
