@@ -152,6 +152,26 @@ The root cause of vault bug 2026-06-21 (subagents stalling on Bash permission pr
 
 Two named frozenset constants (`PATCH_VALID_TYPES`, `CAPTURE_JSON_VALID_TYPES`) are derived from `ENTRY_TYPE_CONFIG` in `vault_cache.py` and re-exported through `vault.py`. `capture.py` imports them directly rather than computing equivalent sets locally on every request. This eliminates three overlapping set expressions that existed after the ENTRY_TYPE_CONFIG refactor (Session 6) and makes the type-set contract for each endpoint visible in one place. `_read_all_entries()` was also updated to iterate `ENTRY_TYPE_CONFIG.values()` directly rather than going through the `TYPE_FOLDERS` derived dict, completing the registry consolidation.
 
+## 2026-06-30: Phase 0 metrics — append-only JSONL, read at call-time
+
+`events.jsonl` at `METRICS_PATH` is append-only. `append_event()` opens in `"a"` mode per call. `read_events(limit)` reads the file at call-time (not import-time) so tests can patch `METRICS_PATH` without module-level binding issues. Returns newest-first by reversing the last N lines before parsing. Per-line `JSONDecodeError` is logged and skipped — a single bad line never drops all events.
+
+## 2026-06-30: /metrics/event requires X-Capture-Token — same pattern as /capture
+
+`POST /metrics/event` is gated by `_check_auth()` in `agents.py`. The session manager posts with `X-Capture-Token: $IKEOS_CAPTURE_TOKEN` from its `.env`. The public `GET /metrics` page does not require auth (read-only, same policy as `/projects`).
+
+## 2026-06-30: Ephemeral sessions get --dangerously-skip-permissions
+
+When a session is created with `initial_command` (ephemeral), Claude is launched with `--dangerously-skip-permissions`. Interactive sessions (no `initial_command`) receive normal permission flow. Rationale: unattended scheduled sessions (housekeeping, auto-tasks) stall indefinitely when subagents prompt for Bash approval — there is no user at the terminal. The `ephemeral` flag on the session record carries this state so `reset()` can restore it.
+
+## 2026-06-30: Metrics wiring is fire-and-forget, 2s timeout
+
+`_post_metric()` in session-manager `app.py` suppresses all exceptions and uses a 2s `urllib.request` timeout. It never blocks session create/remove/cleanup operations. This is correct for the current architecture: if IkeOS is down, metrics are silently dropped — the session operation proceeds. A persistent queue or retry mechanism would be needed only if metrics loss is unacceptable.
+
+## 2026-06-30: send_prompt sleeps 2s after keystroke delivery before returning
+
+After `send_command(name, command)` in `send_prompt()`, a `time.sleep(2.0)` fires before returning `True`. Without it, `parse_activity()` returns `"idle"` in the ~2s gap between tmux keystroke delivery and Claude's first visual pane update (✻ indicator), causing the next `send_prompt` call to fire before the previous command is handled. The sleep is the minimal fix; a smarter detector (watching for the pane to go non-idle then idle again) is a future improvement.
+
 ## 2026-06-27: update_entry_status() validates against per-type lifecycle
 
 `update_entry_status()` (the web-UI status path, called by `POST /projects/<name>/<slug>/status`) previously validated `new_status` against `VALID_STATUSES` before finding the file. This meant experiments could be set to `done` (invalid) and could not be set to `complete` (valid). Fix: remove the upfront check; after finding the file by type folder, validate against `cfg["valid_statuses"]` from `ENTRY_TYPE_CONFIG`. This is the same pattern `update_entry_status_generic()` uses. The web UI status dropdown now correctly enforces per-type lifecycle rules without needing to know the entry type upfront.
