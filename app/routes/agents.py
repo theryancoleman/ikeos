@@ -187,14 +187,14 @@ def metrics_view() -> str:
 
 
 @bp.route("/metrics/event", methods=["POST"])
-def metrics_event():
+def metrics_event() -> tuple:
     if not CAPTURE_TOKEN:
         return jsonify({"error": "Service unavailable"}), 503
     if request.headers.get("X-Capture-Token", "") != CAPTURE_TOKEN:
         return jsonify({"error": "Unauthorized"}), 401
     if not request.is_json:
         return jsonify({"error": "JSON body required"}), 400
-    data = request.get_json(silent=True) or {}
+    data = dict(request.get_json(silent=True) or {})
     event_type = data.pop("event", None)
     if not event_type:
         return jsonify({"error": "event field required"}), 400

@@ -37,7 +37,7 @@ def read_events(limit: int = 50) -> list[dict]:
             try:
                 events.append(json.loads(line))
             except json.JSONDecodeError:
-                pass
+                logger.warning("Skipped malformed metrics line: %r", line)
         return events
     except OSError:
         return []
