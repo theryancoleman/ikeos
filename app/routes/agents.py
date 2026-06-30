@@ -1,11 +1,15 @@
+import os
 import re
 import requests
 from datetime import datetime
 from flask import Blueprint, render_template, jsonify, request
 
+from app.services.metrics import append_event, read_events
+
 bp = Blueprint("agents", __name__)
 
 SESSION_MANAGER_URL = "http://host.docker.internal:5010"
+CAPTURE_TOKEN = os.environ.get("CAPTURE_TOKEN", "")
 
 _CONTAINER_NAME_RE = re.compile(r'^[a-zA-Z0-9][a-zA-Z0-9_.\-]+$')
 
@@ -174,3 +178,27 @@ def infra_toggle_protection(name):
         return jsonify({"error": "invalid container name"}), 400
     data, status = _proxy("PATCH", f"/infrastructure/containers/{name}/protection")
     return jsonify(data), status
+
+
+@bp.route("/metrics")
+def metrics_view() -> str:
+    events = read_events(limit=50)
+    return render_template("metrics.html", events=events)
+
+
+@bp.route("/metrics/event", methods=["POST"])
+def metrics_event():
+    if not CAPTURE_TOKEN:
+        return jsonify({"error": "Service unavailable"}), 503
+    if request.headers.get("X-Capture-Token", "") != CAPTURE_TOKEN:
+        return jsonify({"error": "Unauthorized"}), 401
+    if not request.is_json:
+        return jsonify({"error": "JSON body required"}), 400
+    data = request.get_json(silent=True) or {}
+    event_type = data.pop("event", None)
+    if not event_type:
+        return jsonify({"error": "event field required"}), 400
+    ok = append_event(event_type, data)
+    if not ok:
+        return jsonify({"error": "Failed to write event"}), 500
+    return jsonify({"ok": True}), 200

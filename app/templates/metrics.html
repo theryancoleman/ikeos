@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Metrics{% endblock %}
+
+{% block content %}
+<div class="settings-page">
+  <header class="page-header">
+    <span class="ike-eyebrow">Platform</span>
+    <h1>Metrics</h1>
+    <p class="page-subtitle">Last {{ events|length }} events from events.jsonl</p>
+  </header>
+
+  {% if not events %}
+  <div class="empty-state">
+    <p>No events recorded yet. Events appear here when housekeeping sessions run.</p>
+  </div>
+  {% else %}
+  <table class="settings-list metrics-table">
+    <thead>
+      <tr>
+        <th>Time</th>
+        <th>Event</th>
+        <th>Details</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for ev in events %}
+      <tr class="settings-row metrics-row">
+        <td class="metrics-ts">{{ ev.timestamp | replace('T', ' ') | replace('+00:00', '') }}</td>
+        <td><span class="pill pill--{{ ev.event.split('.')[0] }}">{{ ev.event }}</span></td>
+        <td class="metrics-detail">
+          {% for k, v in ev.items() %}
+            {% if k not in ('event', 'timestamp') %}
+              <span class="metrics-kv"><span class="metrics-key">{{ k }}</span>: {{ v }}</span>
+            {% endif %}
+          {% endfor %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+{% endblock %}
