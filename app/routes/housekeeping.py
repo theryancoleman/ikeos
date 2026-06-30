@@ -115,6 +115,9 @@ def create_task():
 
 @bp.route("/housekeeping/tasks/<filename>/toggle", methods=["POST"])
 def toggle_task(filename: str):
+    ok, status = _check_auth()
+    if not ok:
+        return jsonify({"error": "Unauthorized" if status == 401 else "Service unavailable"}), status
     from app.services.vault import read_housekeeping_tasks
     tasks = read_housekeeping_tasks()
     task = next((t for t in tasks if t.get("filename") == filename), None)
@@ -144,6 +147,9 @@ def toggle_task(filename: str):
 
 @bp.route("/housekeeping/tasks/<filename>/reset", methods=["POST"])
 def reset_task(filename: str):
+    ok, status = _check_auth()
+    if not ok:
+        return jsonify({"error": "Unauthorized" if status == 401 else "Service unavailable"}), status
     from app.services.vault import read_housekeeping_tasks
     tasks = read_housekeeping_tasks()
     task = next((t for t in tasks if t.get("filename") == filename), None)

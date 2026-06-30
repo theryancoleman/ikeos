@@ -2,7 +2,6 @@ import pytest
 import requests
 from pathlib import Path
 from unittest.mock import patch, MagicMock
-from unittest.mock import patch as mock_patch
 from datetime import datetime, timedelta
 
 
@@ -242,7 +241,7 @@ def test_create_task_success(client, tmp_path, monkeypatch):
     mock_resp.ok = True
     mock_resp.json.return_value = {"ok": True}
 
-    with mock_patch("app.routes.housekeeping.requests.post", return_value=mock_resp):
+    with patch("app.routes.housekeeping.requests.post", return_value=mock_resp):
         resp = client.post("/housekeeping/tasks", data={
             "title": "Prune old entries",
             "interval": "weekly",
@@ -271,7 +270,9 @@ def test_create_task_missing_success_definition_returns_400(client):
 def test_toggle_task_disables(client, tmp_path, monkeypatch):
     import app.services.vault as v
     import app.services.vault_cache as vc
+    import app.routes.housekeeping as hk_mod
     monkeypatch.setattr(vc, "VAULT_PATH", tmp_path)
+    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "tok")
     folder = tmp_path / "projects" / "claude-config" / "housekeeping"
     folder.mkdir(parents=True)
     _write_task(folder, "2026-06-17-test-task.md", enabled="true")
@@ -280,8 +281,9 @@ def test_toggle_task_disables(client, tmp_path, monkeypatch):
     mock_resp.ok = True
     mock_resp.json.return_value = {"message": "Updated"}
 
-    with mock_patch("app.routes.housekeeping.requests.patch", return_value=mock_resp):
-        resp = client.post("/housekeeping/tasks/2026-06-17-test-task/toggle")
+    with patch("app.routes.housekeeping.requests.patch", return_value=mock_resp):
+        resp = client.post("/housekeeping/tasks/2026-06-17-test-task/toggle",
+                           headers={"X-Capture-Token": "tok"})
     assert resp.status_code == 200
     assert resp.get_json()["enabled"] == "false"
 
@@ -289,7 +291,9 @@ def test_toggle_task_disables(client, tmp_path, monkeypatch):
 def test_toggle_task_enables(client, tmp_path, monkeypatch):
     import app.services.vault as v
     import app.services.vault_cache as vc
+    import app.routes.housekeeping as hk_mod
     monkeypatch.setattr(vc, "VAULT_PATH", tmp_path)
+    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "tok")
     folder = tmp_path / "projects" / "claude-config" / "housekeeping"
     folder.mkdir(parents=True)
     _write_task(folder, "2026-06-17-test-task.md", enabled="false")
@@ -297,8 +301,9 @@ def test_toggle_task_enables(client, tmp_path, monkeypatch):
     mock_resp = MagicMock()
     mock_resp.ok = True
 
-    with mock_patch("app.routes.housekeeping.requests.patch", return_value=mock_resp):
-        resp = client.post("/housekeeping/tasks/2026-06-17-test-task/toggle")
+    with patch("app.routes.housekeeping.requests.patch", return_value=mock_resp):
+        resp = client.post("/housekeeping/tasks/2026-06-17-test-task/toggle",
+                           headers={"X-Capture-Token": "tok"})
     assert resp.status_code == 200
     assert resp.get_json()["enabled"] == "true"
 
@@ -306,16 +311,21 @@ def test_toggle_task_enables(client, tmp_path, monkeypatch):
 def test_toggle_task_not_found_returns_404(client, tmp_path, monkeypatch):
     import app.services.vault as v
     import app.services.vault_cache as vc
+    import app.routes.housekeeping as hk_mod
     monkeypatch.setattr(vc, "VAULT_PATH", tmp_path)
+    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "tok")
     (tmp_path / "projects" / "claude-config").mkdir(parents=True)
-    resp = client.post("/housekeeping/tasks/nonexistent-task/toggle")
+    resp = client.post("/housekeeping/tasks/nonexistent-task/toggle",
+                       headers={"X-Capture-Token": "tok"})
     assert resp.status_code == 404
 
 
 def test_reset_task_success(client, tmp_path, monkeypatch):
     import app.services.vault as v
     import app.services.vault_cache as vc
+    import app.routes.housekeeping as hk_mod
     monkeypatch.setattr(vc, "VAULT_PATH", tmp_path)
+    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "tok")
     folder = tmp_path / "projects" / "claude-config" / "housekeeping"
     folder.mkdir(parents=True)
     _write_task(folder, "2026-06-17-some-task.md")
@@ -323,8 +333,9 @@ def test_reset_task_success(client, tmp_path, monkeypatch):
     mock_resp = MagicMock()
     mock_resp.ok = True
 
-    with mock_patch("app.routes.housekeeping.requests.patch", return_value=mock_resp):
-        resp = client.post("/housekeeping/tasks/2026-06-17-some-task/reset")
+    with patch("app.routes.housekeeping.requests.patch", return_value=mock_resp):
+        resp = client.post("/housekeeping/tasks/2026-06-17-some-task/reset",
+                           headers={"X-Capture-Token": "tok"})
     assert resp.status_code == 200
     assert resp.get_json()["ok"] is True
 
@@ -332,9 +343,12 @@ def test_reset_task_success(client, tmp_path, monkeypatch):
 def test_reset_task_not_found_returns_404(client, tmp_path, monkeypatch):
     import app.services.vault as v
     import app.services.vault_cache as vc
+    import app.routes.housekeeping as hk_mod
     monkeypatch.setattr(vc, "VAULT_PATH", tmp_path)
+    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "tok")
     (tmp_path / "projects" / "claude-config").mkdir(parents=True)
-    resp = client.post("/housekeeping/tasks/nonexistent-task/reset")
+    resp = client.post("/housekeeping/tasks/nonexistent-task/reset",
+                       headers={"X-Capture-Token": "tok"})
     assert resp.status_code == 404
 
 
@@ -346,7 +360,7 @@ def test_run_task_creates_session(client):
     cmd_mock = MagicMock()
     cmd_mock.ok = True
 
-    with mock_patch("app.routes.housekeeping.requests.post",
+    with patch("app.routes.housekeeping.requests.post",
                     side_effect=[create_mock, cmd_mock]):
         resp = client.post("/housekeeping/tasks/2026-06-17-test-task/run")
     assert resp.status_code == 200
@@ -356,7 +370,7 @@ def test_run_task_creates_session(client):
 
 
 def test_run_task_session_manager_unreachable(client):
-    with mock_patch("app.routes.housekeeping.requests.post",
+    with patch("app.routes.housekeeping.requests.post",
                     side_effect=requests.RequestException("timeout")):
         resp = client.post("/housekeeping/tasks/2026-06-17-test-task/run")
     assert resp.status_code == 502
@@ -548,3 +562,34 @@ def test_blog_draft_rewrite_rejects_missing_token(client, tmp_path, monkeypatch)
     resp = client.post("/housekeeping/blog-draft/rewrite",
                        data={"feedback": "make it better"})
     assert resp.status_code == 401
+
+
+def test_blog_draft_publish_rejects_wrong_token(client, tmp_path, monkeypatch):
+    import app.routes.housekeeping as hk_mod
+    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "secret-token")
+    monkeypatch.setenv("AIOS_BLOG_POSTS_DIR", str(tmp_path))
+    (tmp_path / "2026-06-30-weekly-draft.md").write_text("# Hello")
+    resp = client.post("/housekeeping/blog-draft/publish",
+                       headers={"X-Capture-Token": "wrong"})
+    assert resp.status_code == 401
+
+
+def test_blog_draft_rewrite_rejects_wrong_token(client, tmp_path, monkeypatch):
+    import app.routes.housekeeping as hk_mod
+    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "secret-token")
+    monkeypatch.setenv("AIOS_BLOG_POSTS_DIR", str(tmp_path))
+    (tmp_path / "2026-06-30-weekly-draft.md").write_text("# Hello")
+    resp = client.post("/housekeeping/blog-draft/rewrite",
+                       data={"feedback": "make it better"},
+                       headers={"X-Capture-Token": "wrong"})
+    assert resp.status_code == 401
+
+
+def test_blog_draft_save_returns_503_when_token_unconfigured(client, tmp_path, monkeypatch):
+    import app.routes.housekeeping as hk_mod
+    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "")
+    monkeypatch.setenv("AIOS_BLOG_POSTS_DIR", str(tmp_path))
+    (tmp_path / "2026-06-30-weekly-draft.md").write_text("# Hello")
+    resp = client.post("/housekeeping/blog-draft/save",
+                       data={"content": "x", "bluesky_text": ""})
+    assert resp.status_code == 503
