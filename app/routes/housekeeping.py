@@ -355,6 +355,7 @@ def _housekeeping_context() -> dict:
         schedule=schedule,
         capture_token=CAPTURE_TOKEN,
         blog_draft=_latest_blog_draft(),
+        capabilities=get_capabilities(),
     )
 
 

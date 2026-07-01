@@ -10,6 +10,39 @@
     <p class="page-subtitle">Automated maintenance tasks — reads definitions from the claude-config vault.</p>
   </header>
 
+  <!-- Capability gate -->
+  <section class="hk-schedule-section">
+    <div class="ike-eyebrow">Capabilities</div>
+    {% for name, cap in capabilities.items() %}
+    <div class="hk-schedule-card" id="cap-card-{{ name }}">
+      <div class="hk-schedule-row" style="justify-content: space-between; align-items: center;">
+        <div>
+          <strong>{{ name | replace('_', ' ') | title }}</strong>
+          <p class="hk-schedule-meta" style="margin: 2px 0 0;">{{ cap.description }}</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span class="pill {% if cap.enabled %}pill--housekeeping{% else %}pill--muted{% endif %}"
+                id="cap-status-{{ name }}">
+            {{ 'ENABLED' if cap.enabled else 'DISABLED' }}
+          </span>
+          <button class="pill pill-primary"
+                  onclick="toggleCapability('{{ name }}', {{ 'false' if cap.enabled else 'true' }})"
+                  id="cap-btn-{{ name }}">
+            {{ 'Disable' if cap.enabled else 'Enable' }}
+          </button>
+        </div>
+      </div>
+      {% if cap.enabled and cap.enabled_at %}
+      <div class="hk-schedule-meta">
+        <span class="hk-schedule-label">Enabled:</span>
+        {{ cap.enabled_at | replace('T', ' ') | replace('+00:00', '') }} by {{ cap.enabled_by }}
+      </div>
+      {% endif %}
+      <div class="hk-form-msg" id="cap-msg-{{ name }}"></div>
+    </div>
+    {% endfor %}
+  </section>
+
   <section class="hk-schedule-section">
     <div class="ike-eyebrow">Schedule</div>
     <div class="hk-schedule-card">
@@ -312,6 +345,39 @@ async function saveSchedule() {
     msg.textContent = 'Network error — could not save schedule.';
   }
   btn.disabled = false;
+}
+
+async function toggleCapability(name, enable) {
+  const btn = document.getElementById('cap-btn-' + name);
+  const statusEl = document.getElementById('cap-status-' + name);
+  const msgEl = document.getElementById('cap-msg-' + name);
+  btn.disabled = true;
+  msgEl.textContent = '';
+  try {
+    const resp = await fetch('/housekeeping/capabilities/' + name, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Capture-Token': _captureToken,
+      },
+      body: JSON.stringify({ enabled: enable }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      msgEl.textContent = data.error || 'Failed';
+      btn.disabled = false;
+      return;
+    }
+    const enabled = data.capability.enabled;
+    statusEl.textContent = enabled ? 'ENABLED' : 'DISABLED';
+    statusEl.className = 'pill ' + (enabled ? 'pill--housekeeping' : 'pill--muted');
+    btn.textContent = enabled ? 'Disable' : 'Enable';
+    btn.onclick = () => toggleCapability(name, !enabled);
+    btn.disabled = false;
+  } catch (e) {
+    msgEl.textContent = 'Request failed';
+    btn.disabled = false;
+  }
 }
 </script>
 {% endblock %}
