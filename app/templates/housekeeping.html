@@ -26,7 +26,7 @@
             {{ 'ENABLED' if cap.enabled else 'DISABLED' }}
           </span>
           <button class="pill pill-primary"
-                  onclick="toggleCapability('{{ name }}', {{ 'false' if cap.enabled else 'true' }})"
+                  onclick="toggleCapability({{ name | tojson | forceescape }}, {{ cap.enabled | tojson | forceescape }})"
                   id="cap-btn-{{ name }}">
             {{ 'Disable' if cap.enabled else 'Enable' }}
           </button>
@@ -35,7 +35,7 @@
       {% if cap.enabled and cap.enabled_at %}
       <div class="hk-schedule-meta">
         <span class="hk-schedule-label">Enabled:</span>
-        {{ cap.enabled_at | replace('T', ' ') | replace('+00:00', '') }} by {{ cap.enabled_by }}
+        {{ cap.enabled_at | replace('T', ' ') | replace('+00:00', '') }}{% if cap.enabled_by %} by {{ cap.enabled_by }}{% endif %}
       </div>
       {% endif %}
       <div class="hk-form-msg" id="cap-msg-{{ name }}"></div>
@@ -362,12 +362,13 @@ async function toggleCapability(name, enable) {
       },
       body: JSON.stringify({ enabled: enable }),
     });
-    const data = await resp.json();
     if (!resp.ok) {
-      msgEl.textContent = data.error || 'Failed';
+      const err = await resp.json().catch(() => ({}));
+      msgEl.textContent = err.error || 'Failed';
       btn.disabled = false;
       return;
     }
+    const data = await resp.json();
     const enabled = data.capability.enabled;
     statusEl.textContent = enabled ? 'ENABLED' : 'DISABLED';
     statusEl.className = 'pill ' + (enabled ? 'pill--housekeeping' : 'pill--muted');

@@ -426,10 +426,11 @@ def patch_capability(name: str):
     if not request.is_json:
         return jsonify({"error": "JSON body required"}), 400
     data = request.get_json(silent=True) or {}
-    if "enabled" not in data:
-        return jsonify({"error": "enabled field required"}), 400
+    enabled_val = data.get("enabled")
+    if not isinstance(enabled_val, bool):
+        return jsonify({"error": "enabled must be a boolean"}), 400
     try:
-        record = update_capability(name, bool(data["enabled"]))
+        record = update_capability(name, enabled_val)
         return jsonify({"capability": record}), 200
     except ValueError as e:
         return jsonify({"error": str(e)}), 404
