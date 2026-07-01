@@ -658,3 +658,27 @@ def test_patch_capability_rejects_missing_enabled_field(client, monkeypatch):
         headers={"X-Capture-Token": "tok"},
     )
     assert resp.status_code == 400
+
+
+def test_blog_draft_publish_creates_session(client, tmp_path, monkeypatch):
+    import app.routes.housekeeping as hk_mod
+    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "tok")
+    monkeypatch.setattr(hk_mod, "AIOS_BLOG_POSTS_DIR", str(tmp_path))
+    monkeypatch.setattr(hk_mod, "AIOS_BLOG_PROJECT_DIR", "/srv/blog")
+    (tmp_path / "2026-07-01-weekly-draft.md").write_text("# Draft")
+
+    mock_resp = MagicMock()
+    mock_resp.ok = True
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {"id": "pub-sess-1"}
+
+    with patch("app.services.session_client.requests.post", return_value=mock_resp):
+        with patch("app.services.session_client.append_event"):
+            resp = client.post(
+                "/housekeeping/blog-draft/publish",
+                headers={"X-Capture-Token": "tok"},
+            )
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["ok"] is True
+    assert data["session_id"] == "pub-sess-1"

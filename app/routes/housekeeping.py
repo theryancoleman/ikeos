@@ -263,22 +263,15 @@ def blog_draft_publish():
         f"The Bluesky companion text is in content/posts/{bluesky_file}. "
         "Build the Hugo site, deploy via rsync, and post to Bluesky."
     )
-    try:
-        resp = requests.post(
-            f"{SESSION_MANAGER_URL}/sessions",
-            json={
-                "name": f"blog-publish-{draft.stem[:30]}",
-                "project": "aios-blog",
-                "project_dir": AIOS_BLOG_PROJECT_DIR,
-                "initial_command": command,
-            },
-            timeout=5,
-        )
-        if not resp.ok:
-            return jsonify({"error": "Failed to create publish session"}), 502
-        return jsonify({"ok": True, "session_id": resp.json().get("id")}), 200
-    except requests.RequestException:
-        return jsonify({"error": "Session manager unreachable"}), 502
+    result = create_session(
+        name=f"blog-publish-{draft.stem[:30]}",
+        project="aios-blog",
+        project_dir=AIOS_BLOG_PROJECT_DIR,
+        initial_command=command,
+    )
+    if not result.ok:
+        return jsonify({"error": "Failed to create publish session"}), 502
+    return jsonify({"ok": True, "session_id": result.session_id}), 200
 
 
 @bp.route("/housekeeping/blog-draft/rewrite", methods=["POST"])
