@@ -4,6 +4,7 @@ import os
 from datetime import datetime
 from pathlib import Path
 
+from app.services.metrics import append_event
 from app.services.session_client import create_session
 
 logger = logging.getLogger(__name__)
@@ -132,7 +133,6 @@ def trigger_now() -> str | None:
     except OSError:
         logger.exception("Failed to write last_triggered after scheduling housekeeping session")
 
-    from app.services.metrics import append_event
     append_event("housekeeping.trigger", {
         "trigger": "scheduled" if _scheduler else "manual",
         "session_id": session_id,
