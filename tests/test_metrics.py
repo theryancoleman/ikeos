@@ -116,3 +116,17 @@ def test_metrics_event_post_appends_event(client, tmp_path, monkeypatch):
     record = json.loads(lines[0])
     assert record["event"] == "agent.session_start"
     assert "timestamp" in record
+
+
+def test_metrics_view_shows_capability_status(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("VAULT_PATH", str(tmp_path))
+    (tmp_path / "projects" / "claude-config" / "housekeeping").mkdir(parents=True)
+    import app.services.metrics as metrics_mod
+    with patch("app.services.metrics.METRICS_PATH", tmp_path / "events.jsonl"):
+        resp = client.get("/metrics")
+    assert resp.status_code == 200
+    body = resp.data.decode()
+    # The capability status panel heading must be present
+    assert "Capability Status" in body
+    # The capability name is rendered as "Housekeeping Scheduler" (title-cased, underscores→spaces)
+    assert "housekeeping" in body.lower()

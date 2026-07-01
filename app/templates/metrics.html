@@ -9,6 +9,38 @@
     <p class="page-subtitle">Last {{ events|length }} events from events.jsonl</p>
   </header>
 
+  <section style="margin-bottom: 24px;">
+    <div class="ike-eyebrow">Capability Status</div>
+    <table class="settings-list metrics-table">
+      <thead>
+        <tr>
+          <th>Capability</th>
+          <th>Status</th>
+          <th>Since</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for name, cap in capabilities.items() %}
+        <tr class="settings-row metrics-row">
+          <td>{{ name | replace('_', ' ') | title }}</td>
+          <td>
+            <span class="pill {% if cap.enabled %}pill--housekeeping{% else %}pill--muted{% endif %}">
+              {{ 'ENABLED' if cap.enabled else 'DISABLED' }}
+            </span>
+          </td>
+          <td class="metrics-ts">
+            {% if cap.enabled and cap.enabled_at %}
+              {{ cap.enabled_at | replace('T', ' ') | replace('+00:00', '') }}
+            {% else %}
+              —
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
   {% if not events %}
   <div class="empty-state">
     <p>No events recorded yet. Events appear here when housekeeping sessions run.</p>

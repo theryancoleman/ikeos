@@ -182,8 +182,10 @@ def infra_toggle_protection(name):
 
 @bp.route("/metrics")
 def metrics_view() -> str:
+    from app.services.capabilities import get_capabilities
     events = read_events(limit=50)
-    return render_template("metrics.html", events=events)
+    capabilities = get_capabilities()
+    return render_template("metrics.html", events=events, capabilities=capabilities)
 
 
 @bp.route("/metrics/event", methods=["POST"])
