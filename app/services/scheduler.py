@@ -155,6 +155,10 @@ def trigger_now() -> str | None:
 
 
 def _job() -> None:
+    from app.services.capabilities import is_enabled
+    if not is_enabled("housekeeping_scheduler"):
+        logger.info("Housekeeping job skipped: capability gate disabled")
+        return
     logger.info("Housekeeping scheduled trigger firing")
     trigger_now()
 

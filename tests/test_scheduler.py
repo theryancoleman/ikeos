@@ -203,3 +203,25 @@ def test_trigger_now_updates_last_triggered_in_config(sched_vault, monkeypatch):
     config = get_config()
     assert config["last_triggered"] is not None
     assert "T" in config["last_triggered"]  # ISO datetime
+
+
+# ── _job capability gate ──
+
+def test_job_skips_trigger_when_capability_disabled(sched_vault, monkeypatch):
+    monkeypatch.setenv("VAULT_PATH", str(sched_vault))
+    # No capabilities.json → disabled by default
+    with patch("app.services.scheduler.trigger_now") as mock_trigger:
+        from app.services.scheduler import _job
+        _job()
+    mock_trigger.assert_not_called()
+
+
+def test_job_calls_trigger_when_capability_enabled(sched_vault, monkeypatch):
+    monkeypatch.setenv("VAULT_PATH", str(sched_vault))
+    cap_file = _hk_dir(sched_vault) / "capabilities.json"
+    import json as _json
+    cap_file.write_text(_json.dumps({"housekeeping_scheduler": {"enabled": True}}))
+    with patch("app.services.scheduler.trigger_now") as mock_trigger:
+        from app.services.scheduler import _job
+        _job()
+    mock_trigger.assert_called_once()
