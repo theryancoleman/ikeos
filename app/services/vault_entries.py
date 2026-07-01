@@ -46,7 +46,6 @@ def write_entry(data: dict) -> str:
             metadata["project"] = project
         content = f"## Context\n\n{body}\n\n## Decision\n\n\n## Consequences\n\n"
     elif entry_type == "housekeeping-task":
-        project = data.get("project", "")
         target_dir = _vc.VAULT_PATH / "projects" / project / "housekeeping"
         target_dir.mkdir(parents=True, exist_ok=True)
         metadata = {
@@ -70,7 +69,6 @@ def write_entry(data: dict) -> str:
         _vc._invalidate_cache()
         return slug
     elif entry_type == "housekeeping-heartbeat":
-        project = data.get("project", "")
         target_dir = _vc.VAULT_PATH / "projects" / project / "housekeeping"
         target_dir.mkdir(parents=True, exist_ok=True)
         metadata = {

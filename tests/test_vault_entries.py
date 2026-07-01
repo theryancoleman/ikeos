@@ -295,3 +295,33 @@ def test_write_entry_normalizes_project_to_lowercase(tmp_path):
         write_entry({"type": "note", "project": "MyProj", "title": "Mixed case", "body": ""})
     files = list((tmp_path / "projects" / "myproj" / "notes").glob("*.md"))
     assert len(files) == 1, "entry should land in lowercase project dir"
+
+
+def test_write_entry_normalizes_project_for_housekeeping_task(tmp_path):
+    (tmp_path / "projects" / "claude-config" / "housekeeping").mkdir(parents=True)
+    with patch.object(_vc, "VAULT_PATH", tmp_path):
+        from app.services.vault_entries import write_entry
+        write_entry({
+            "type": "housekeeping-task",
+            "project": "Claude-Config",
+            "title": "Mixed case task",
+            "body": "instructions",
+            "interval": "weekly",
+            "success_definition": "done",
+        })
+    files = list((tmp_path / "projects" / "claude-config" / "housekeeping").glob("*.md"))
+    assert len(files) == 1, "housekeeping-task should land in lowercase project dir"
+
+
+def test_write_entry_normalizes_project_for_housekeeping_heartbeat(tmp_path):
+    (tmp_path / "projects" / "claude-config" / "housekeeping").mkdir(parents=True)
+    with patch.object(_vc, "VAULT_PATH", tmp_path):
+        from app.services.vault_entries import write_entry
+        write_entry({
+            "type": "housekeeping-heartbeat",
+            "project": "Claude-Config",
+            "title": "heartbeat",
+            "body": "",
+        })
+    files = list((tmp_path / "projects" / "claude-config" / "housekeeping").glob("*.md"))
+    assert len(files) == 1, "housekeeping-heartbeat should land in lowercase project dir"
