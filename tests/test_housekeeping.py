@@ -593,3 +593,69 @@ def test_blog_draft_save_returns_503_when_token_unconfigured(client, tmp_path, m
     resp = client.post("/housekeeping/blog-draft/save",
                        data={"content": "x", "bluesky_text": ""})
     assert resp.status_code == 503
+
+
+# ── capability routes ──
+
+def test_get_capabilities_returns_200(client):
+    resp = client.get("/housekeeping/capabilities")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert "capabilities" in data
+    assert "housekeeping_scheduler" in data["capabilities"]
+
+
+def test_get_capabilities_scheduler_disabled_by_default(client):
+    resp = client.get("/housekeeping/capabilities")
+    assert resp.status_code == 200
+    cap = resp.get_json()["capabilities"]["housekeeping_scheduler"]
+    assert cap["enabled"] is False
+
+
+def test_patch_capability_requires_auth(client):
+    resp = client.patch(
+        "/housekeeping/capabilities/housekeeping_scheduler",
+        json={"enabled": True},
+        content_type="application/json",
+    )
+    assert resp.status_code in (401, 503)
+
+
+def test_patch_capability_enables(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("VAULT_PATH", str(tmp_path))
+    (tmp_path / "projects" / "claude-config" / "housekeeping").mkdir(parents=True)
+    monkeypatch.setattr("app.routes.housekeeping.CAPTURE_TOKEN", "tok")
+    from unittest.mock import patch
+    with patch("app.services.capabilities.append_event"):
+        resp = client.patch(
+            "/housekeeping/capabilities/housekeeping_scheduler",
+            json={"enabled": True},
+            content_type="application/json",
+            headers={"X-Capture-Token": "tok"},
+        )
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["capability"]["enabled"] is True
+    assert data["capability"]["enabled_by"] == "architect"
+
+
+def test_patch_capability_rejects_unknown_name(client, monkeypatch):
+    monkeypatch.setattr("app.routes.housekeeping.CAPTURE_TOKEN", "tok")
+    resp = client.patch(
+        "/housekeeping/capabilities/nonexistent_cap",
+        json={"enabled": True},
+        content_type="application/json",
+        headers={"X-Capture-Token": "tok"},
+    )
+    assert resp.status_code == 404
+
+
+def test_patch_capability_rejects_missing_enabled_field(client, monkeypatch):
+    monkeypatch.setattr("app.routes.housekeeping.CAPTURE_TOKEN", "tok")
+    resp = client.patch(
+        "/housekeeping/capabilities/housekeeping_scheduler",
+        json={"something": "else"},
+        content_type="application/json",
+        headers={"X-Capture-Token": "tok"},
+    )
+    assert resp.status_code == 400

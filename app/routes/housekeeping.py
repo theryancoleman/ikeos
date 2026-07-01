@@ -5,6 +5,7 @@ from pathlib import Path
 
 from flask import Blueprint, render_template, request, jsonify
 
+from app.services.capabilities import get_capabilities, update_capability
 from app.services.scheduler import get_config_with_next_run, update_config
 
 bp = Blueprint("housekeeping", __name__)
@@ -409,3 +410,25 @@ def patch_schedule():
         return jsonify(get_config_with_next_run()), 200
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
+
+
+@bp.route("/housekeeping/capabilities")
+def get_capabilities_route():
+    return jsonify({"capabilities": get_capabilities()}), 200
+
+
+@bp.route("/housekeeping/capabilities/<name>", methods=["PATCH"])
+def patch_capability(name: str):
+    ok, status = _check_auth()
+    if not ok:
+        return jsonify({"error": "Unauthorized" if status == 401 else "Service unavailable"}), status
+    if not request.is_json:
+        return jsonify({"error": "JSON body required"}), 400
+    data = request.get_json(silent=True) or {}
+    if "enabled" not in data:
+        return jsonify({"error": "enabled field required"}), 400
+    try:
+        record = update_capability(name, bool(data["enabled"]))
+        return jsonify({"capability": record}), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 404

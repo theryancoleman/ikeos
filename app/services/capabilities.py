@@ -64,5 +64,8 @@ def update_capability(name: str, enabled: bool, actor: str = "architect") -> dic
         tmp.unlink(missing_ok=True)
         raise
     event_type = "capability.enabled" if enabled else "capability.disabled"
-    append_event(event_type, {"capability": name, "actor": actor})
+    try:
+        append_event(event_type, {"capability": name, "actor": actor})
+    except Exception:
+        logger.warning("Failed to emit %s event for capability %s", event_type, name)
     return caps[name]
