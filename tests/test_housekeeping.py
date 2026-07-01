@@ -353,16 +353,14 @@ def test_reset_task_not_found_returns_404(client, tmp_path, monkeypatch):
 
 
 def test_run_task_creates_session(client):
-    create_mock = MagicMock()
-    create_mock.ok = True
-    create_mock.json.return_value = {"id": "session-abc123"}
+    mock_resp = MagicMock()
+    mock_resp.ok = True
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {"id": "session-abc123"}
 
-    cmd_mock = MagicMock()
-    cmd_mock.ok = True
-
-    with patch("app.routes.housekeeping.requests.post",
-                    side_effect=[create_mock, cmd_mock]):
-        resp = client.post("/housekeeping/tasks/2026-06-17-test-task/run")
+    with patch("app.services.session_client.requests.post", return_value=mock_resp):
+        with patch("app.services.session_client.append_event"):
+            resp = client.post("/housekeeping/tasks/2026-06-17-test-task/run")
     assert resp.status_code == 200
     data = resp.get_json()
     assert data["ok"] is True
@@ -370,8 +368,9 @@ def test_run_task_creates_session(client):
 
 
 def test_run_task_session_manager_unreachable(client):
-    with patch("app.routes.housekeeping.requests.post",
-                    side_effect=requests.RequestException("timeout")):
+    import requests as req_lib
+    with patch("app.services.session_client.requests.post",
+               side_effect=req_lib.RequestException("timeout")):
         resp = client.post("/housekeeping/tasks/2026-06-17-test-task/run")
     assert resp.status_code == 502
 

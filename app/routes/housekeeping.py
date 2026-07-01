@@ -7,6 +7,7 @@ from flask import Blueprint, render_template, request, jsonify
 
 from app.services.capabilities import get_capabilities, update_capability
 from app.services.scheduler import get_config_with_next_run, update_config
+from app.services.session_client import create_session
 
 bp = Blueprint("housekeeping", __name__)
 
@@ -199,31 +200,17 @@ def run_task(filename: str):
     session_name = f"housekeeping-{filename}"
     slug = _re.sub(r"^\d{4}-\d{2}-\d{2}-", "", filename)
     command = f"/housekeeping run {slug}"
-    try:
-        create_resp = requests.post(
-            f"{SESSION_MANAGER_URL}/sessions",
-            json={
-                "name": session_name,
-                "project": "claude-config",
-                "project_dir": HOUSEKEEPING_PROJECT_DIR,
-                "initial_command": command,
-            },
-            timeout=5,
-        )
-        if create_resp.status_code == 409:
-            body = create_resp.json()
-            existing = body.get("session", {})
-            session_id = existing.get("id")
-            return jsonify({"ok": True, "session_id": session_id, "already_running": True}), 200
-        if not create_resp.ok:
-            return jsonify({"error": "Failed to create session"}), 502
-        session_id = create_resp.json().get("id")
-        if not session_id:
-            return jsonify({"error": "No session ID returned"}), 502
-    except requests.RequestException:
-        return jsonify({"error": "Session manager unreachable"}), 502
-
-    return jsonify({"ok": True, "session_id": session_id}), 200
+    result = create_session(
+        name=session_name,
+        project="claude-config",
+        project_dir=HOUSEKEEPING_PROJECT_DIR,
+        initial_command=command,
+    )
+    if result.already_running:
+        return jsonify({"ok": True, "session_id": result.session_id, "already_running": True}), 200
+    if not result.ok:
+        return jsonify({"error": "Failed to create session"}), 502
+    return jsonify({"ok": True, "session_id": result.session_id}), 200
 
 
 @bp.route("/housekeeping/blog-draft")
