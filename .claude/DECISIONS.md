@@ -172,6 +172,14 @@ When a session is created with `initial_command` (ephemeral), Claude is launched
 
 After `send_command(name, command)` in `send_prompt()`, a `time.sleep(2.0)` fires before returning `True`. Without it, `parse_activity()` returns `"idle"` in the ~2s gap between tmux keystroke delivery and Claude's first visual pane update (✻ indicator), causing the next `send_prompt` call to fire before the previous command is handled. The sleep is the minimal fix; a smarter detector (watching for the pane to go non-idle then idle again) is a future improvement.
 
+## 2026-07-01: Phase 1 — capability gate is additive pre-condition over schedule.json enabled flag
+
+`capabilities.json` in the vault provides a safe-off gate checked in `scheduler._job()` before `trigger_now()` fires. The `schedule.json` `enabled` flag is preserved and continues to control APScheduler job state. The capability gate is an additional layer, not a replacement. Rationale: additive design avoids migration risk — existing schedule config is untouched, and the gate can be extended to future autonomous capabilities without changing the scheduler layer.
+
+## 2026-07-01: Phase 2 — session_client.create_session() is the single session-creation path
+
+All IkeOS→session-manager `POST /sessions` calls are centralised in `app/services/session_client.py`. `create_session()` returns a `SessionResult` frozen dataclass with `session_id`, `already_running`, `error`, and `ok` property. Callers check `result.ok` / `result.already_running` instead of raw HTTP status codes. Automatic `session.created` metric emission on success is fire-and-forget (wrapped in try/except, never raises). The `requests` import was removed from `scheduler.py` — no other function there uses it. The `requests` import stays in `housekeeping.py` — still needed by command-send, toggle/reset, and proxy routes. The blog-rewrite 409 branch (send command to running session) stays in the route because it is not session creation.
+
 ## 2026-06-27: update_entry_status() validates against per-type lifecycle
 
 `update_entry_status()` (the web-UI status path, called by `POST /projects/<name>/<slug>/status`) previously validated `new_status` against `VALID_STATUSES` before finding the file. This meant experiments could be set to `done` (invalid) and could not be set to `complete` (valid). Fix: remove the upfront check; after finding the file by type folder, validate against `cfg["valid_statuses"]` from `ENTRY_TYPE_CONFIG`. This is the same pattern `update_entry_status_generic()` uses. The web UI status dropdown now correctly enforces per-type lifecycle rules without needing to know the entry type upfront.
