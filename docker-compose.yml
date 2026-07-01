@@ -9,6 +9,7 @@ services:
       - METRICS_PATH=/metrics/events.jsonl
       - AIOS_BLOG_POSTS_DIR=/blog-posts
       - AIOS_BLOG_PROJECT_DIR=${AIOS_BLOG_PROJECT_DIR:-}
+      - WEEKLY_REVIEW_OUTPUT_DIR=/weekly-reviews
     ports:
       - "5009:5009"
     volumes:
@@ -16,3 +17,4 @@ services:
       - ${METRICS_PATH_HOST:-/tmp/ikeos-metrics}:/metrics:rw
       - ${CLAUDE_VERSION_PATH}:/claude-config/VERSION:ro
       - ${AIOS_BLOG_POSTS_PATH}:/blog-posts:rw
+      - ${WEEKLY_REVIEW_OUTPUT_PATH:-/tmp/ikeos-no-weekly-reviews}:/weekly-reviews:ro
