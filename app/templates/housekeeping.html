@@ -26,7 +26,7 @@
             {{ 'ENABLED' if cap.enabled else 'DISABLED' }}
           </span>
           <button class="pill pill-primary"
-                  onclick="toggleCapability({{ name | tojson | forceescape }}, {{ cap.enabled | tojson | forceescape }})"
+                  onclick="toggleCapability({{ name | tojson | forceescape }}, {{ (not cap.enabled) | tojson | forceescape }})"
                   id="cap-btn-{{ name }}">
             {{ 'Disable' if cap.enabled else 'Enable' }}
           </button>
