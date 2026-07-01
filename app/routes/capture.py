@@ -56,7 +56,7 @@ def capture_submit():
     if entry_type == "decision":
         project = request.form.get("project", "")
         if project:
-            data["project"] = project
+            data["project"] = project.lower().strip()
     else:
         project = request.form["project"]
         if project == "__future__":
