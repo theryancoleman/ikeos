@@ -138,3 +138,22 @@ def test_update_capability_raises_for_unknown_name(cap_vault, monkeypatch):
     import app.services.capabilities as caps_mod
     with pytest.raises(ValueError, match="Unknown capability"):
         caps_mod.update_capability("nonexistent", True)
+
+
+def test_weekly_platform_review_capability_exists_and_defaults_to_disabled(tmp_path):
+    import app.services.capabilities as capabilities
+    caps_file = tmp_path / "capabilities.json"
+    with patch.object(capabilities, "_capabilities_path", return_value=caps_file):
+        caps = capabilities.get_capabilities()
+    assert "weekly_platform_review" in caps
+    assert caps["weekly_platform_review"]["enabled"] is False
+
+
+def test_update_weekly_platform_review_capability(tmp_path):
+    import app.services.capabilities as capabilities
+    caps_file = tmp_path / "capabilities.json"
+    with patch.object(capabilities, "_capabilities_path", return_value=caps_file):
+        with patch("app.services.capabilities.append_event"):
+            result = capabilities.update_capability("weekly_platform_review", enabled=True, actor="ryan")
+    assert result["enabled"] is True
+    assert result["enabled_by"] == "ryan"

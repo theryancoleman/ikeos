@@ -14,7 +14,13 @@ DEFAULT_CAPABILITIES: dict = {
         "enabled_by": None,
         "enabled_at": None,
         "description": "Scheduled weekly housekeeping runs via session manager",
-    }
+    },
+    "weekly_platform_review": {
+        "enabled": False,
+        "enabled_by": None,
+        "enabled_at": None,
+        "description": "Weekly AI engineering platform review — researches ecosystem developments and scores platform health",
+    },
 }
 
 
