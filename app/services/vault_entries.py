@@ -22,7 +22,7 @@ def _slugify(title: str) -> str:
 
 def write_entry(data: dict) -> str:
     entry_type = data["type"]
-    project = data.get("project", "")
+    project = data.get("project", "").lower().strip()
     title = data["title"]
     body = data.get("body", "")
 

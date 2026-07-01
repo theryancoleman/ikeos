@@ -3,6 +3,7 @@ import os
 import hashlib
 from unittest.mock import patch
 from app import create_app
+import app.services.vault_cache as _vc
 
 
 @pytest.fixture
@@ -956,3 +957,16 @@ def test_capture_json_experiment(client, tmp_vault):
     assert post.metadata["hypothesis"] == "Caching will be faster"
     assert post.metadata["timebox"] == "one session"
     assert "status/running" in post.metadata["tags"]
+
+
+def test_capture_post_normalizes_project_slug(client, tmp_path):
+    (tmp_path / "projects" / "bcr-waivers").mkdir(parents=True, exist_ok=True)
+    with patch.object(_vc, "VAULT_PATH", tmp_path):
+        client.post("/capture", data={
+            "type": "note",
+            "project": "BCR-Waivers",
+            "title": "Mixed case project",
+            "body": "test",
+        })
+    files = list((tmp_path / "projects" / "bcr-waivers" / "notes").glob("*.md"))
+    assert len(files) == 1, "should write to lowercase project dir"

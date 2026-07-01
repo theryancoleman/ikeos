@@ -286,3 +286,12 @@ def test_update_entry_status_rejects_experiment_status_for_note(tmp_path):
         from app.services.vault_entries import update_entry_status
         result = update_entry_status("myproj", "2026-01-01-n", "running")
     assert result is False, "update_entry_status must reject 'running' for notes"
+
+
+def test_write_entry_normalizes_project_to_lowercase(tmp_path):
+    (tmp_path / "projects" / "myproj").mkdir(parents=True)
+    with patch.object(_vc, "VAULT_PATH", tmp_path):
+        from app.services.vault_entries import write_entry
+        write_entry({"type": "note", "project": "MyProj", "title": "Mixed case", "body": ""})
+    files = list((tmp_path / "projects" / "myproj" / "notes").glob("*.md"))
+    assert len(files) == 1, "entry should land in lowercase project dir"

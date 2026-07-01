@@ -61,7 +61,7 @@ def capture_submit():
         project = request.form["project"]
         if project == "__future__":
             project = request.form.get("future_project_name", "").strip() or "future"
-        data["project"] = project
+        data["project"] = project.lower().strip()
         component = request.form.get("component", "").strip() or None
         if component:
             data["component"] = component
@@ -104,7 +104,7 @@ def patch_entries():
         req_data = request.form.to_dict()
 
     # Extract parameters
-    project = req_data.get("project", "").strip()
+    project = req_data.get("project", "").strip().lower()
     entry_type = req_data.get("type", "").strip()
     filename = req_data.get("filename", "").strip()
     status = req_data.get("status", "").strip()
@@ -155,7 +155,7 @@ def patch_housekeeping():
     req_data = request.get_json(silent=True)
     if req_data is None:
         return jsonify({"error": "Invalid or empty JSON body"}), 400
-    project = req_data.get("project", "").strip()
+    project = req_data.get("project", "").strip().lower()
     entry_type = req_data.get("type", "").strip()
     filename = req_data.get("filename", "").strip()
     fields = req_data.get("fields")
@@ -183,7 +183,7 @@ def patch_housekeeping():
 def capture_json():
     req = request.get_json(silent=True) or {}
     entry_type = req.get("type", "")
-    project = req.get("project", "")
+    project = req.get("project", "").strip().lower()
     title = req.get("title", "")
 
     if not title:
