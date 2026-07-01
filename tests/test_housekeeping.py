@@ -732,3 +732,70 @@ def test_blog_draft_publish_creates_session(client, tmp_path, monkeypatch):
     data = resp.get_json()
     assert data["ok"] is True
     assert data["session_id"] == "pub-sess-1"
+
+
+# ── GET /housekeeping/weekly-review ──
+
+def test_weekly_review_returns_200_with_no_review_dir(client, monkeypatch):
+    import app.routes.housekeeping as hk_mod
+    monkeypatch.setattr(hk_mod, "WEEKLY_REVIEW_OUTPUT_DIR", "")
+    resp = client.get("/housekeeping/weekly-review")
+    assert resp.status_code == 200
+    assert b"No review" in resp.data or b"weekly" in resp.data.lower()
+
+
+def test_weekly_review_returns_200_with_no_files(client, monkeypatch, tmp_path):
+    import app.routes.housekeeping as hk_mod
+    monkeypatch.setattr(hk_mod, "WEEKLY_REVIEW_OUTPUT_DIR", str(tmp_path))
+    resp = client.get("/housekeeping/weekly-review")
+    assert resp.status_code == 200
+
+
+def test_weekly_review_returns_latest_file_content(client, monkeypatch, tmp_path):
+    import app.routes.housekeeping as hk_mod
+    monkeypatch.setattr(hk_mod, "WEEKLY_REVIEW_OUTPUT_DIR", str(tmp_path))
+    (tmp_path / "2026-06-30-weekly-review.md").write_text("# Review June 30")
+    (tmp_path / "2026-07-01-weekly-review.md").write_text("# Review July 1")
+    resp = client.get("/housekeeping/weekly-review")
+    assert resp.status_code == 200
+    assert b"Review July 1" in resp.data
+
+
+# ── POST /housekeeping/weekly-review/run ──
+
+def test_weekly_review_run_returns_403_when_capability_disabled(client, monkeypatch):
+    import app.routes.housekeeping as hk_mod
+    import app.services.capabilities as caps_mod
+    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "tok")
+    monkeypatch.setattr(caps_mod, "is_enabled", lambda name: False)
+    resp = client.post(
+        "/housekeeping/weekly-review/run",
+        headers={"X-Capture-Token": "tok"},
+    )
+    assert resp.status_code == 403
+    assert "disabled" in resp.get_json().get("error", "").lower()
+
+
+def test_weekly_review_run_creates_session_when_enabled(client, monkeypatch):
+    import app.routes.housekeeping as hk_mod
+    import app.services.capabilities as caps_mod
+    from unittest.mock import patch, MagicMock
+    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "tok")
+    monkeypatch.setattr(hk_mod, "HOUSEKEEPING_PROJECT_DIR", "/srv/claude-config")
+    monkeypatch.setattr(caps_mod, "is_enabled", lambda name: True)
+
+    mock_resp = MagicMock()
+    mock_resp.ok = True
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {"id": "review-sess-1"}
+
+    with patch("app.services.session_client.requests.post", return_value=mock_resp):
+        with patch("app.services.session_client.append_event"):
+            resp = client.post(
+                "/housekeeping/weekly-review/run",
+                headers={"X-Capture-Token": "tok"},
+            )
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["ok"] is True
+    assert data["session_id"] == "review-sess-1"

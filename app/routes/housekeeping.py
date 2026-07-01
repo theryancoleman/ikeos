@@ -5,7 +5,7 @@ from pathlib import Path
 
 from flask import Blueprint, render_template, request, jsonify
 
-from app.services.capabilities import get_capabilities, update_capability
+from app.services.capabilities import get_capabilities, is_enabled, update_capability
 from app.services.scheduler import get_config_with_next_run, update_config
 from app.services.session_client import create_session
 
@@ -17,6 +17,7 @@ SESSION_MANAGER_URL = os.environ.get("SESSION_MANAGER_URL", "http://host.docker.
 HOUSEKEEPING_PROJECT_DIR = os.environ.get("HOUSEKEEPING_PROJECT_DIR", "/mnt/c/Server/claude-config")
 AIOS_BLOG_POSTS_DIR = os.environ.get("AIOS_BLOG_POSTS_DIR", "")
 AIOS_BLOG_PROJECT_DIR = os.environ.get("AIOS_BLOG_PROJECT_DIR", "")
+WEEKLY_REVIEW_OUTPUT_DIR = os.environ.get("WEEKLY_REVIEW_OUTPUT_DIR", "")
 
 
 def _blog_draft_paths() -> tuple[Path | None, Path | None]:
@@ -35,6 +36,16 @@ def _blog_draft_paths() -> tuple[Path | None, Path | None]:
 def _latest_blog_draft() -> str | None:
     draft, _ = _blog_draft_paths()
     return draft.name if draft else None
+
+
+def _latest_weekly_review() -> str | None:
+    if not WEEKLY_REVIEW_OUTPUT_DIR:
+        return None
+    review_dir = Path(WEEKLY_REVIEW_OUTPUT_DIR)
+    if not review_dir.exists():
+        return None
+    reviews = sorted(review_dir.glob("*-weekly-review.md"), reverse=True)
+    return reviews[0].name if reviews else None
 
 
 def _capture_headers() -> dict:
@@ -328,6 +339,7 @@ def _housekeeping_context() -> dict:
         schedule=schedule,
         capture_token=CAPTURE_TOKEN,
         blog_draft=_latest_blog_draft(),
+        weekly_review_file=_latest_weekly_review(),
         capabilities=get_capabilities(),
     )
 
@@ -358,6 +370,42 @@ def blog_draft_session_status():
         return jsonify({"active": data.get("status") == "active"})
     except requests.RequestException:
         return jsonify({"active": False})
+
+
+@bp.route("/housekeeping/weekly-review")
+def weekly_review():
+    if not WEEKLY_REVIEW_OUTPUT_DIR:
+        return render_template("weekly_review.html", content=None, filename=None,
+                               capture_token=CAPTURE_TOKEN, capabilities=get_capabilities())
+    review_dir = Path(WEEKLY_REVIEW_OUTPUT_DIR)
+    reviews = sorted(review_dir.glob("*-weekly-review.md"), reverse=True) if review_dir.exists() else []
+    if not reviews:
+        return render_template("weekly_review.html", content=None, filename=None,
+                               capture_token=CAPTURE_TOKEN, capabilities=get_capabilities())
+    latest = reviews[0]
+    content = latest.read_text(encoding="utf-8")
+    return render_template("weekly_review.html", content=content, filename=latest.name,
+                           capture_token=CAPTURE_TOKEN, capabilities=get_capabilities())
+
+
+@bp.route("/housekeeping/weekly-review/run", methods=["POST"])
+def weekly_review_run():
+    ok, status = _check_auth()
+    if not ok:
+        return jsonify({"error": "Unauthorized" if status == 401 else "Service unavailable"}), status
+    if not is_enabled("weekly_platform_review"):
+        return jsonify({"error": "weekly_platform_review capability is disabled"}), 403
+    result = create_session(
+        name="weekly-platform-review",
+        project="claude-config",
+        project_dir=HOUSEKEEPING_PROJECT_DIR,
+        initial_command="/platform-review",
+    )
+    if result.already_running:
+        return jsonify({"ok": True, "session_id": result.session_id, "already_running": True}), 200
+    if not result.ok:
+        return jsonify({"error": "Failed to create review session"}), 502
+    return jsonify({"ok": True, "session_id": result.session_id}), 200
 
 
 @bp.route("/housekeeping/schedule", methods=["GET"])

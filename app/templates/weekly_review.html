@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Weekly Platform Review{% endblock %}
+{% block content %}
+<div>
+{% if content %}
+<pre>{{ content | e }}</pre>
+{% else %}
+<p>No review yet.</p>
+{% endif %}
+</div>
+{% endblock %}
