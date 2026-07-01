@@ -26,6 +26,8 @@ IkeOS is designed to run locally on a trusted network. It is not internet-facing
 - Docker and Docker Compose
 - An Obsidian vault (or any directory organised as `projects/<slug>/bugs|ideas|notes|grill-me/`)
 - A Claude Code installation (for session management and housekeeping features)
+- tmux (for session management features)
+- **Windows users:** WSL2 — IkeOS runs in Docker via WSL2; the vault path in `.env` must be a WSL2-accessible path
 
 ---
 
@@ -40,10 +42,12 @@ cp .env.example .env
 ```
 
 Edit `.env` and set at minimum:
-- `VAULT_PATH` — absolute path to your Obsidian vault on the host machine
+- `VAULT_PATH` — absolute path to your vault on the host. On Windows/WSL2, use the WSL2 mount path (e.g. `/mnt/c/Server/obsidian-vault`), not the Windows path (`C:\...`)
 - `CLAUDE_VERSION_PATH` — path to your `.claude/VERSION` file (e.g. `/home/you/.claude/VERSION`)
 - `CAPTURE_TOKEN` — any secret string; protects vault mutation endpoints
 - `FLASK_SECRET_KEY` — any secret string; protects Flask sessions
+
+The remaining variables in `.env.example` (`SESSION_MANAGER_URL`, `HOUSEKEEPING_PROJECT_DIR`, blog paths) are optional — leave them blank to disable those features.
 
 **2. Start**
 
@@ -51,9 +55,26 @@ Edit `.env` and set at minimum:
 docker compose up -d
 ```
 
-**3. Access**
+**3. Verify**
+
+```bash
+curl http://localhost:5009/health
+# → ok
+```
+
+**4. Access**
 
 Open `http://localhost:5009` in your browser.
+
+**5. Umbrella view (optional)**
+
+The Projects page can group related sub-projects under an umbrella. To enable it, copy the example config and edit it to match your setup:
+
+```bash
+cp umbrella_registry.yaml.example umbrella_registry.yaml
+```
+
+`umbrella_registry.yaml` is gitignored — it contains local paths specific to your machine.
 
 ---
 
