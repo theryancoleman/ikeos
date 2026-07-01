@@ -9,7 +9,7 @@ from app.services.metrics import append_event
 logger = logging.getLogger(__name__)
 
 
-@dataclass
+@dataclass(frozen=True)
 class SessionResult:
     session_id: str
     already_running: bool = False
@@ -58,6 +58,6 @@ def create_session(
             {"session_id": session_id, "name": name, "project": project},
         )
     except Exception:
-        logger.warning("Failed to emit session.created metric for session %s", session_id)
+        logger.warning("Failed to emit session.created metric for session %s", session_id, exc_info=True)
 
     return SessionResult(session_id=session_id)
