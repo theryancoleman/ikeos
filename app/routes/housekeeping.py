@@ -292,34 +292,27 @@ def blog_draft_rewrite():
         f"{feedback} — keep the same frontmatter, voice, and section structure from the /blog skill. "
         "Overwrite the file in place when done."
     )
-    try:
-        resp = requests.post(
-            f"{SESSION_MANAGER_URL}/sessions",
-            json={
-                "name": f"blog-rewrite-{draft.stem[:30]}",
-                "project": "aios-blog",
-                "project_dir": AIOS_BLOG_PROJECT_DIR,
-                "initial_command": command,
-            },
-            timeout=5,
-        )
-        if resp.status_code == 409:
-            # Session already running — send feedback directly to it
-            existing = resp.json().get("session", {})
-            session_id = existing.get("id")
+    result = create_session(
+        name=f"blog-rewrite-{draft.stem[:30]}",
+        project="aios-blog",
+        project_dir=AIOS_BLOG_PROJECT_DIR,
+        initial_command=command,
+    )
+    if result.already_running:
+        try:
             cmd_resp = requests.post(
-                f"{SESSION_MANAGER_URL}/sessions/{session_id}/command",
+                f"{SESSION_MANAGER_URL}/sessions/{result.session_id}/command",
                 json={"command": command, "escape_first": True},
                 timeout=5,
             )
             if not cmd_resp.ok:
                 return jsonify({"error": "Rewrite session running but failed to send command"}), 502
-            return jsonify({"ok": True, "session_id": session_id}), 200
-        if not resp.ok:
-            return jsonify({"error": "Failed to create rewrite session"}), 502
-        return jsonify({"ok": True, "session_id": resp.json().get("id")}), 200
-    except requests.RequestException:
-        return jsonify({"error": "Session manager unreachable"}), 502
+        except requests.RequestException:
+            return jsonify({"error": "Session manager unreachable"}), 502
+        return jsonify({"ok": True, "session_id": result.session_id}), 200
+    if not result.ok:
+        return jsonify({"error": "Failed to create rewrite session"}), 502
+    return jsonify({"ok": True, "session_id": result.session_id}), 200
 
 
 def _housekeeping_context() -> dict:

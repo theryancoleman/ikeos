@@ -660,6 +660,56 @@ def test_patch_capability_rejects_missing_enabled_field(client, monkeypatch):
     assert resp.status_code == 400
 
 
+def test_blog_draft_rewrite_creates_session(client, tmp_path, monkeypatch):
+    import app.routes.housekeeping as hk_mod
+    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "tok")
+    monkeypatch.setattr(hk_mod, "AIOS_BLOG_POSTS_DIR", str(tmp_path))
+    monkeypatch.setattr(hk_mod, "AIOS_BLOG_PROJECT_DIR", "/srv/blog")
+    (tmp_path / "2026-07-01-weekly-draft.md").write_text("# Draft")
+
+    mock_resp = MagicMock()
+    mock_resp.ok = True
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {"id": "rw-sess-1"}
+
+    with patch("app.services.session_client.requests.post", return_value=mock_resp):
+        with patch("app.services.session_client.append_event"):
+            resp = client.post(
+                "/housekeeping/blog-draft/rewrite",
+                data={"feedback": "make it shorter"},
+                headers={"X-Capture-Token": "tok"},
+            )
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["ok"] is True
+    assert data["session_id"] == "rw-sess-1"
+
+
+def test_blog_draft_rewrite_409_sends_command_to_running_session(client, tmp_path, monkeypatch):
+    import app.routes.housekeeping as hk_mod
+    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "tok")
+    monkeypatch.setattr(hk_mod, "AIOS_BLOG_POSTS_DIR", str(tmp_path))
+    monkeypatch.setattr(hk_mod, "AIOS_BLOG_PROJECT_DIR", "/srv/blog")
+    monkeypatch.setattr(hk_mod, "SESSION_MANAGER_URL", "http://mock-sm")
+    (tmp_path / "2026-07-01-weekly-draft.md").write_text("# Draft")
+
+    from app.services.session_client import SessionResult
+    with patch("app.routes.housekeeping.create_session",
+               return_value=SessionResult(session_id="existing-rw", already_running=True)):
+        cmd_mock = MagicMock()
+        cmd_mock.ok = True
+        with patch("app.routes.housekeeping.requests.post", return_value=cmd_mock):
+            resp = client.post(
+                "/housekeeping/blog-draft/rewrite",
+                data={"feedback": "different angle"},
+                headers={"X-Capture-Token": "tok"},
+            )
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["ok"] is True
+    assert data["session_id"] == "existing-rw"
+
+
 def test_blog_draft_publish_creates_session(client, tmp_path, monkeypatch):
     import app.routes.housekeeping as hk_mod
     monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "tok")
