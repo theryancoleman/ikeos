@@ -1,11 +1,81 @@
 {% extends "base.html" %}
 {% block title %}Weekly Platform Review{% endblock %}
+
 {% block content %}
-<div>
-{% if content %}
-<pre>{{ content | e }}</pre>
-{% else %}
-<p>No review yet.</p>
-{% endif %}
+<div class="settings-page">
+
+  <header class="page-header">
+    <span class="ike-eyebrow">Housekeeping</span>
+    <h1>Weekly Platform Review</h1>
+    <p class="page-subtitle">
+      Strategic review of the AI engineering ecosystem &mdash; what should change in IkeOS?
+    </p>
+  </header>
+
+  <div style="display:flex; gap:10px; align-items:center; margin-bottom:20px;">
+    <a href="{{ url_for('housekeeping.index') }}" class="pill">&larr; Housekeeping</a>
+    {% if capabilities.weekly_platform_review.enabled %}
+    <button class="pill pill-primary" id="run-review-btn" onclick="runWeeklyReview(this)">
+      Run Review
+    </button>
+    <span id="run-review-msg" style="font-size:0.85rem; color:var(--color-muted);"></span>
+    {% else %}
+    <span class="pill pill--muted">Enable capability to run</span>
+    {% endif %}
+  </div>
+
+  {% if content %}
+  <section>
+    <div class="ike-eyebrow">{{ filename }}</div>
+    <div class="hk-schedule-card" style="overflow-x:auto;">
+      <pre style="white-space:pre-wrap; word-break:break-word; font-family:var(--font-mono, monospace);
+                  font-size:0.85rem; line-height:1.6; margin:0;">{{ content | e }}</pre>
+    </div>
+  </section>
+  {% else %}
+  <div class="hk-widget">
+    <p class="hk-status hk-status-pending">No review report found yet.</p>
+    {% if not capabilities.weekly_platform_review.enabled %}
+    <p style="font-size:0.9rem; color:var(--color-muted);">
+      Enable the <strong>Weekly Platform Review</strong> capability on the
+      <a href="{{ url_for('housekeeping.index') }}">Housekeeping page</a> to run the first review.
+    </p>
+    {% endif %}
+  </div>
+  {% endif %}
+
 </div>
+
+<script>
+const _captureToken = {{ capture_token | tojson }};
+
+async function runWeeklyReview(btn) {
+  const msg = document.getElementById('run-review-msg');
+  btn.disabled = true;
+  btn.textContent = 'Starting…';
+  msg.textContent = '';
+  try {
+    const resp = await fetch('/housekeeping/weekly-review/run', {
+      method: 'POST',
+      headers: {'X-Capture-Token': _captureToken},
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      btn.textContent = 'Run Review';
+      btn.disabled = false;
+      msg.textContent = data.error || 'Error starting review.';
+    } else if (data.already_running) {
+      btn.textContent = 'Already running';
+      msg.textContent = `Session: ${data.session_id}`;
+    } else {
+      btn.textContent = 'Running…';
+      msg.textContent = `Session started: ${data.session_id}`;
+    }
+  } catch (e) {
+    btn.textContent = 'Run Review';
+    btn.disabled = false;
+    msg.textContent = 'Network error.';
+  }
+}
+</script>
 {% endblock %}

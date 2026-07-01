@@ -765,9 +765,8 @@ def test_weekly_review_returns_latest_file_content(client, monkeypatch, tmp_path
 
 def test_weekly_review_run_returns_403_when_capability_disabled(client, monkeypatch):
     import app.routes.housekeeping as hk_mod
-    import app.services.capabilities as caps_mod
     monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "tok")
-    monkeypatch.setattr(caps_mod, "is_enabled", lambda name: False)
+    monkeypatch.setattr(hk_mod, "is_enabled", lambda name: False)
     resp = client.post(
         "/housekeeping/weekly-review/run",
         headers={"X-Capture-Token": "tok"},
@@ -778,11 +777,10 @@ def test_weekly_review_run_returns_403_when_capability_disabled(client, monkeypa
 
 def test_weekly_review_run_creates_session_when_enabled(client, monkeypatch):
     import app.routes.housekeeping as hk_mod
-    import app.services.capabilities as caps_mod
     from unittest.mock import patch, MagicMock
     monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "tok")
     monkeypatch.setattr(hk_mod, "HOUSEKEEPING_PROJECT_DIR", "/srv/claude-config")
-    monkeypatch.setattr(caps_mod, "is_enabled", lambda name: True)
+    monkeypatch.setattr(hk_mod, "is_enabled", lambda name: True)
 
     mock_resp = MagicMock()
     mock_resp.ok = True
