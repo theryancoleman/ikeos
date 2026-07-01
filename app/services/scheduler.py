@@ -168,6 +168,11 @@ def start(app) -> None:
         minute=config["minute"],
     )
     _scheduler.start()
+    logger.warning(
+        "APScheduler started — this relies on gunicorn --workers 1. "
+        "If workers > 1, the housekeeping job fires multiple times per trigger. "
+        "See DECISIONS.md 2026-06-18 for context."
+    )
     if not config.get("enabled"):
         _scheduler.pause_job("housekeeping")
     logger.info(
