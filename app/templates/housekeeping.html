@@ -108,6 +108,32 @@
     {% endif %}
   </div>
 
+  <!-- Weekly Platform Review status -->
+  <div class="hk-widget">
+    <span class="ike-eyebrow">Weekly Platform Review</span>
+    {% if weekly_review_file %}
+      <p class="hk-status hk-status-ok">
+        <a href="{{ url_for('housekeeping.weekly_review') }}" class="hk-draft-link">
+          {{ weekly_review_file }}
+        </a>
+        — ready for review
+      </p>
+    {% else %}
+      <p class="hk-status hk-status-pending">No review yet this week</p>
+    {% endif %}
+    {% if capabilities.weekly_platform_review.enabled %}
+    <button class="pill pill-primary" style="margin-top:6px;"
+            id="hk-run-review-btn" onclick="runWeeklyReview(this)">
+      Run Review
+    </button>
+    <span id="hk-run-review-msg" style="font-size:0.85rem; color:var(--color-muted); margin-left:8px;"></span>
+    {% else %}
+    <p style="font-size:0.85rem; color:var(--color-muted); margin-top:4px;">
+      Enable the <strong>Weekly Platform Review</strong> capability above to run.
+    </p>
+    {% endif %}
+  </div>
+
   <section>
     <div class="ike-eyebrow">Tasks <span class="eyebrow-count">/ {{ tasks | length }}</span></div>
     {% if tasks %}
@@ -240,6 +266,36 @@ async function runTask(filename, btn) {
     btn.textContent = 'Run';
     btn.disabled = false;
     alert('Network error — could not launch session.');
+  }
+}
+
+async function runWeeklyReview(btn) {
+  const msgId = btn.id === 'hk-run-review-btn' ? 'hk-run-review-msg' : 'run-review-msg';
+  const msg = document.getElementById(msgId);
+  btn.disabled = true;
+  btn.textContent = 'Starting…';
+  if (msg) msg.textContent = '';
+  try {
+    const resp = await fetch('/housekeeping/weekly-review/run', {
+      method: 'POST',
+      headers: {'X-Capture-Token': _captureToken},
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      btn.textContent = 'Run Review';
+      btn.disabled = false;
+      if (msg) msg.textContent = data.error || 'Error starting review.';
+    } else if (data.already_running) {
+      btn.textContent = 'Already running';
+      if (msg) msg.textContent = `Session: ${data.session_id}`;
+    } else {
+      btn.textContent = 'Running…';
+      if (msg) msg.textContent = `Session started: ${data.session_id}`;
+    }
+  } catch (e) {
+    btn.textContent = 'Run Review';
+    btn.disabled = false;
+    if (msg) msg.textContent = 'Network error.';
   }
 }
 
