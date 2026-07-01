@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 from pathlib import Path
 
-import requests
+from app.services.session_client import create_session
 
 logger = logging.getLogger(__name__)
 
@@ -114,29 +114,17 @@ def get_config_with_next_run() -> dict:
 def trigger_now() -> str | None:
     now = datetime.now()
     session_name = f"housekeeping-{now.strftime('%Y%m%d')}"
-    sm_url = os.environ.get("SESSION_MANAGER_URL", "http://host.docker.internal:5010")
     project_dir = os.environ.get("HOUSEKEEPING_PROJECT_DIR", "/mnt/c/Server/claude-config")
-    try:
-        create_resp = requests.post(
-            f"{sm_url}/sessions",
-            json={
-                "name": session_name,
-                "project": "claude-config",
-                "project_dir": project_dir,
-                "initial_command": "/housekeeping — run in scheduled mode",
-            },
-            timeout=5,
-        )
-        if not create_resp.ok:
-            logger.error("Failed to create housekeeping session: %s", create_resp.status_code)
-            return None
-        session_id = create_resp.json().get("id")
-        if not session_id:
-            logger.error("No session ID returned from session manager")
-            return None
-    except (requests.RequestException, OSError):
-        logger.exception("Housekeeping trigger failed")
+    result = create_session(
+        name=session_name,
+        project="claude-config",
+        project_dir=project_dir,
+        initial_command="/housekeeping — run in scheduled mode",
+    )
+    if not result.ok:
+        logger.error("Failed to create housekeeping session: %s", result.error)
         return None
+    session_id = result.session_id
     config = get_config()
     config["last_triggered"] = now.isoformat(timespec="seconds")
     try:
