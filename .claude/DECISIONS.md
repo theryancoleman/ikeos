@@ -183,3 +183,11 @@ All IkeOS→session-manager `POST /sessions` calls are centralised in `app/servi
 ## 2026-06-27: update_entry_status() validates against per-type lifecycle
 
 `update_entry_status()` (the web-UI status path, called by `POST /projects/<name>/<slug>/status`) previously validated `new_status` against `VALID_STATUSES` before finding the file. This meant experiments could be set to `done` (invalid) and could not be set to `complete` (valid). Fix: remove the upfront check; after finding the file by type folder, validate against `cfg["valid_statuses"]` from `ENTRY_TYPE_CONFIG`. This is the same pattern `update_entry_status_generic()` uses. The web UI status dropdown now correctly enforces per-type lifecycle rules without needing to know the entry type upfront.
+
+## 2026-07-02: v0.1.0 released as Claude Code-specific; driver abstraction deferred
+
+IkeOS v0.1.0 ships with Claude Code as the sole AI agent driver. `session_client.py` is a thin HTTP client for the session-manager, which hardcodes `--model sonnet` in `CLAUDE_CMD`. The driver interface is implicit, not abstracted. Decision rationale: YAGNI — abstracting before a second driver exists is speculative, and a `DriverBase` protocol before the interface is stress-tested by real use risks calcifying the wrong contract. The adapter principle (IkeOS should outlast its toolchain) is honoured by keeping all Claude Code-specific code in `session_client.py` and the session-manager — none of it leaks into `app/routes/` or `app/services/vault*.py`. A pluggable driver model is planned for v0.2, to be designed in a dedicated architecture session.
+
+## 2026-07-02: Skill implementations stay in claude-config; IkeOS owns the API contract
+
+IkeOS-specific Claude Code skills (`/housekeeping`, `/platform-review`) live in claude-config (private), not in IkeOS. IkeOS owns the API surface those skills call (capture endpoint, session trigger, weekly-review viewer). The integration story is documented in IkeOS (`docs/` and `CLAUDE.md`) as the canonical contract; actual skill implementations are user-supplied. A `docs/skills/` reference directory is planned for v0.2 to give contributors a starting point. This preserves the adapter principle: IkeOS is AI-tool-agnostic at the web layer; the driver (skill) layer is swappable.
