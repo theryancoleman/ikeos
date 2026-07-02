@@ -14,7 +14,7 @@
 - Conventional commits: `feat:`, `refactor:`, `docs:`, `test:`, `chore:`.
 - Services must not import Flask (`request`/`g`/`current_app`) — CLAUDE.md rule.
 - Routes stay thin: parse request, call service, return response.
-- Test runner: `.venv/Scripts/python.exe -m pytest` from repo root (if `.venv` is broken, use `venv/Scripts/python.exe`). Establish a green baseline (`-q`, full suite) before Task 1 and record the pass count.
+- Test runner: **neither checked-in venv has pytest — do not use `.venv/` or `venv/`.** For fast iteration run under WSL2 system python (has pytest 8.3.4): `wsl.exe -e bash -c "cd /mnt/c/Server/projects/ikeos && python3 -m pytest <args>"`. The canonical documented runner is in-container: `docker.exe exec ikeos pytest tests/ -q` (CONTRIBUTING.md) — but the container runs *built* code with no bind mount, so it only reflects changes after `docker.exe compose up --build -d`; use it as the final gate (Task 12), not for TDD loops. Establish a green baseline (`-q`, full suite, WSL2 runner) before Task 1 and record the pass count.
 - Wire-behavior freeze: the JSON bodies sent to the session-manager must be byte-identical to current behavior except for the additive optional `model` key. The em dash in `"/housekeeping — run in scheduled mode"` is existing live behavior — preserve it exactly.
 - After the final task, rebuild the running container (`docker.exe compose up --build -d`) — the app has no bind mount for code.
 
@@ -136,7 +136,7 @@ def test_config_version_path_blank_disables(monkeypatch):
     assert config_version_path() == ""
 ```
 
-- [ ] **Step 2: Run to verify failure.** `.venv/Scripts/python.exe -m pytest tests/test_platform.py -v` — expect `ModuleNotFoundError`/import error.
+- [ ] **Step 2: Run to verify failure.** `python3 -m pytest tests/test_platform.py -v` — expect `ModuleNotFoundError`/import error.
 
 - [ ] **Step 3: Implement** `app/services/platform.py`:
 
@@ -321,7 +321,7 @@ def get_session_status(session_id: str) -> dict | None:
     return resp.json()
 ```
 
-- [ ] **Step 4: Run the whole file — all old and new tests pass.** `.venv/Scripts/python.exe -m pytest tests/test_session_client.py -v`
+- [ ] **Step 4: Run the whole file — all old and new tests pass.** `python3 -m pytest tests/test_session_client.py -v`
 
 - [ ] **Step 5: Commit**
 
@@ -575,7 +575,7 @@ Session naming and `HOUSEKEEPING_PROJECT_DIR` handling now live in the driver �
 
 - [ ] **Step 2: Update `tests/test_scheduler.py`.** Read the file; wherever it patches `app.services.scheduler.create_session`, patch `app.services.scheduler.run_scheduled_housekeeping` instead, returning `SessionResult(session_id=...)` as before. Assertions about session name/command move to `tests/test_driver.py` (already covered by Task 4) — delete any duplicates here rather than porting them.
 
-- [ ] **Step 3: Run.** `.venv/Scripts/python.exe -m pytest tests/test_scheduler.py tests/test_driver.py -v` — all pass.
+- [ ] **Step 3: Run.** `python3 -m pytest tests/test_scheduler.py tests/test_driver.py -v` — all pass.
 
 - [ ] **Step 4: Commit**
 
@@ -906,7 +906,7 @@ def blog_draft_rewrite():
 | module constants `AIOS_BLOG_POSTS_DIR` etc. (if monkeypatched as attributes) | `monkeypatch.setenv(...)` — services read env at call time now |
 | `app.routes.housekeeping.requests` (session-status/rewrite paths) | `app.routes.housekeeping.get_session_status` / driver functions |
 
-- [ ] **Step 3: Run.** `.venv/Scripts/python.exe -m pytest tests/test_housekeeping.py -v` — all pass. Then full suite `-q` — no regressions.
+- [ ] **Step 3: Run.** `python3 -m pytest tests/test_housekeeping.py -v` — all pass. Then full suite `-q` — no regressions.
 
 - [ ] **Step 4: Commit**
 
@@ -1104,7 +1104,7 @@ git commit -m "feat: platform project slug and config version path are env-confi
 
 **Files:** none new.
 
-- [ ] **Step 1: Full suite.** `.venv/Scripts/python.exe -m pytest tests/ -q` — compare against the pre-Task-1 baseline count; every previously passing test still passes, plus the new ones.
+- [ ] **Step 1: Full suite.** `python3 -m pytest tests/ -q` — compare against the pre-Task-1 baseline count; every previously passing test still passes, plus the new ones.
 
 - [ ] **Step 2: Grep gates.** All must return nothing:
 
