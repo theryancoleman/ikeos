@@ -20,23 +20,31 @@ class SessionResult:
         return self.error is None
 
 
+def session_manager_url() -> str:
+    return os.environ.get("SESSION_MANAGER_URL", "http://host.docker.internal:5010")
+
+
 def create_session(
     *,
     name: str,
     project: str,
     project_dir: str,
     initial_command: str | None = None,
+    model: str | None = None,
 ) -> SessionResult:
-    sm_url = os.environ.get("SESSION_MANAGER_URL", "http://host.docker.internal:5010")
+    sm_url = session_manager_url()
+    payload = {
+        "name": name,
+        "project": project,
+        "project_dir": project_dir,
+        "initial_command": initial_command,
+    }
+    if model is not None:
+        payload["model"] = model
     try:
         response = requests.post(
             f"{sm_url}/sessions",
-            json={
-                "name": name,
-                "project": project,
-                "project_dir": project_dir,
-                "initial_command": initial_command,
-            },
+            json=payload,
             timeout=5,
         )
     except requests.RequestException:
@@ -61,3 +69,30 @@ def create_session(
         logger.warning("Failed to emit session.created metric for session %s", session_id, exc_info=True)
 
     return SessionResult(session_id=session_id)
+
+
+def send_command(session_id: str, command: str, *, escape_first: bool = False) -> bool:
+    """Send text to a live session. Returns True on 2xx."""
+    try:
+        resp = requests.post(
+            f"{session_manager_url()}/sessions/{session_id}/command",
+            json={"command": command, "escape_first": escape_first},
+            timeout=5,
+        )
+    except requests.RequestException:
+        return False
+    return resp.ok
+
+
+def get_session_status(session_id: str) -> dict | None:
+    """Session object from the driver, or None if unknown/unreachable."""
+    try:
+        resp = requests.get(
+            f"{session_manager_url()}/sessions/{session_id}",
+            timeout=3,
+        )
+    except requests.RequestException:
+        return None
+    if not resp.ok:
+        return None
+    return resp.json()

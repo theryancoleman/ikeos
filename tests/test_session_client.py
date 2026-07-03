@@ -2,7 +2,13 @@ import pytest
 import requests as req_lib
 from unittest.mock import MagicMock, patch
 
-from app.services.session_client import SessionResult, create_session
+from app.services.session_client import (
+    SessionResult,
+    create_session,
+    get_session_status,
+    send_command,
+    session_manager_url,
+)
 
 
 def test_create_session_success(monkeypatch):
@@ -80,3 +86,76 @@ def test_create_session_no_metric_on_failure(monkeypatch):
         with patch("app.services.session_client.append_event") as mock_emit:
             create_session(name="test", project="proj", project_dir="/tmp")
     mock_emit.assert_not_called()
+
+
+def test_session_manager_url_default(monkeypatch):
+    monkeypatch.delenv("SESSION_MANAGER_URL", raising=False)
+    assert session_manager_url() == "http://host.docker.internal:5010"
+
+
+def test_session_manager_url_env_override(monkeypatch):
+    monkeypatch.setenv("SESSION_MANAGER_URL", "http://custom:9999")
+    assert session_manager_url() == "http://custom:9999"
+
+
+def test_create_session_omits_model_when_none(monkeypatch):
+    monkeypatch.setenv("SESSION_MANAGER_URL", "http://mock-sm")
+    mock_resp = MagicMock()
+    mock_resp.ok = True
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {"id": "abc"}
+    with patch("app.services.session_client.requests.post", return_value=mock_resp) as mock_post:
+        with patch("app.services.session_client.append_event"):
+            create_session(name="t", project="p", project_dir="/tmp")
+    assert "model" not in mock_post.call_args.kwargs["json"]
+
+
+def test_create_session_passes_model_when_set(monkeypatch):
+    monkeypatch.setenv("SESSION_MANAGER_URL", "http://mock-sm")
+    mock_resp = MagicMock()
+    mock_resp.ok = True
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {"id": "abc"}
+    with patch("app.services.session_client.requests.post", return_value=mock_resp) as mock_post:
+        with patch("app.services.session_client.append_event"):
+            create_session(name="t", project="p", project_dir="/tmp", model="claude-fable-5")
+    assert mock_post.call_args.kwargs["json"]["model"] == "claude-fable-5"
+
+
+def test_send_command_success(monkeypatch):
+    monkeypatch.setenv("SESSION_MANAGER_URL", "http://mock-sm")
+    mock_resp = MagicMock()
+    mock_resp.ok = True
+    with patch("app.services.session_client.requests.post", return_value=mock_resp) as mock_post:
+        assert send_command("sess1", "hello", escape_first=True) is True
+    assert mock_post.call_args.args[0] == "http://mock-sm/sessions/sess1/command"
+    assert mock_post.call_args.kwargs["json"] == {"command": "hello", "escape_first": True}
+
+
+def test_send_command_unreachable_returns_false(monkeypatch):
+    monkeypatch.setenv("SESSION_MANAGER_URL", "http://mock-sm")
+    with patch("app.services.session_client.requests.post",
+               side_effect=req_lib.RequestException("boom")):
+        assert send_command("sess1", "hello") is False
+
+
+def test_get_session_status_found(monkeypatch):
+    monkeypatch.setenv("SESSION_MANAGER_URL", "http://mock-sm")
+    mock_resp = MagicMock()
+    mock_resp.ok = True
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {"id": "s1", "status": "active"}
+    with patch("app.services.session_client.requests.get", return_value=mock_resp):
+        assert get_session_status("s1") == {"id": "s1", "status": "active"}
+
+
+def test_get_session_status_missing_or_down(monkeypatch):
+    monkeypatch.setenv("SESSION_MANAGER_URL", "http://mock-sm")
+    mock_resp = MagicMock()
+    mock_resp.ok = False
+    mock_resp.status_code = 404
+    with patch("app.services.session_client.requests.get", return_value=mock_resp):
+        assert get_session_status("nope") is None
+    with patch("app.services.session_client.requests.get",
+               side_effect=req_lib.RequestException("down")):
+        assert get_session_status("s1") is None
