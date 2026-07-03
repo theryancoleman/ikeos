@@ -86,7 +86,7 @@ def create_task():
             f"{CAPTURE_URL}/capture/json",
             json={
                 "type": "housekeeping-task",
-                "project": "claude-config",
+                "project": project_slug(),
                 "title": title,
                 "interval": interval,
                 "success_definition": success_definition,
@@ -114,7 +114,7 @@ def toggle_task(filename: str):
         resp = requests.patch(
             f"{CAPTURE_URL}/entries/housekeeping",
             json={
-                "project": task.get("project", "claude-config"),
+                "project": task.get("project", project_slug()),
                 "type": "housekeeping-task",
                 "filename": filename,
                 "fields": {"enabled": new_enabled},
@@ -142,7 +142,7 @@ def reset_task(filename: str):
         resp = requests.patch(
             f"{CAPTURE_URL}/entries/housekeeping",
             json={
-                "project": task.get("project", "claude-config"),
+                "project": task.get("project", project_slug()),
                 "type": "housekeeping-task",
                 "filename": filename,
                 "fields": {"last_run": "null", "consecutive_failures": "0"},
@@ -165,7 +165,7 @@ def delete_task(filename: str):
     task = next((t for t in tasks if t.get("filename") == filename), None)
     if not task:
         return jsonify({"error": "Task not found"}), 404
-    deleted = delete_housekeeping_task(task.get("project", "claude-config"), filename)
+    deleted = delete_housekeeping_task(task.get("project", project_slug()), filename)
     if not deleted:
         return jsonify({"error": "Task not found"}), 404
     return jsonify({"ok": True}), 200
