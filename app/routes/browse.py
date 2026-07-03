@@ -7,6 +7,7 @@ from app.services.vault import (
 from app.services.umbrella import get_components
 from app.services.skills import get_skills_by_category
 from app.services.blog_drafts import latest_draft_name
+from app.services.platform import project_slug
 
 bp = Blueprint("browse", __name__)
 
@@ -35,7 +36,7 @@ def tasks():
     needs_triage = [e for e in all_entries if e.get("status") == "new"]
 
     from app.routes.housekeeping import _age_str, _widget_status
-    heartbeat = read_housekeeping_heartbeat("claude-config")
+    heartbeat = read_housekeeping_heartbeat(project_slug())
     hk_age = _age_str(heartbeat.get("last_run"))
     hk_status = _widget_status(heartbeat)
     blog_draft = latest_draft_name()
