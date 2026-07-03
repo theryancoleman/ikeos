@@ -275,7 +275,7 @@ def test_dashboard_shows_blog_draft_ready(client, tmp_path):
     draft_dir.mkdir(parents=True)
     (draft_dir / "2026-06-22-weekly-draft.md").write_text("# Draft")
 
-    with patch("app.routes.housekeeping.AIOS_BLOG_POSTS_DIR", str(draft_dir)):
+    with patch.dict("os.environ", {"AIOS_BLOG_POSTS_DIR": str(draft_dir)}):
         resp = client.get("/tasks")
 
     assert resp.status_code == 200
@@ -289,7 +289,7 @@ def test_dashboard_shows_no_draft_when_absent(client, tmp_path):
     empty_dir = tmp_path / "posts"
     empty_dir.mkdir(parents=True)
 
-    with patch("app.routes.housekeeping.AIOS_BLOG_POSTS_DIR", str(empty_dir)):
+    with patch.dict("os.environ", {"AIOS_BLOG_POSTS_DIR": str(empty_dir)}):
         resp = client.get("/tasks")
 
     assert resp.status_code == 200

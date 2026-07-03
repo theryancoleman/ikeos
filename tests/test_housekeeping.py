@@ -270,9 +270,8 @@ def test_create_task_missing_success_definition_returns_400(client):
 def test_toggle_task_disables(client, tmp_path, monkeypatch):
     import app.services.vault as v
     import app.services.vault_cache as vc
-    import app.routes.housekeeping as hk_mod
     monkeypatch.setattr(vc, "VAULT_PATH", tmp_path)
-    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "tok")
+    monkeypatch.setenv("CAPTURE_TOKEN", "tok")
     folder = tmp_path / "projects" / "claude-config" / "housekeeping"
     folder.mkdir(parents=True)
     _write_task(folder, "2026-06-17-test-task.md", enabled="true")
@@ -291,9 +290,8 @@ def test_toggle_task_disables(client, tmp_path, monkeypatch):
 def test_toggle_task_enables(client, tmp_path, monkeypatch):
     import app.services.vault as v
     import app.services.vault_cache as vc
-    import app.routes.housekeeping as hk_mod
     monkeypatch.setattr(vc, "VAULT_PATH", tmp_path)
-    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "tok")
+    monkeypatch.setenv("CAPTURE_TOKEN", "tok")
     folder = tmp_path / "projects" / "claude-config" / "housekeeping"
     folder.mkdir(parents=True)
     _write_task(folder, "2026-06-17-test-task.md", enabled="false")
@@ -311,9 +309,8 @@ def test_toggle_task_enables(client, tmp_path, monkeypatch):
 def test_toggle_task_not_found_returns_404(client, tmp_path, monkeypatch):
     import app.services.vault as v
     import app.services.vault_cache as vc
-    import app.routes.housekeeping as hk_mod
     monkeypatch.setattr(vc, "VAULT_PATH", tmp_path)
-    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "tok")
+    monkeypatch.setenv("CAPTURE_TOKEN", "tok")
     (tmp_path / "projects" / "claude-config").mkdir(parents=True)
     resp = client.post("/housekeeping/tasks/nonexistent-task/toggle",
                        headers={"X-Capture-Token": "tok"})
@@ -323,9 +320,8 @@ def test_toggle_task_not_found_returns_404(client, tmp_path, monkeypatch):
 def test_reset_task_success(client, tmp_path, monkeypatch):
     import app.services.vault as v
     import app.services.vault_cache as vc
-    import app.routes.housekeeping as hk_mod
     monkeypatch.setattr(vc, "VAULT_PATH", tmp_path)
-    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "tok")
+    monkeypatch.setenv("CAPTURE_TOKEN", "tok")
     folder = tmp_path / "projects" / "claude-config" / "housekeeping"
     folder.mkdir(parents=True)
     _write_task(folder, "2026-06-17-some-task.md")
@@ -343,9 +339,8 @@ def test_reset_task_success(client, tmp_path, monkeypatch):
 def test_reset_task_not_found_returns_404(client, tmp_path, monkeypatch):
     import app.services.vault as v
     import app.services.vault_cache as vc
-    import app.routes.housekeeping as hk_mod
     monkeypatch.setattr(vc, "VAULT_PATH", tmp_path)
-    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "tok")
+    monkeypatch.setenv("CAPTURE_TOKEN", "tok")
     (tmp_path / "projects" / "claude-config").mkdir(parents=True)
     resp = client.post("/housekeeping/tasks/nonexistent-task/reset",
                        headers={"X-Capture-Token": "tok"})
@@ -404,8 +399,7 @@ def test_get_schedule_returns_defaults_when_no_file(client, monkeypatch, tmp_pat
 # ── PATCH /housekeeping/schedule ──
 
 def test_patch_schedule_requires_token(client, monkeypatch):
-    import app.routes.housekeeping as hk_mod
-    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "real-token")
+    monkeypatch.setenv("CAPTURE_TOKEN", "real-token")
     resp = client.patch("/housekeeping/schedule",
                         json={"enabled": True},
                         headers={"X-Capture-Token": "wrong-token"})
@@ -415,8 +409,7 @@ def test_patch_schedule_requires_token(client, monkeypatch):
 def test_patch_schedule_rejects_non_json_body(client, monkeypatch, tmp_path):
     (tmp_path / "projects" / "claude-config" / "housekeeping").mkdir(parents=True)
     monkeypatch.setenv("VAULT_PATH", str(tmp_path))
-    import app.routes.housekeeping as hk_mod
-    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "tok")
+    monkeypatch.setenv("CAPTURE_TOKEN", "tok")
     resp = client.patch("/housekeeping/schedule",
                         data="not json",
                         headers={"X-Capture-Token": "tok",
@@ -427,8 +420,7 @@ def test_patch_schedule_rejects_non_json_body(client, monkeypatch, tmp_path):
 def test_patch_schedule_rejects_invalid_hour(client, monkeypatch, tmp_path):
     (tmp_path / "projects" / "claude-config" / "housekeeping").mkdir(parents=True)
     monkeypatch.setenv("VAULT_PATH", str(tmp_path))
-    import app.routes.housekeeping as hk_mod
-    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "tok")
+    monkeypatch.setenv("CAPTURE_TOKEN", "tok")
     resp = client.patch("/housekeeping/schedule",
                         json={"hour": 25},
                         headers={"X-Capture-Token": "tok"})
@@ -439,8 +431,7 @@ def test_patch_schedule_rejects_invalid_hour(client, monkeypatch, tmp_path):
 def test_patch_schedule_rejects_invalid_day_of_week(client, monkeypatch, tmp_path):
     (tmp_path / "projects" / "claude-config" / "housekeeping").mkdir(parents=True)
     monkeypatch.setenv("VAULT_PATH", str(tmp_path))
-    import app.routes.housekeeping as hk_mod
-    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "tok")
+    monkeypatch.setenv("CAPTURE_TOKEN", "tok")
     resp = client.patch("/housekeeping/schedule",
                         json={"day_of_week": "xyz"},
                         headers={"X-Capture-Token": "tok"})
@@ -451,8 +442,7 @@ def test_patch_schedule_rejects_invalid_day_of_week(client, monkeypatch, tmp_pat
 def test_patch_schedule_updates_and_returns_config(client, monkeypatch, tmp_path):
     (tmp_path / "projects" / "claude-config" / "housekeeping").mkdir(parents=True)
     monkeypatch.setenv("VAULT_PATH", str(tmp_path))
-    import app.routes.housekeeping as hk_mod
-    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "tok")
+    monkeypatch.setenv("CAPTURE_TOKEN", "tok")
     resp = client.patch("/housekeeping/schedule",
                         json={"enabled": False, "hour": 4, "minute": 30, "day_of_week": "mon"},
                         headers={"X-Capture-Token": "tok"})
@@ -467,8 +457,7 @@ def test_patch_schedule_updates_and_returns_config(client, monkeypatch, tmp_path
 def test_patch_schedule_rejects_all_unrecognized_keys(client, monkeypatch, tmp_path):
     (tmp_path / "projects" / "claude-config" / "housekeeping").mkdir(parents=True)
     monkeypatch.setenv("VAULT_PATH", str(tmp_path))
-    import app.routes.housekeeping as hk_mod
-    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "tok")
+    monkeypatch.setenv("CAPTURE_TOKEN", "tok")
     resp = client.patch("/housekeeping/schedule",
                         json={"unknown_key": "value", "also_unknown": 123},
                         headers={"X-Capture-Token": "tok"})
@@ -476,31 +465,27 @@ def test_patch_schedule_rejects_all_unrecognized_keys(client, monkeypatch, tmp_p
     assert "No valid fields" in resp.get_json()["error"]
 
 
-def test_blog_draft_status_present_when_draft_exists(client, tmp_path):
+def test_blog_draft_status_present_when_draft_exists(client, tmp_path, monkeypatch):
     """GET /housekeeping shows blog draft status when draft file exists."""
-    from unittest.mock import patch
-
     draft_dir = tmp_path / "posts"
     draft_dir.mkdir(parents=True)
     draft_file = draft_dir / "2026-06-22-weekly-draft.md"
     draft_file.write_text("# Draft")
 
-    with patch("app.routes.housekeeping.AIOS_BLOG_POSTS_DIR", str(draft_dir)):
-        resp = client.get("/housekeeping")
+    monkeypatch.setenv("AIOS_BLOG_POSTS_DIR", str(draft_dir))
+    resp = client.get("/housekeeping")
 
     assert resp.status_code == 200
     assert b"2026-06-22-weekly-draft.md" in resp.data
 
 
-def test_blog_draft_status_no_draft(client, tmp_path):
+def test_blog_draft_status_no_draft(client, tmp_path, monkeypatch):
     """GET /housekeeping shows 'No draft' when posts dir is empty."""
-    from unittest.mock import patch
-
     empty_dir = tmp_path / "posts"
     empty_dir.mkdir(parents=True)
 
-    with patch("app.routes.housekeeping.AIOS_BLOG_POSTS_DIR", str(empty_dir)):
-        resp = client.get("/housekeeping")
+    monkeypatch.setenv("AIOS_BLOG_POSTS_DIR", str(empty_dir))
+    resp = client.get("/housekeeping")
 
     assert resp.status_code == 200
     assert b"No draft" in resp.data
@@ -509,9 +494,8 @@ def test_blog_draft_status_no_draft(client, tmp_path):
 # ── blog-draft auth guard ──
 
 def test_blog_draft_save_rejects_missing_token(client, tmp_path, monkeypatch):
-    import app.routes.housekeeping as hk_mod
-    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "secret-token")
-    monkeypatch.setattr(hk_mod, "AIOS_BLOG_POSTS_DIR", str(tmp_path))
+    monkeypatch.setenv("CAPTURE_TOKEN", "secret-token")
+    monkeypatch.setenv("AIOS_BLOG_POSTS_DIR", str(tmp_path))
     draft = tmp_path / "2026-06-30-weekly-draft.md"
     draft.write_text("# Hello")
     resp = client.post("/housekeeping/blog-draft/save",
@@ -520,9 +504,8 @@ def test_blog_draft_save_rejects_missing_token(client, tmp_path, monkeypatch):
 
 
 def test_blog_draft_save_rejects_wrong_token(client, tmp_path, monkeypatch):
-    import app.routes.housekeeping as hk_mod
-    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "secret-token")
-    monkeypatch.setattr(hk_mod, "AIOS_BLOG_POSTS_DIR", str(tmp_path))
+    monkeypatch.setenv("CAPTURE_TOKEN", "secret-token")
+    monkeypatch.setenv("AIOS_BLOG_POSTS_DIR", str(tmp_path))
     draft = tmp_path / "2026-06-30-weekly-draft.md"
     draft.write_text("# Hello")
     resp = client.post("/housekeeping/blog-draft/save",
@@ -532,9 +515,8 @@ def test_blog_draft_save_rejects_wrong_token(client, tmp_path, monkeypatch):
 
 
 def test_blog_draft_save_accepts_correct_token(client, tmp_path, monkeypatch):
-    import app.routes.housekeeping as hk_mod
-    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "secret-token")
-    monkeypatch.setattr(hk_mod, "AIOS_BLOG_POSTS_DIR", str(tmp_path))
+    monkeypatch.setenv("CAPTURE_TOKEN", "secret-token")
+    monkeypatch.setenv("AIOS_BLOG_POSTS_DIR", str(tmp_path))
     draft = tmp_path / "2026-06-30-weekly-draft.md"
     draft.write_text("# Hello")
     resp = client.post("/housekeeping/blog-draft/save",
@@ -545,18 +527,16 @@ def test_blog_draft_save_accepts_correct_token(client, tmp_path, monkeypatch):
 
 
 def test_blog_draft_publish_rejects_missing_token(client, tmp_path, monkeypatch):
-    import app.routes.housekeeping as hk_mod
-    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "secret-token")
-    monkeypatch.setattr(hk_mod, "AIOS_BLOG_POSTS_DIR", str(tmp_path))
+    monkeypatch.setenv("CAPTURE_TOKEN", "secret-token")
+    monkeypatch.setenv("AIOS_BLOG_POSTS_DIR", str(tmp_path))
     (tmp_path / "2026-06-30-weekly-draft.md").write_text("# Hello")
     resp = client.post("/housekeeping/blog-draft/publish")
     assert resp.status_code == 401
 
 
 def test_blog_draft_rewrite_rejects_missing_token(client, tmp_path, monkeypatch):
-    import app.routes.housekeeping as hk_mod
-    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "secret-token")
-    monkeypatch.setattr(hk_mod, "AIOS_BLOG_POSTS_DIR", str(tmp_path))
+    monkeypatch.setenv("CAPTURE_TOKEN", "secret-token")
+    monkeypatch.setenv("AIOS_BLOG_POSTS_DIR", str(tmp_path))
     (tmp_path / "2026-06-30-weekly-draft.md").write_text("# Hello")
     resp = client.post("/housekeeping/blog-draft/rewrite",
                        data={"feedback": "make it better"})
@@ -564,8 +544,7 @@ def test_blog_draft_rewrite_rejects_missing_token(client, tmp_path, monkeypatch)
 
 
 def test_blog_draft_publish_rejects_wrong_token(client, tmp_path, monkeypatch):
-    import app.routes.housekeeping as hk_mod
-    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "secret-token")
+    monkeypatch.setenv("CAPTURE_TOKEN", "secret-token")
     monkeypatch.setenv("AIOS_BLOG_POSTS_DIR", str(tmp_path))
     (tmp_path / "2026-06-30-weekly-draft.md").write_text("# Hello")
     resp = client.post("/housekeeping/blog-draft/publish",
@@ -574,8 +553,7 @@ def test_blog_draft_publish_rejects_wrong_token(client, tmp_path, monkeypatch):
 
 
 def test_blog_draft_rewrite_rejects_wrong_token(client, tmp_path, monkeypatch):
-    import app.routes.housekeeping as hk_mod
-    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "secret-token")
+    monkeypatch.setenv("CAPTURE_TOKEN", "secret-token")
     monkeypatch.setenv("AIOS_BLOG_POSTS_DIR", str(tmp_path))
     (tmp_path / "2026-06-30-weekly-draft.md").write_text("# Hello")
     resp = client.post("/housekeeping/blog-draft/rewrite",
@@ -585,8 +563,7 @@ def test_blog_draft_rewrite_rejects_wrong_token(client, tmp_path, monkeypatch):
 
 
 def test_blog_draft_save_returns_503_when_token_unconfigured(client, tmp_path, monkeypatch):
-    import app.routes.housekeeping as hk_mod
-    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "")
+    monkeypatch.setenv("CAPTURE_TOKEN", "")
     monkeypatch.setenv("AIOS_BLOG_POSTS_DIR", str(tmp_path))
     (tmp_path / "2026-06-30-weekly-draft.md").write_text("# Hello")
     resp = client.post("/housekeeping/blog-draft/save",
@@ -622,9 +599,8 @@ def test_patch_capability_requires_auth(client):
 
 def test_patch_capability_enables(client, tmp_path, monkeypatch):
     monkeypatch.setenv("VAULT_PATH", str(tmp_path))
+    monkeypatch.setenv("CAPTURE_TOKEN", "tok")
     (tmp_path / "projects" / "claude-config" / "housekeeping").mkdir(parents=True)
-    monkeypatch.setattr("app.routes.housekeeping.CAPTURE_TOKEN", "tok")
-    from unittest.mock import patch
     with patch("app.services.capabilities.append_event"):
         resp = client.patch(
             "/housekeeping/capabilities/housekeeping_scheduler",
@@ -639,7 +615,7 @@ def test_patch_capability_enables(client, tmp_path, monkeypatch):
 
 
 def test_patch_capability_rejects_unknown_name(client, monkeypatch):
-    monkeypatch.setattr("app.routes.housekeeping.CAPTURE_TOKEN", "tok")
+    monkeypatch.setenv("CAPTURE_TOKEN", "tok")
     resp = client.patch(
         "/housekeeping/capabilities/nonexistent_cap",
         json={"enabled": True},
@@ -650,7 +626,7 @@ def test_patch_capability_rejects_unknown_name(client, monkeypatch):
 
 
 def test_patch_capability_rejects_missing_enabled_field(client, monkeypatch):
-    monkeypatch.setattr("app.routes.housekeeping.CAPTURE_TOKEN", "tok")
+    monkeypatch.setenv("CAPTURE_TOKEN", "tok")
     resp = client.patch(
         "/housekeeping/capabilities/housekeeping_scheduler",
         json={"something": "else"},
@@ -661,10 +637,9 @@ def test_patch_capability_rejects_missing_enabled_field(client, monkeypatch):
 
 
 def test_blog_draft_rewrite_creates_session(client, tmp_path, monkeypatch):
-    import app.routes.housekeeping as hk_mod
-    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "tok")
-    monkeypatch.setattr(hk_mod, "AIOS_BLOG_POSTS_DIR", str(tmp_path))
-    monkeypatch.setattr(hk_mod, "AIOS_BLOG_PROJECT_DIR", "/srv/blog")
+    monkeypatch.setenv("CAPTURE_TOKEN", "tok")
+    monkeypatch.setenv("AIOS_BLOG_POSTS_DIR", str(tmp_path))
+    monkeypatch.setenv("AIOS_BLOG_PROJECT_DIR", "/srv/blog")
     (tmp_path / "2026-07-01-weekly-draft.md").write_text("# Draft")
 
     mock_resp = MagicMock()
@@ -686,19 +661,15 @@ def test_blog_draft_rewrite_creates_session(client, tmp_path, monkeypatch):
 
 
 def test_blog_draft_rewrite_409_sends_command_to_running_session(client, tmp_path, monkeypatch):
-    import app.routes.housekeeping as hk_mod
-    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "tok")
-    monkeypatch.setattr(hk_mod, "AIOS_BLOG_POSTS_DIR", str(tmp_path))
-    monkeypatch.setattr(hk_mod, "AIOS_BLOG_PROJECT_DIR", "/srv/blog")
-    monkeypatch.setattr(hk_mod, "SESSION_MANAGER_URL", "http://mock-sm")
+    monkeypatch.setenv("CAPTURE_TOKEN", "tok")
+    monkeypatch.setenv("AIOS_BLOG_POSTS_DIR", str(tmp_path))
+    monkeypatch.setenv("AIOS_BLOG_PROJECT_DIR", "/srv/blog")
     (tmp_path / "2026-07-01-weekly-draft.md").write_text("# Draft")
 
     from app.services.session_client import SessionResult
-    with patch("app.routes.housekeeping.create_session",
+    with patch("app.services.driver.create_session",
                return_value=SessionResult(session_id="existing-rw", already_running=True)):
-        cmd_mock = MagicMock()
-        cmd_mock.ok = True
-        with patch("app.routes.housekeeping.requests.post", return_value=cmd_mock):
+        with patch("app.services.driver.send_command", return_value=True):
             resp = client.post(
                 "/housekeeping/blog-draft/rewrite",
                 data={"feedback": "different angle"},
@@ -711,10 +682,9 @@ def test_blog_draft_rewrite_409_sends_command_to_running_session(client, tmp_pat
 
 
 def test_blog_draft_publish_creates_session(client, tmp_path, monkeypatch):
-    import app.routes.housekeeping as hk_mod
-    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "tok")
-    monkeypatch.setattr(hk_mod, "AIOS_BLOG_POSTS_DIR", str(tmp_path))
-    monkeypatch.setattr(hk_mod, "AIOS_BLOG_PROJECT_DIR", "/srv/blog")
+    monkeypatch.setenv("CAPTURE_TOKEN", "tok")
+    monkeypatch.setenv("AIOS_BLOG_POSTS_DIR", str(tmp_path))
+    monkeypatch.setenv("AIOS_BLOG_PROJECT_DIR", "/srv/blog")
     (tmp_path / "2026-07-01-weekly-draft.md").write_text("# Draft")
 
     mock_resp = MagicMock()
@@ -737,23 +707,20 @@ def test_blog_draft_publish_creates_session(client, tmp_path, monkeypatch):
 # ── GET /housekeeping/weekly-review ──
 
 def test_weekly_review_returns_200_with_no_review_dir(client, monkeypatch):
-    import app.routes.housekeeping as hk_mod
-    monkeypatch.setattr(hk_mod, "WEEKLY_REVIEW_OUTPUT_DIR", "")
+    monkeypatch.setenv("WEEKLY_REVIEW_OUTPUT_DIR", "")
     resp = client.get("/housekeeping/weekly-review")
     assert resp.status_code == 200
     assert b"No review" in resp.data or b"weekly" in resp.data.lower()
 
 
 def test_weekly_review_returns_200_with_no_files(client, monkeypatch, tmp_path):
-    import app.routes.housekeeping as hk_mod
-    monkeypatch.setattr(hk_mod, "WEEKLY_REVIEW_OUTPUT_DIR", str(tmp_path))
+    monkeypatch.setenv("WEEKLY_REVIEW_OUTPUT_DIR", str(tmp_path))
     resp = client.get("/housekeeping/weekly-review")
     assert resp.status_code == 200
 
 
 def test_weekly_review_returns_latest_file_content(client, monkeypatch, tmp_path):
-    import app.routes.housekeeping as hk_mod
-    monkeypatch.setattr(hk_mod, "WEEKLY_REVIEW_OUTPUT_DIR", str(tmp_path))
+    monkeypatch.setenv("WEEKLY_REVIEW_OUTPUT_DIR", str(tmp_path))
     (tmp_path / "2026-06-30-weekly-review.md").write_text("# Review June 30")
     (tmp_path / "2026-07-01-weekly-review.md").write_text("# Review July 1")
     resp = client.get("/housekeeping/weekly-review")
@@ -764,9 +731,8 @@ def test_weekly_review_returns_latest_file_content(client, monkeypatch, tmp_path
 # ── POST /housekeeping/weekly-review/run ──
 
 def test_weekly_review_run_returns_403_when_capability_disabled(client, monkeypatch):
-    import app.routes.housekeeping as hk_mod
-    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "tok")
-    monkeypatch.setattr(hk_mod, "is_enabled", lambda name: False)
+    monkeypatch.setenv("CAPTURE_TOKEN", "tok")
+    monkeypatch.setattr("app.routes.housekeeping.is_enabled", lambda name: False)
     resp = client.post(
         "/housekeeping/weekly-review/run",
         headers={"X-Capture-Token": "tok"},
@@ -776,11 +742,8 @@ def test_weekly_review_run_returns_403_when_capability_disabled(client, monkeypa
 
 
 def test_weekly_review_run_creates_session_when_enabled(client, monkeypatch):
-    import app.routes.housekeeping as hk_mod
-    from unittest.mock import patch, MagicMock
-    monkeypatch.setattr(hk_mod, "CAPTURE_TOKEN", "tok")
-    monkeypatch.setattr(hk_mod, "HOUSEKEEPING_PROJECT_DIR", "/srv/claude-config")
-    monkeypatch.setattr(hk_mod, "is_enabled", lambda name: True)
+    monkeypatch.setenv("CAPTURE_TOKEN", "tok")
+    monkeypatch.setattr("app.routes.housekeeping.is_enabled", lambda name: True)
 
     mock_resp = MagicMock()
     mock_resp.ok = True
