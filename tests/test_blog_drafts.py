@@ -68,6 +68,21 @@ def test_save_draft_raises_when_no_draft(posts_dir):
         blog_drafts.save_draft("content", "sky")
 
 
+def test_latest_draft_none_when_dir_not_configured(monkeypatch):
+    monkeypatch.delenv("AIOS_BLOG_POSTS_DIR", raising=False)
+    assert blog_drafts.latest_draft_paths() == (None, None)
+    assert blog_drafts.latest_draft_name() is None
+    assert blog_drafts.read_draft_bundle() is None
+
+
+def test_save_draft_works_without_bluesky_file(posts_dir):
+    (posts_dir / "2026-07-01-weekly-draft.md").write_text("old body", encoding="utf-8")
+    # no bluesky file
+    filename = blog_drafts.save_draft("new body", "")
+    assert filename == "2026-07-01-weekly-draft.md"
+    assert (posts_dir / "2026-07-01-weekly-draft.md").read_text(encoding="utf-8") == "new body"
+
+
 def test_latest_review_none_when_empty(review_dir):
     assert reviews.latest_review_name() is None
 

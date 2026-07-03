@@ -2,14 +2,15 @@ import os
 from pathlib import Path
 
 
-def _posts_dir() -> Path:
-    return Path(os.environ.get("AIOS_BLOG_POSTS_DIR", ""))
+def _posts_dir() -> Path | None:
+    d = os.environ.get("AIOS_BLOG_POSTS_DIR", "")
+    return Path(d) if d else None
 
 
 def latest_draft_paths() -> tuple[Path | None, Path | None]:
     """Return (draft_path, bluesky_path) for the latest weekly draft, or (None, None)."""
     posts = _posts_dir()
-    if not posts.exists():
+    if not posts or not posts.exists():
         return None, None
     drafts = sorted(posts.glob("*-weekly-draft.md"), reverse=True)
     if not drafts:
@@ -46,6 +47,6 @@ def save_draft(content: str, bluesky_text: str) -> str:
     if not draft:
         raise FileNotFoundError("No draft file found")
     draft.write_text(content, encoding="utf-8")
-    if bluesky and bluesky_text:
+    if bluesky:
         bluesky.write_text(bluesky_text, encoding="utf-8")
     return draft.name
