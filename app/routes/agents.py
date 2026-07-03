@@ -1,21 +1,19 @@
-import os
 import re
 import requests
 from datetime import datetime
 from flask import Blueprint, render_template, jsonify, request
 
+from app.routes.auth import require_capture_token
 from app.services.metrics import append_event, read_events
+from app.services.session_client import session_manager_url
 
 bp = Blueprint("agents", __name__)
-
-SESSION_MANAGER_URL = "http://host.docker.internal:5010"
-CAPTURE_TOKEN = os.environ.get("CAPTURE_TOKEN", "")
 
 _CONTAINER_NAME_RE = re.compile(r'^[a-zA-Z0-9][a-zA-Z0-9_.\-]+$')
 
 
 def _proxy(method: str, path: str, **kwargs):
-    url = f"{SESSION_MANAGER_URL}{path}"
+    url = f"{session_manager_url()}{path}"
     resp = requests.request(method, url, timeout=5, **kwargs)
     return resp.json(), resp.status_code
 
@@ -189,11 +187,8 @@ def metrics_view() -> str:
 
 
 @bp.route("/metrics/event", methods=["POST"])
+@require_capture_token
 def metrics_event() -> tuple:
-    if not CAPTURE_TOKEN:
-        return jsonify({"error": "Service unavailable"}), 503
-    if request.headers.get("X-Capture-Token", "") != CAPTURE_TOKEN:
-        return jsonify({"error": "Unauthorized"}), 401
     if not request.is_json:
         return jsonify({"error": "JSON body required"}), 400
     data = dict(request.get_json(silent=True) or {})
