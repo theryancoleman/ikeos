@@ -35,7 +35,7 @@ def test_create_session(client, mocker):
     resp = client.post("/sessions", json={
         "name": "test-session",
         "project": "my-proj",
-        "project_dir": "/mnt/c/Server/projects/my-proj",
+        "project_dir": "/home/user/projects/my-proj",
         "remote_control": False,
     })
     assert resp.status_code == 201

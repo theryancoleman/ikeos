@@ -25,7 +25,7 @@ def test_list_sessions_empty():
 
 
 def test_create_session_returns_record():
-    s = create_session("test", "my-project", "/mnt/c/Server/projects/my-project")
+    s = create_session("test", "my-project", "/home/user/projects/my-project")
     assert s["name"] == "test"
     assert s["project"] == "my-project"
     assert s["status"] == "active"

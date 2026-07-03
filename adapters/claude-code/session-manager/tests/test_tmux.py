@@ -18,9 +18,9 @@ def test_has_session_returns_false_when_missing(mocker):
 
 def test_launch_session_runs_correct_command(mocker):
     mock_run = mocker.patch("subprocess.run")
-    tmux.launch_session("my-session", "/mnt/c/Server/projects/foo")
+    tmux.launch_session("my-session", "/home/user/projects/foo")
     expected = ["tmux", "new-session", "-d", "-s", "my-session",
-                "-c", "/mnt/c/Server/projects/foo",
+                "-c", "/home/user/projects/foo",
                 "bash", "-lc", shlex.join(tmux.CLAUDE_CMD)]
     mock_run.assert_called_once_with(expected, check=True)
 

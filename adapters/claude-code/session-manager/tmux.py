@@ -5,10 +5,10 @@ import time
 
 from pane_parser import parse_activity
 
-CLAUDE_BIN = os.environ.get("CLAUDE_BIN", "/home/autoserver/bin/claude")
+CLAUDE_BIN = os.environ.get("CLAUDE_BIN", "claude")
 PLUGIN_BASE = os.environ.get(
     "CLAUDE_PLUGIN_BASE",
-    "/mnt/c/Users/autoserver/.claude/plugins/cache/claude-plugins-official",
+    os.path.expanduser("~/.claude/plugins/cache/claude-plugins-official"),
 )
 CLAUDE_CMD = [
     CLAUDE_BIN,
