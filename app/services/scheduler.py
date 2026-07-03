@@ -4,8 +4,9 @@ import os
 from datetime import datetime
 from pathlib import Path
 
+from app.services.driver import run_scheduled_housekeeping
 from app.services.metrics import append_event
-from app.services.session_client import create_session
+from app.services.platform import project_slug
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +24,7 @@ _scheduler = None  # set by start(); None in tests and before startup
 
 def _schedule_path() -> Path:
     vault = Path(os.environ.get("VAULT_PATH", "/vault"))
-    return vault / "projects" / "claude-config" / "housekeeping" / "schedule.json"
+    return vault / "projects" / project_slug() / "housekeeping" / "schedule.json"
 
 
 def _write_config(config: dict) -> None:
@@ -113,32 +114,22 @@ def get_config_with_next_run() -> dict:
 
 
 def trigger_now() -> str | None:
-    now = datetime.now()
-    session_name = f"housekeeping-{now.strftime('%Y%m%d')}"
-    project_dir = os.environ.get("HOUSEKEEPING_PROJECT_DIR", "/mnt/c/Server/claude-config")
-    result = create_session(
-        name=session_name,
-        project="claude-config",
-        project_dir=project_dir,
-        initial_command="/housekeeping — run in scheduled mode",
-    )
+    result = run_scheduled_housekeeping()
     if not result.ok:
         logger.error("Failed to create housekeeping session: %s", result.error)
         return None
     session_id = result.session_id
     config = get_config()
-    config["last_triggered"] = now.isoformat(timespec="seconds")
+    config["last_triggered"] = datetime.now().isoformat(timespec="seconds")
     try:
         _write_config(config)
     except OSError:
         logger.exception("Failed to write last_triggered after scheduling housekeeping session")
-
     append_event("housekeeping.trigger", {
         "trigger": "scheduled" if _scheduler else "manual",
         "session_id": session_id,
-        "project": "claude-config",
+        "project": project_slug(),
     })
-
     return session_id
 
 
@@ -154,6 +145,12 @@ def _job() -> None:
 def start(app) -> None:
     global _scheduler
     if app.config.get("TESTING"):
+        return
+    if _scheduler is not None and _scheduler.running:
+        logger.warning(
+            "APScheduler already running in this process — skipping duplicate start. "
+            "Run gunicorn with --workers 1 to avoid duplicate housekeeping triggers."
+        )
         return
     from apscheduler.schedulers.background import BackgroundScheduler
 

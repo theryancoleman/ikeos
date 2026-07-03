@@ -125,13 +125,12 @@ See the `DECISIONS.md` entry "ENTRY_TYPE_CONFIG is the single registry" for the 
 Skills are defined in `skills_registry.yaml`. Each skill has a name, category, description, and usage examples.
 
 ```yaml
-my-skill:
-  name: My Skill
-  category: workflow
-  description: "What this skill does in one sentence."
-  usage: "/my-skill"
-  examples:
-    - "When to invoke this skill"
+skills:
+  - command: /my-skill
+    category: Workflow
+    description: "What this skill does in one sentence."
+    added: 'YYYY-MM-DD'        # optional; drives "New" badge for 14 days
+    updated: 'YYYY-MM-DD'     # optional; drives "Updated" badge for 14 days
 ```
 
 Skills are displayed on the `/skills` page. The `skills.py` service reads `skills_registry.yaml` and groups entries by `category`.

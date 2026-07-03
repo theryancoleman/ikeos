@@ -99,8 +99,7 @@ def test_metrics_event_post_requires_auth(client):
 
 
 def test_metrics_event_post_appends_event(client, tmp_path, monkeypatch):
-    import app.routes.agents as agents_mod
-    monkeypatch.setattr(agents_mod, "CAPTURE_TOKEN", "tok")
+    monkeypatch.setenv("CAPTURE_TOKEN", "tok")
     events_file = tmp_path / "events.jsonl"
     with patch("app.services.metrics.METRICS_PATH", events_file):
         resp = client.post(

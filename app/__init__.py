@@ -69,8 +69,12 @@ def create_app(config: dict | None = None) -> Flask:
 
     @app.context_processor
     def inject_config_version():
+        from app.services.platform import config_version_path
+        path = config_version_path()
+        if not path:
+            return {"config_version": None}
         try:
-            with open("/claude-config/VERSION") as f:
+            with open(path) as f:
                 version = f.read().strip()
         except OSError:
             version = None

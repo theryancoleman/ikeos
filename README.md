@@ -104,4 +104,6 @@ docker exec ikeos pytest     # run tests
 
 See [CLAUDE.md](CLAUDE.md) for the full architecture and Claude Code adapter contract.
 
+The wire contract for session drivers is documented in [docs/SESSION_DRIVER_API.md](docs/SESSION_DRIVER_API.md).
+
 See [.claude/DECISIONS.md](.claude/DECISIONS.md) for the history of architectural decisions.

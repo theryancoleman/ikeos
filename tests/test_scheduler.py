@@ -90,118 +90,38 @@ def test_update_config_rejects_invalid_minute(sched_vault, monkeypatch):
 
 
 from unittest.mock import patch, MagicMock
+from app.services.session_client import SessionResult
 
 
 # ── trigger_now ──
 
-def test_trigger_now_creates_session_and_sends_command(sched_vault, monkeypatch):
-    monkeypatch.setenv("VAULT_PATH", str(sched_vault))
-    monkeypatch.setenv("SESSION_MANAGER_URL", "http://mock-sm")
-
-    mock_create = MagicMock()
-    mock_create.ok = True
-    mock_create.status_code = 200
-    mock_create.json.return_value = {"id": "sess-abc"}
-
-    with patch("app.services.session_client.requests.post", return_value=mock_create) as mock_post:
-        from app.services.scheduler import trigger_now
-        result = trigger_now()
-
-    assert result == "sess-abc"
-    assert mock_post.call_count == 1
-    call = mock_post.call_args_list[0]
-    assert call[0][0] == "http://mock-sm/sessions"
-    body = call[1]["json"]
-    assert body["initial_command"] == "/housekeeping — run in scheduled mode"
-
-
-def test_trigger_now_session_name_starts_with_housekeeping(sched_vault, monkeypatch):
-    monkeypatch.setenv("VAULT_PATH", str(sched_vault))
-    monkeypatch.setenv("SESSION_MANAGER_URL", "http://mock-sm")
-
-    mock_create = MagicMock()
-    mock_create.ok = True
-    mock_create.status_code = 200
-    mock_create.json.return_value = {"id": "sess-xyz"}
-
-    with patch("app.services.session_client.requests.post",
-               return_value=mock_create) as mock_post:
-        from app.services.scheduler import trigger_now
-        trigger_now()
-
-    first_body = mock_post.call_args_list[0][1]["json"]
-    assert first_body["name"].startswith("housekeeping-")
-    suffix = first_body["name"].removeprefix("housekeeping-")
-    assert len(suffix) == 8
-    assert suffix.isdigit()
-
-
-def test_trigger_now_returns_none_on_request_error(sched_vault, monkeypatch):
-    monkeypatch.setenv("VAULT_PATH", str(sched_vault))
-    monkeypatch.setenv("SESSION_MANAGER_URL", "http://mock-sm")
-
-    import requests as req_mod
-    with patch("app.services.session_client.requests.post",
-               side_effect=req_mod.RequestException("timeout")):
-        from app.services.scheduler import trigger_now
-        result = trigger_now()
-
-    assert result is None
-
-
-def test_trigger_now_returns_none_when_session_create_fails(sched_vault, monkeypatch):
-    monkeypatch.setenv("VAULT_PATH", str(sched_vault))
-    monkeypatch.setenv("SESSION_MANAGER_URL", "http://mock-sm")
-
-    mock_create = MagicMock()
-    mock_create.ok = False
-    mock_create.status_code = 503
-
-    with patch("app.services.session_client.requests.post",
-               return_value=mock_create):
-        from app.services.scheduler import trigger_now
-        result = trigger_now()
-
-    assert result is None
-
-
 def test_trigger_now_returns_session_id_on_success(sched_vault, monkeypatch):
-    """trigger_now returns the session ID once the session is created and
-    last_triggered is persisted to the schedule config."""
     monkeypatch.setenv("VAULT_PATH", str(sched_vault))
-    monkeypatch.setenv("SESSION_MANAGER_URL", "http://mock-sm")
-
-    mock_create = MagicMock()
-    mock_create.ok = True
-    mock_create.status_code = 200
-    mock_create.json.return_value = {"id": "sess-fail-cmd"}
-
-    with patch("app.services.session_client.requests.post", return_value=mock_create):
-        from app.services.scheduler import trigger_now, get_config
+    ok_result = SessionResult(session_id="sess-abc")
+    with patch("app.services.scheduler.run_scheduled_housekeeping", return_value=ok_result):
+        from app.services.scheduler import trigger_now
         result = trigger_now()
-
-    assert result == "sess-fail-cmd"
-    config = get_config()
-    assert config["last_triggered"] is not None
+    assert result == "sess-abc"
 
 
 def test_trigger_now_updates_last_triggered_in_config(sched_vault, monkeypatch):
     monkeypatch.setenv("VAULT_PATH", str(sched_vault))
-    monkeypatch.setenv("SESSION_MANAGER_URL", "http://mock-sm")
-
-    mock_create = MagicMock()
-    mock_create.ok = True
-    mock_create.status_code = 200
-    mock_create.json.return_value = {"id": "sess-ts"}
-
-    with patch("app.services.session_client.requests.post",
-               return_value=mock_create):
+    ok_result = SessionResult(session_id="sess-ts")
+    with patch("app.services.scheduler.run_scheduled_housekeeping", return_value=ok_result):
         from app.services.scheduler import trigger_now, get_config
         trigger_now()
-
     config = get_config()
     assert config["last_triggered"] is not None
-    assert "T" in config["last_triggered"]  # ISO datetime
+    assert "T" in config["last_triggered"]
+
+
+def test_trigger_now_returns_none_on_failure(sched_vault, monkeypatch):
+    monkeypatch.setenv("VAULT_PATH", str(sched_vault))
+    err_result = SessionResult(session_id="", error="Session manager unreachable")
+    with patch("app.services.scheduler.run_scheduled_housekeeping", return_value=err_result):
+        from app.services.scheduler import trigger_now
+        result = trigger_now()
+    assert result is None
 
 
 # ── _job capability gate ──
@@ -224,3 +144,45 @@ def test_job_calls_trigger_when_capability_enabled(sched_vault, monkeypatch):
         from app.services.scheduler import _job
         _job()
     mock_trigger.assert_called_once()
+
+
+# ── start() multi-worker guard ──
+
+def test_start_skips_when_scheduler_already_running(sched_vault, monkeypatch):
+    """Second call to start() does not replace the running scheduler."""
+    monkeypatch.setenv("VAULT_PATH", str(sched_vault))
+    import app.services.scheduler as sched_mod
+
+    mock_sched = MagicMock()
+    mock_sched.running = True
+    original = sched_mod._scheduler
+    sched_mod._scheduler = mock_sched
+    try:
+        fake_app = MagicMock()
+        fake_app.config = {}
+        from app.services.scheduler import start
+        start(fake_app)
+        assert sched_mod._scheduler is mock_sched
+    finally:
+        sched_mod._scheduler = original
+
+
+def test_start_logs_warning_when_already_running(sched_vault, monkeypatch, caplog):
+    """Second call to start() logs a warning about the duplicate start."""
+    import logging
+    monkeypatch.setenv("VAULT_PATH", str(sched_vault))
+    import app.services.scheduler as sched_mod
+
+    mock_sched = MagicMock()
+    mock_sched.running = True
+    original = sched_mod._scheduler
+    sched_mod._scheduler = mock_sched
+    try:
+        fake_app = MagicMock()
+        fake_app.config = {}
+        with caplog.at_level(logging.WARNING, logger="app.services.scheduler"):
+            from app.services.scheduler import start
+            start(fake_app)
+        assert "already running" in caplog.text.lower()
+    finally:
+        sched_mod._scheduler = original

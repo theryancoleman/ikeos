@@ -25,8 +25,9 @@ DEFAULT_CAPABILITIES: dict = {
 
 
 def _capabilities_path() -> Path:
+    from app.services.platform import project_slug
     vault = Path(os.environ.get("VAULT_PATH", "/vault"))
-    return vault / "projects" / "claude-config" / "housekeeping" / "capabilities.json"
+    return vault / "projects" / project_slug() / "housekeeping" / "capabilities.json"
 
 
 def get_capabilities() -> dict:
