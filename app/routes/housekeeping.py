@@ -17,6 +17,11 @@ from app.services.platform import project_slug
 from app.services.reviews import latest_review_name, read_latest_review
 from app.services.scheduler import get_config_with_next_run, update_config
 from app.services.session_client import get_session_status
+from app.services.vault import (
+    delete_housekeeping_task,
+    read_housekeeping_heartbeat,
+    read_housekeeping_tasks,
+)
 
 bp = Blueprint("housekeeping", __name__)
 
@@ -63,6 +68,8 @@ def index():
     return render_template("housekeeping.html", **_housekeeping_context())
 
 
+# Intentionally unauthenticated at this layer — the upstream capture API
+# validates the payload. Task creation is lower-risk than mutation endpoints.
 @bp.route("/housekeeping/tasks", methods=["POST"])
 def create_task():
     title = request.form.get("title", "").strip()
@@ -97,7 +104,6 @@ def create_task():
 @bp.route("/housekeeping/tasks/<filename>/toggle", methods=["POST"])
 @require_capture_token
 def toggle_task(filename: str):
-    from app.services.vault import read_housekeeping_tasks
     tasks = read_housekeeping_tasks()
     task = next((t for t in tasks if t.get("filename") == filename), None)
     if not task:
@@ -127,7 +133,6 @@ def toggle_task(filename: str):
 @bp.route("/housekeeping/tasks/<filename>/reset", methods=["POST"])
 @require_capture_token
 def reset_task(filename: str):
-    from app.services.vault import read_housekeeping_tasks
     tasks = read_housekeeping_tasks()
     task = next((t for t in tasks if t.get("filename") == filename), None)
     if not task:
@@ -156,7 +161,6 @@ def reset_task(filename: str):
 @bp.route("/housekeeping/tasks/<filename>/delete", methods=["POST"])
 @require_capture_token
 def delete_task(filename: str):
-    from app.services.vault import read_housekeeping_tasks, delete_housekeeping_task
     tasks = read_housekeeping_tasks()
     task = next((t for t in tasks if t.get("filename") == filename), None)
     if not task:
@@ -236,7 +240,6 @@ def blog_draft_rewrite():
 
 
 def _housekeeping_context() -> dict:
-    from app.services.vault import read_housekeeping_tasks, read_housekeeping_heartbeat
     tasks = read_housekeeping_tasks()
     heartbeat = read_housekeeping_heartbeat(project_slug())
     schedule = get_config_with_next_run()
