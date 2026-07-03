@@ -144,3 +144,45 @@ def test_job_calls_trigger_when_capability_enabled(sched_vault, monkeypatch):
         from app.services.scheduler import _job
         _job()
     mock_trigger.assert_called_once()
+
+
+# ── start() multi-worker guard ──
+
+def test_start_skips_when_scheduler_already_running(sched_vault, monkeypatch):
+    """Second call to start() does not replace the running scheduler."""
+    monkeypatch.setenv("VAULT_PATH", str(sched_vault))
+    import app.services.scheduler as sched_mod
+
+    mock_sched = MagicMock()
+    mock_sched.running = True
+    original = sched_mod._scheduler
+    sched_mod._scheduler = mock_sched
+    try:
+        fake_app = MagicMock()
+        fake_app.config = {}
+        from app.services.scheduler import start
+        start(fake_app)
+        assert sched_mod._scheduler is mock_sched
+    finally:
+        sched_mod._scheduler = original
+
+
+def test_start_logs_warning_when_already_running(sched_vault, monkeypatch, caplog):
+    """Second call to start() logs a warning about the duplicate start."""
+    import logging
+    monkeypatch.setenv("VAULT_PATH", str(sched_vault))
+    import app.services.scheduler as sched_mod
+
+    mock_sched = MagicMock()
+    mock_sched.running = True
+    original = sched_mod._scheduler
+    sched_mod._scheduler = mock_sched
+    try:
+        fake_app = MagicMock()
+        fake_app.config = {}
+        with caplog.at_level(logging.WARNING, logger="app.services.scheduler"):
+            from app.services.scheduler import start
+            start(fake_app)
+        assert "already running" in caplog.text.lower()
+    finally:
+        sched_mod._scheduler = original

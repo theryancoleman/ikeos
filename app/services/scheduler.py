@@ -146,6 +146,12 @@ def start(app) -> None:
     global _scheduler
     if app.config.get("TESTING"):
         return
+    if _scheduler is not None and _scheduler.running:
+        logger.warning(
+            "APScheduler already running in this process — skipping duplicate start. "
+            "Run gunicorn with --workers 1 to avoid duplicate housekeeping triggers."
+        )
+        return
     from apscheduler.schedulers.background import BackgroundScheduler
 
     config = get_config()
