@@ -7,6 +7,7 @@ from app.services.vault import (
     PATCH_VALID_TYPES, CAPTURE_JSON_VALID_TYPES,
 )
 from app.services.umbrella import get_components
+from app.services.metrics import append_event
 
 bp = Blueprint("capture", __name__)
 
@@ -181,6 +182,14 @@ def patch_housekeeping():
     success = update_housekeeping_fields(entry_type, project, filename, fields)
     if not success:
         return jsonify({"error": "Entry not found or no valid fields provided"}), 404
+
+    if entry_type == "housekeeping-heartbeat" and "tasks_run" in fields:
+        append_event("housekeeping.run", {
+            "trigger": fields.get("trigger", "scheduled"),
+            "tasks_run": int(fields.get("tasks_run") or 0),
+            "tasks_failed": int(fields.get("tasks_failed") or 0),
+            "tasks_skipped": int(fields.get("tasks_skipped") or 0),
+        })
 
     return jsonify({"message": "Updated"}), 200
 
