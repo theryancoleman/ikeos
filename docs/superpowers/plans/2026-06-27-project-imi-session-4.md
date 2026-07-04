@@ -53,7 +53,7 @@ Sub-modules access `VAULT_PATH` via `import app.services.vault_cache as _vc` and
 
 This module owns all shared state. No other vault sub-module should define `VAULT_PATH` or cache globals.
 
-- [ ] **Step 1: Confirm baseline tests pass**
+- [x] **Step 1: Confirm baseline tests pass**
 
 ```bash
 docker exec ikeos pytest tests/test_vault.py -q 2>&1 | tail -5
@@ -61,7 +61,7 @@ docker exec ikeos pytest tests/test_vault.py -q 2>&1 | tail -5
 
 Expected: All tests pass (no failures). If any fail, stop and fix before proceeding.
 
-- [ ] **Step 2: Create `app/services/vault_cache.py`**
+- [x] **Step 2: Create `app/services/vault_cache.py`**
 
 ```python
 import os
@@ -109,7 +109,7 @@ def _invalidate_cache() -> None:
     _hub_pages_cache_ts = 0.0
 ```
 
-- [ ] **Step 3: Verify vault_cache imports correctly**
+- [x] **Step 3: Verify vault_cache imports correctly**
 
 ```bash
 docker exec ikeos python -c "from app.services.vault_cache import VAULT_PATH, _invalidate_cache, TYPE_FOLDERS; print('OK', VAULT_PATH)"
@@ -117,7 +117,7 @@ docker exec ikeos python -c "from app.services.vault_cache import VAULT_PATH, _i
 
 Expected: `OK /vault`
 
-- [ ] **Step 4: Confirm existing tests still pass (vault.py unchanged)**
+- [x] **Step 4: Confirm existing tests still pass (vault.py unchanged)**
 
 ```bash
 docker exec ikeos pytest tests/test_vault.py -q 2>&1 | tail -5
@@ -125,7 +125,7 @@ docker exec ikeos pytest tests/test_vault.py -q 2>&1 | tail -5
 
 Expected: all still pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/services/vault_cache.py
@@ -146,7 +146,7 @@ import via module reference to preserve test-patch semantics."
 
 Moves `_read_project_meta`, `get_projects`, `get_projects_with_meta`, `write_project_meta` from vault.py into a dedicated module. vault.py is NOT changed in this task.
 
-- [ ] **Step 1: Write failing tests for vault_projects**
+- [x] **Step 1: Write failing tests for vault_projects**
 
 Create `tests/test_vault_projects.py`:
 
@@ -216,7 +216,7 @@ def test_write_project_meta_creates_project_md(tmp_path):
     assert post.metadata["description"] == "A description"
 ```
 
-- [ ] **Step 2: Run tests to confirm they fail**
+- [x] **Step 2: Run tests to confirm they fail**
 
 ```bash
 docker exec ikeos pytest tests/test_vault_projects.py -v 2>&1 | tail -15
@@ -224,7 +224,7 @@ docker exec ikeos pytest tests/test_vault_projects.py -v 2>&1 | tail -15
 
 Expected: `ModuleNotFoundError: No module named 'app.services.vault_projects'`
 
-- [ ] **Step 3: Create `app/services/vault_projects.py`**
+- [x] **Step 3: Create `app/services/vault_projects.py`**
 
 ```python
 import time
@@ -294,7 +294,7 @@ def write_project_meta(slug: str, name: str, description: str, hidden: bool) -> 
     return True
 ```
 
-- [ ] **Step 4: Run tests — must pass**
+- [x] **Step 4: Run tests — must pass**
 
 ```bash
 docker exec ikeos pytest tests/test_vault_projects.py -v 2>&1 | tail -15
@@ -302,7 +302,7 @@ docker exec ikeos pytest tests/test_vault_projects.py -v 2>&1 | tail -15
 
 Expected: 5 PASSED
 
-- [ ] **Step 5: Confirm existing vault tests unchanged**
+- [x] **Step 5: Confirm existing vault tests unchanged**
 
 ```bash
 docker exec ikeos pytest tests/test_vault.py -q 2>&1 | tail -5
@@ -310,7 +310,7 @@ docker exec ikeos pytest tests/test_vault.py -q 2>&1 | tail -5
 
 Expected: all pass (vault.py not yet modified).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/services/vault_projects.py tests/test_vault_projects.py
@@ -331,7 +331,7 @@ Tests use vault_cache.VAULT_PATH patch directly."
 
 Moves `_slugify`, `write_entry`, `_read_all_entries`, `read_entries`, `read_entry`, `update_entry_status`, `update_entry_status_generic` from vault.py.
 
-- [ ] **Step 1: Write failing tests for vault_entries**
+- [x] **Step 1: Write failing tests for vault_entries**
 
 Create `tests/test_vault_entries.py`:
 
@@ -415,7 +415,7 @@ def test_update_entry_status_generic_changes_status(tmp_path):
     assert "status/open" in post.metadata["tags"]
 ```
 
-- [ ] **Step 2: Run to confirm failure**
+- [x] **Step 2: Run to confirm failure**
 
 ```bash
 docker exec ikeos pytest tests/test_vault_entries.py -v 2>&1 | tail -10
@@ -423,7 +423,7 @@ docker exec ikeos pytest tests/test_vault_entries.py -v 2>&1 | tail -10
 
 Expected: `ModuleNotFoundError: No module named 'app.services.vault_entries'`
 
-- [ ] **Step 3: Create `app/services/vault_entries.py`**
+- [x] **Step 3: Create `app/services/vault_entries.py`**
 
 Copy the following functions verbatim from `app/services/vault.py` with ONE change: replace all bare `VAULT_PATH` references with `_vc.VAULT_PATH`, all `_invalidate_cache()` with `_vc._invalidate_cache()`, and all `VALID_TYPES/VALID_STATUSES/DECISION_STATUSES/TYPE_FOLDERS/TYPE_TAGS` with `_vc.` prefix. Also replace `get_projects()` with a call imported from `vault_projects`.
 
@@ -685,7 +685,7 @@ def update_entry_status_generic(entry_type: str, project: str | None, filename: 
         return False
 ```
 
-- [ ] **Step 4: Run vault_entries tests — must pass**
+- [x] **Step 4: Run vault_entries tests — must pass**
 
 ```bash
 docker exec ikeos pytest tests/test_vault_entries.py -v 2>&1 | tail -15
@@ -693,7 +693,7 @@ docker exec ikeos pytest tests/test_vault_entries.py -v 2>&1 | tail -15
 
 Expected: 5 PASSED
 
-- [ ] **Step 5: Confirm existing test_vault.py still passes**
+- [x] **Step 5: Confirm existing test_vault.py still passes**
 
 ```bash
 docker exec ikeos pytest tests/test_vault.py -q 2>&1 | tail -5
@@ -701,7 +701,7 @@ docker exec ikeos pytest tests/test_vault.py -q 2>&1 | tail -5
 
 Expected: all pass.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/services/vault_entries.py tests/test_vault_entries.py
@@ -722,7 +722,7 @@ All cache/VAULT_PATH access via vault_cache module reference."
 
 Moves `_WIKILINK_RE`, `_STALE_DAYS`, `_get_urgency`, `_read_hub_pages`, `get_vault_graph`, `write_hub_page`, `write_component_stub` from vault.py.
 
-- [ ] **Step 1: Write failing tests for vault_graph**
+- [x] **Step 1: Write failing tests for vault_graph**
 
 Create `tests/test_vault_graph.py`:
 
@@ -775,7 +775,7 @@ def test_write_component_stub_creates_stub(tmp_path):
     assert (stubs_dir / "api.md").exists()
 ```
 
-- [ ] **Step 2: Run to confirm failure**
+- [x] **Step 2: Run to confirm failure**
 
 ```bash
 docker exec ikeos pytest tests/test_vault_graph.py -v 2>&1 | tail -10
@@ -783,7 +783,7 @@ docker exec ikeos pytest tests/test_vault_graph.py -v 2>&1 | tail -10
 
 Expected: `ModuleNotFoundError: No module named 'app.services.vault_graph'`
 
-- [ ] **Step 3: Create `app/services/vault_graph.py`**
+- [x] **Step 3: Create `app/services/vault_graph.py`**
 
 ```python
 import logging
@@ -971,7 +971,7 @@ def write_component_stub(umbrella_slug: str, component_slug: str) -> None:
     _vc._invalidate_cache()
 ```
 
-- [ ] **Step 4: Run tests — must pass**
+- [x] **Step 4: Run tests — must pass**
 
 ```bash
 docker exec ikeos pytest tests/test_vault_graph.py -v 2>&1 | tail -10
@@ -979,7 +979,7 @@ docker exec ikeos pytest tests/test_vault_graph.py -v 2>&1 | tail -10
 
 Expected: 3 PASSED
 
-- [ ] **Step 5: Confirm existing tests still pass**
+- [x] **Step 5: Confirm existing tests still pass**
 
 ```bash
 docker exec ikeos pytest tests/test_vault.py -q 2>&1 | tail -5
@@ -987,7 +987,7 @@ docker exec ikeos pytest tests/test_vault.py -q 2>&1 | tail -5
 
 Expected: all pass.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/services/vault_graph.py tests/test_vault_graph.py
@@ -1007,7 +1007,7 @@ moved from vault.py. _get_urgency helper included."
 
 Moves all housekeeping vault functions (lines 512–718 of vault.py) into a dedicated module.
 
-- [ ] **Step 1: Write failing tests for vault_housekeeping**
+- [x] **Step 1: Write failing tests for vault_housekeeping**
 
 Create `tests/test_vault_housekeeping.py`:
 
@@ -1092,7 +1092,7 @@ def test_delete_housekeeping_task_removes_file(tmp_path):
     assert not (hk_dir / "2026-01-01-test.md").exists()
 ```
 
-- [ ] **Step 2: Run to confirm failure**
+- [x] **Step 2: Run to confirm failure**
 
 ```bash
 docker exec ikeos pytest tests/test_vault_housekeeping.py -v 2>&1 | tail -10
@@ -1100,7 +1100,7 @@ docker exec ikeos pytest tests/test_vault_housekeeping.py -v 2>&1 | tail -10
 
 Expected: `ModuleNotFoundError: No module named 'app.services.vault_housekeeping'`
 
-- [ ] **Step 3: Create `app/services/vault_housekeeping.py`**
+- [x] **Step 3: Create `app/services/vault_housekeeping.py`**
 
 ```python
 import logging
@@ -1257,7 +1257,7 @@ def delete_housekeeping_task(project: str, filename: str) -> bool:
     return True
 ```
 
-- [ ] **Step 4: Run tests — must pass**
+- [x] **Step 4: Run tests — must pass**
 
 ```bash
 docker exec ikeos pytest tests/test_vault_housekeeping.py -v 2>&1 | tail -10
@@ -1265,7 +1265,7 @@ docker exec ikeos pytest tests/test_vault_housekeeping.py -v 2>&1 | tail -10
 
 Expected: 5 PASSED
 
-- [ ] **Step 5: Confirm existing tests still pass**
+- [x] **Step 5: Confirm existing tests still pass**
 
 ```bash
 docker exec ikeos pytest tests/test_vault.py tests/test_housekeeping.py -q 2>&1 | tail -5
@@ -1273,7 +1273,7 @@ docker exec ikeos pytest tests/test_vault.py tests/test_housekeeping.py -q 2>&1 
 
 Expected: all pass.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/services/vault_housekeeping.py tests/test_vault_housekeeping.py
@@ -1294,7 +1294,7 @@ vault.py becomes a pure re-export module. All existing `from app.services.vault 
 
 **Important:** After this task, the cache and VAULT_PATH live in `vault_cache.py`. Existing tests that patch `app.services.vault.VAULT_PATH` will begin to FAIL because sub-modules now reference `_vc.VAULT_PATH` (vault_cache.VAULT_PATH). This is expected — Task 7 fixes the tests.
 
-- [ ] **Step 1: Read current vault.py to confirm scope**
+- [x] **Step 1: Read current vault.py to confirm scope**
 
 ```bash
 grep -c "^def " /mnt/c/Server/projects/ikeos/app/services/vault.py
@@ -1302,7 +1302,7 @@ grep -c "^def " /mnt/c/Server/projects/ikeos/app/services/vault.py
 
 Expected: 21 (confirm all 21 functions are accounted for in the sub-modules).
 
-- [ ] **Step 2: List all functions in each sub-module**
+- [x] **Step 2: List all functions in each sub-module**
 
 ```bash
 grep "^def " \
@@ -1317,7 +1317,7 @@ Verify these 21 names appear: `_invalidate_cache`, `_read_project_meta`, `get_pr
 
 If any are missing, add them to the appropriate sub-module before proceeding.
 
-- [ ] **Step 3: Replace app/services/vault.py with facade**
+- [x] **Step 3: Replace app/services/vault.py with facade**
 
 Overwrite the file with exactly this content:
 
@@ -1382,7 +1382,7 @@ from app.services.vault_housekeeping import (  # noqa: F401
 )
 ```
 
-- [ ] **Step 4: Verify imports work**
+- [x] **Step 4: Verify imports work**
 
 ```bash
 docker exec ikeos python -c "
@@ -1397,7 +1397,7 @@ print('All imports OK')
 
 Expected: `All imports OK`
 
-- [ ] **Step 5: Run sub-module tests (should still pass)**
+- [x] **Step 5: Run sub-module tests (should still pass)**
 
 ```bash
 docker exec ikeos pytest tests/test_vault_projects.py tests/test_vault_entries.py tests/test_vault_graph.py tests/test_vault_housekeeping.py -q 2>&1 | tail -5
@@ -1405,7 +1405,7 @@ docker exec ikeos pytest tests/test_vault_projects.py tests/test_vault_entries.p
 
 Expected: all pass.
 
-- [ ] **Step 6: Run original tests (expect failures — VAULT_PATH patch mismatch)**
+- [x] **Step 6: Run original tests (expect failures — VAULT_PATH patch mismatch)**
 
 ```bash
 docker exec ikeos pytest tests/test_vault.py -q 2>&1 | tail -20
@@ -1413,7 +1413,7 @@ docker exec ikeos pytest tests/test_vault.py -q 2>&1 | tail -20
 
 Expected: some failures related to VAULT_PATH patching and cache attribute access. Note which tests fail — Task 7 will fix them.
 
-- [ ] **Step 7: Commit (with known test failures noted in message)**
+- [x] **Step 7: Commit (with known test failures noted in message)**
 
 ```bash
 git add app/services/vault.py
@@ -1438,7 +1438,7 @@ Task 7 updates them to patch app.services.vault_cache.VAULT_PATH."
 
 After this task, all tests must pass.
 
-- [ ] **Step 1: Find all VAULT_PATH patch locations**
+- [x] **Step 1: Find all VAULT_PATH patch locations**
 
 ```bash
 grep -n "vault\.VAULT_PATH\|patch.*vault.*VAULT_PATH\|vault_mod\._\|patch\.object.*vault_mod" \
@@ -1447,7 +1447,7 @@ grep -n "vault\.VAULT_PATH\|patch.*vault.*VAULT_PATH\|vault_mod\._\|patch\.objec
 
 Note every line number. Each occurrence needs the patch target updated.
 
-- [ ] **Step 2: Update test_vault.py — VAULT_PATH patches**
+- [x] **Step 2: Update test_vault.py — VAULT_PATH patches**
 
 In `tests/test_vault.py`, replace ALL occurrences of:
 - `patch("app.services.vault.VAULT_PATH"` → `patch("app.services.vault_cache.VAULT_PATH"`
@@ -1461,7 +1461,7 @@ grep -c 'patch("app.services.vault_cache.VAULT_PATH"' tests/test_vault.py
 # counts must match
 ```
 
-- [ ] **Step 3: Update test_vault.py — vault_mod cache attribute access**
+- [x] **Step 3: Update test_vault.py — vault_mod cache attribute access**
 
 Find the test around line 362 that uses `patch.object(vault_mod, "VAULT_PATH", ...)` and accesses `vault_mod._hub_pages_cache` / `vault_mod._hub_pages_cache_ts`. This test tests hub-page caching behavior.
 
@@ -1491,7 +1491,7 @@ assert vault_cache_mod._hub_pages_cache is not None
 
 Read the actual test before editing to ensure the replacement is exact.
 
-- [ ] **Step 4: Update test_browse.py**
+- [x] **Step 4: Update test_browse.py**
 
 ```bash
 grep -n "vault\.VAULT_PATH\|vault_cache" tests/test_browse.py
@@ -1515,13 +1515,13 @@ import app.services.vault_cache  # noqa: F401 — needed for patch("app.services
 
 (The existing `_invalidate_cache` import from vault still works because vault.py re-exports it.)
 
-- [ ] **Step 5: Update test_capture.py**
+- [x] **Step 5: Update test_capture.py**
 
 ```bash
 sed -i 's/patch("app\.services\.vault\.VAULT_PATH"/patch("app.services.vault_cache.VAULT_PATH"/g' tests/test_capture.py
 ```
 
-- [ ] **Step 6: Update test_housekeeping.py**
+- [x] **Step 6: Update test_housekeeping.py**
 
 ```bash
 sed -i 's/patch("app\.services\.vault\.VAULT_PATH"/patch("app.services.vault_cache.VAULT_PATH"/g' tests/test_housekeeping.py
@@ -1535,7 +1535,7 @@ grep "_compute_task_status\|_compute_next_run" tests/test_housekeeping.py
 
 Expected: imports from `app.services.vault` — these still work via the facade.
 
-- [ ] **Step 7: Update tests/conftest.py if it patches VAULT_PATH**
+- [x] **Step 7: Update tests/conftest.py if it patches VAULT_PATH**
 
 ```bash
 grep -n "VAULT_PATH" tests/conftest.py
@@ -1543,7 +1543,7 @@ grep -n "VAULT_PATH" tests/conftest.py
 
 If any patch uses `vault.VAULT_PATH`, apply the same sed replacement.
 
-- [ ] **Step 8: Run ALL tests — must all pass**
+- [x] **Step 8: Run ALL tests — must all pass**
 
 ```bash
 docker exec ikeos pytest tests/ -q 2>&1 | tail -20
@@ -1551,7 +1551,7 @@ docker exec ikeos pytest tests/ -q 2>&1 | tail -20
 
 Expected: all tests pass, 0 failures. If any fail, read the error and fix the specific test before proceeding.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add tests/test_vault.py tests/test_browse.py tests/test_capture.py tests/test_housekeeping.py tests/conftest.py
@@ -1568,7 +1568,7 @@ All tests updated to patch the canonical location."
 
 **Files:** None (verification only)
 
-- [ ] **Step 1: Run the full test suite one final time**
+- [x] **Step 1: Run the full test suite one final time**
 
 ```bash
 docker exec ikeos pytest tests/ -v 2>&1 | tail -30
@@ -1576,7 +1576,7 @@ docker exec ikeos pytest tests/ -v 2>&1 | tail -30
 
 Expected: all tests pass.
 
-- [ ] **Step 2: Confirm vault.py has no function definitions**
+- [x] **Step 2: Confirm vault.py has no function definitions**
 
 ```bash
 grep "^def " /mnt/c/Server/projects/ikeos/app/services/vault.py
@@ -1584,7 +1584,7 @@ grep "^def " /mnt/c/Server/projects/ikeos/app/services/vault.py
 
 Expected: no output (vault.py is now a pure re-export file).
 
-- [ ] **Step 3: Confirm sub-module line counts are reasonable**
+- [x] **Step 3: Confirm sub-module line counts are reasonable**
 
 ```bash
 wc -l app/services/vault_cache.py app/services/vault_projects.py app/services/vault_entries.py app/services/vault_graph.py app/services/vault_housekeeping.py app/services/vault.py
@@ -1592,7 +1592,7 @@ wc -l app/services/vault_cache.py app/services/vault_projects.py app/services/va
 
 Expected (approximate): cache ~50, projects ~70, entries ~200, graph ~130, housekeeping ~120, vault facade ~60. Total should be ~630 lines across 6 files vs 718 in the original single file.
 
-- [ ] **Step 4: Confirm app import works cleanly**
+- [x] **Step 4: Confirm app import works cleanly**
 
 ```bash
 docker exec ikeos python -c "from app import create_app; app = create_app(); print('App factory OK')"
@@ -1600,7 +1600,7 @@ docker exec ikeos python -c "from app import create_app; app = create_app(); pri
 
 Expected: `App factory OK`
 
-- [ ] **Step 5: Rebuild container and smoke test**
+- [x] **Step 5: Rebuild container and smoke test**
 
 ```bash
 docker.exe compose up --build -d ikeos 2>&1 | tail -10
@@ -1610,7 +1610,7 @@ curl -s http://localhost:5009/health
 
 Expected: `{"status": "ok"}` or similar health response.
 
-- [ ] **Step 6: Commit the verification result (if any minor fixes were needed)**
+- [x] **Step 6: Commit the verification result (if any minor fixes were needed)**
 
 If steps 1–5 required any fixes, commit them:
 
@@ -1627,11 +1627,11 @@ If no fixes needed, no commit required.
 
 Session 4 is done when:
 
-- [ ] `grep "^def " app/services/vault.py` returns empty (vault.py is a pure facade)
-- [ ] All 5 sub-module files exist: vault_cache.py, vault_projects.py, vault_entries.py, vault_graph.py, vault_housekeeping.py
-- [ ] `docker exec ikeos pytest tests/ -q` shows 0 failures
-- [ ] `curl -s http://localhost:5009/health` returns HTTP 200
-- [ ] `from app.services.vault import write_entry, read_entries, VAULT_PATH` works (backward compat preserved)
+- [x] `grep "^def " app/services/vault.py` returns empty (vault.py is a pure facade)
+- [x] All 5 sub-module files exist: vault_cache.py, vault_projects.py, vault_entries.py, vault_graph.py, vault_housekeeping.py
+- [x] `docker exec ikeos pytest tests/ -q` shows 0 failures
+- [x] `curl -s http://localhost:5009/health` returns HTTP 200
+- [x] `from app.services.vault import write_entry, read_entries, VAULT_PATH` works (backward compat preserved)
 
 ---
 

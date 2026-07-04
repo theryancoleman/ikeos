@@ -18,7 +18,7 @@
 - Test: `tests/test_vault_entries.py`
 - Test: `tests/test_capture.py`
 
-- [ ] **Step 1.1: Write the failing test in test_vault_entries.py**
+- [x] **Step 1.1: Write the failing test in test_vault_entries.py**
 
 Add at the bottom of `tests/test_vault_entries.py`:
 
@@ -31,7 +31,7 @@ def test_write_entry_normalizes_project_to_lowercase(tmp_path):
     assert len(files) == 1, "entry should land in lowercase project dir"
 ```
 
-- [ ] **Step 1.2: Run it to confirm it fails**
+- [x] **Step 1.2: Run it to confirm it fails**
 
 ```bash
 docker exec ikeos pytest tests/test_vault_entries.py::test_write_entry_normalizes_project_to_lowercase -v
@@ -39,7 +39,7 @@ docker exec ikeos pytest tests/test_vault_entries.py::test_write_entry_normalize
 
 Expected: FAIL — the entry lands in `MyProj/notes/` (wrong case directory) or raises FileNotFoundError.
 
-- [ ] **Step 1.3: Implement — normalise project in write_entry()**
+- [x] **Step 1.3: Implement — normalise project in write_entry()**
 
 In `app/services/vault_entries.py`, after line `project = data.get("project", "")`, add:
 
@@ -57,7 +57,7 @@ def write_entry(data: dict) -> str:
     body = data.get("body", "")
 ```
 
-- [ ] **Step 1.4: Run test — should pass**
+- [x] **Step 1.4: Run test — should pass**
 
 ```bash
 docker exec ikeos pytest tests/test_vault_entries.py::test_write_entry_normalizes_project_to_lowercase -v
@@ -65,7 +65,7 @@ docker exec ikeos pytest tests/test_vault_entries.py::test_write_entry_normalize
 
 Expected: PASS
 
-- [ ] **Step 1.5: Write the failing capture route test**
+- [x] **Step 1.5: Write the failing capture route test**
 
 Add to `tests/test_capture.py`:
 
@@ -90,7 +90,7 @@ import app.services.vault_cache as _vc
 from unittest.mock import patch
 ```
 
-- [ ] **Step 1.6: Run it to confirm it fails**
+- [x] **Step 1.6: Run it to confirm it fails**
 
 ```bash
 docker exec ikeos pytest tests/test_capture.py::test_capture_post_normalizes_project_slug -v
@@ -98,7 +98,7 @@ docker exec ikeos pytest tests/test_capture.py::test_capture_post_normalizes_pro
 
 Expected: FAIL — entry goes to `BCR-Waivers/notes/` because the route doesn't normalise before passing to `write_entry`.
 
-- [ ] **Step 1.7: Implement — normalise in capture form POST**
+- [x] **Step 1.7: Implement — normalise in capture form POST**
 
 In `app/routes/capture.py`, the form POST handler sets `project` at lines 57–63. Change:
 
@@ -132,7 +132,7 @@ And the second JSON path around line 186: `project = req.get("project", "")` cha
 project = req.get("project", "").strip().lower()
 ```
 
-- [ ] **Step 1.8: Run the full vault_entries and capture test suites**
+- [x] **Step 1.8: Run the full vault_entries and capture test suites**
 
 ```bash
 docker exec ikeos pytest tests/test_vault_entries.py tests/test_capture.py -v
@@ -140,7 +140,7 @@ docker exec ikeos pytest tests/test_vault_entries.py tests/test_capture.py -v
 
 Expected: all pass (the new tests and all pre-existing ones).
 
-- [ ] **Step 1.9: Run the full test suite**
+- [x] **Step 1.9: Run the full test suite**
 
 ```bash
 docker exec ikeos pytest tests/ -q
@@ -148,7 +148,7 @@ docker exec ikeos pytest tests/ -q
 
 Expected: 322+ passed, 0 failed.
 
-- [ ] **Step 1.10: Commit**
+- [x] **Step 1.10: Commit**
 
 ```bash
 git add app/services/vault_entries.py app/routes/capture.py tests/test_vault_entries.py tests/test_capture.py
@@ -164,7 +164,7 @@ git commit -m "fix: normalize project slugs to lowercase at write and capture bo
 
 The gunicorn `--workers 1` flag is set in the Dockerfile CMD and is the constraint preventing duplicate housekeeping runs. There is no clean way to verify the worker count at runtime from within the app (gunicorn doesn't expose this to the WSGI app). The correct mitigation is a visible startup log that makes the assumption explicit — so any operator who changes the Dockerfile CMD sees it in startup output and knows what they're breaking.
 
-- [ ] **Step 2.1: Add the startup warning to scheduler.start()**
+- [x] **Step 2.1: Add the startup warning to scheduler.start()**
 
 In `app/services/scheduler.py`, in the `start()` function, immediately after `_scheduler.start()`, add:
 
@@ -212,7 +212,7 @@ def start(app) -> None:
     )
 ```
 
-- [ ] **Step 2.2: Run the scheduler tests**
+- [x] **Step 2.2: Run the scheduler tests**
 
 ```bash
 docker exec ikeos pytest tests/test_scheduler.py -v
@@ -220,7 +220,7 @@ docker exec ikeos pytest tests/test_scheduler.py -v
 
 Expected: all pass (the log is a warning-level side effect, not observable in unit tests that don't spin up a real scheduler).
 
-- [ ] **Step 2.3: Rebuild and check the startup log**
+- [x] **Step 2.3: Rebuild and check the startup log**
 
 ```bash
 docker.exe compose up --build -d ikeos && docker.exe compose logs --tail=30 ikeos
@@ -228,7 +228,7 @@ docker.exe compose up --build -d ikeos && docker.exe compose logs --tail=30 ikeo
 
 Expected: log lines show `APScheduler started — this relies on gunicorn --workers 1.` near startup.
 
-- [ ] **Step 2.4: Commit**
+- [x] **Step 2.4: Commit**
 
 ```bash
 git add app/services/scheduler.py
@@ -245,7 +245,7 @@ git commit -m "fix: log explicit single-worker assumption when APScheduler start
 
 This is the controls-first extension for the next autonomous capability: the weekly AI engineering platform review routine (DO THIRD in the 'Imi sequence). The capability defaults to `enabled: False`. Until an architect enables it, the capability registry records it as known-but-locked. No routing changes are needed in this task — the capability gate will be checked in the next phase when the review route is built.
 
-- [ ] **Step 3.1: Write the failing test**
+- [x] **Step 3.1: Write the failing test**
 
 Add to `tests/test_capabilities.py`:
 
@@ -267,7 +267,7 @@ def test_update_weekly_platform_review_capability(tmp_path):
 
 Check the import block at the top of `tests/test_capabilities.py` — it should already import `capabilities` module directly (not via `from ... import`). Confirm and add `from unittest.mock import patch` if not present.
 
-- [ ] **Step 3.2: Run to confirm failure**
+- [x] **Step 3.2: Run to confirm failure**
 
 ```bash
 docker exec ikeos pytest tests/test_capabilities.py::test_weekly_platform_review_capability_exists_and_defaults_to_disabled tests/test_capabilities.py::test_update_weekly_platform_review_capability -v
@@ -275,7 +275,7 @@ docker exec ikeos pytest tests/test_capabilities.py::test_weekly_platform_review
 
 Expected: FAIL — `weekly_platform_review` not in `DEFAULT_CAPABILITIES`.
 
-- [ ] **Step 3.3: Add the capability to DEFAULT_CAPABILITIES**
+- [x] **Step 3.3: Add the capability to DEFAULT_CAPABILITIES**
 
 In `app/services/capabilities.py`, extend `DEFAULT_CAPABILITIES`:
 
@@ -296,7 +296,7 @@ DEFAULT_CAPABILITIES: dict = {
 }
 ```
 
-- [ ] **Step 3.4: Run new tests — should pass**
+- [x] **Step 3.4: Run new tests — should pass**
 
 ```bash
 docker exec ikeos pytest tests/test_capabilities.py::test_weekly_platform_review_capability_exists_and_defaults_to_disabled tests/test_capabilities.py::test_update_weekly_platform_review_capability -v
@@ -304,7 +304,7 @@ docker exec ikeos pytest tests/test_capabilities.py::test_weekly_platform_review
 
 Expected: PASS
 
-- [ ] **Step 3.5: Run full capabilities test suite**
+- [x] **Step 3.5: Run full capabilities test suite**
 
 ```bash
 docker exec ikeos pytest tests/test_capabilities.py -v
@@ -312,7 +312,7 @@ docker exec ikeos pytest tests/test_capabilities.py -v
 
 Expected: all pass.
 
-- [ ] **Step 3.6: Run full test suite**
+- [x] **Step 3.6: Run full test suite**
 
 ```bash
 docker exec ikeos pytest tests/ -q
@@ -320,7 +320,7 @@ docker exec ikeos pytest tests/ -q
 
 Expected: 325+ passed, 0 failed.
 
-- [ ] **Step 3.7: Rebuild container and verify /housekeeping/capabilities lists both capabilities**
+- [x] **Step 3.7: Rebuild container and verify /housekeeping/capabilities lists both capabilities**
 
 ```bash
 docker.exe compose up --build -d ikeos
@@ -329,7 +329,7 @@ curl -s http://localhost:5009/housekeeping/capabilities | python3 -m json.tool
 
 Expected: JSON with `housekeeping_scheduler` and `weekly_platform_review`, both `"enabled": false`.
 
-- [ ] **Step 3.8: Commit**
+- [x] **Step 3.8: Commit**
 
 ```bash
 git add app/services/capabilities.py tests/test_capabilities.py

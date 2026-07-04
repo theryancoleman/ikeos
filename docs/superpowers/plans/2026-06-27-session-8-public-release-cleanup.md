@@ -42,24 +42,24 @@ The following 'Imi audit items were already complete before Session 8 began:
 **Files:**
 - Modify: `TASK.md`
 
-- [ ] **Step 1: Replace stale container names in TASK.md**
+- [x] **Step 1: Replace stale container names in TASK.md**
 
 Read `TASK.md`. Replace every instance of `obsidian-capture` with `ikeos`. There are 3 occurrences (lines 51, 52, 64 approximately):
 
 ```
 # Old line ~51:
-- [ ] `docker compose logs --tail=50 obsidian-capture` — no ERROR lines
+- [x] `docker compose logs --tail=50 obsidian-capture` — no ERROR lines
 
 # New:
-- [ ] `docker compose logs --tail=50 ikeos` — no ERROR lines
+- [x] `docker compose logs --tail=50 ikeos` — no ERROR lines
 ```
 
 ```
 # Old line ~52:
-- [ ] <!-- Add any test command, e.g.: `docker exec obsidian-capture pytest` -->
+- [x] <!-- Add any test command, e.g.: `docker exec obsidian-capture pytest` -->
 
 # New:
-- [ ] <!-- Add any test command, e.g.: `docker exec ikeos pytest` -->
+- [x] <!-- Add any test command, e.g.: `docker exec ikeos pytest` -->
 ```
 
 ```
@@ -70,7 +70,7 @@ Read `TASK.md`. Replace every instance of `obsidian-capture` with `ikeos`. There
 1. Run `docker compose logs ikeos` — identify the failure
 ```
 
-- [ ] **Step 2: Verify no more stale references**
+- [x] **Step 2: Verify no more stale references**
 
 ```bash
 grep -n "obsidian-capture" TASK.md
@@ -78,7 +78,7 @@ grep -n "obsidian-capture" TASK.md
 
 Expected: no output.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add TASK.md
@@ -95,7 +95,7 @@ git commit -m "chore: fix stale obsidian-capture container name in TASK.md templ
 
 **Context:** `VALID_TYPES` was grep-confirmed to have no consumers in routes, services, or tests — only defined in `vault_cache.py` and re-exported from `vault.py`. The three status sets (`VALID_STATUSES`, `DECISION_STATUSES`, `EXPERIMENT_STATUSES`) remain plain `set` while the new constants added in Session 7 (`PATCH_VALID_TYPES`, `CAPTURE_JSON_VALID_TYPES`) are `frozenset`. Converting them is consistent and communicates immutability intent. There are no behavior changes — `frozenset` supports the same `in` operator.
 
-- [ ] **Step 1: Update vault_cache.py**
+- [x] **Step 1: Update vault_cache.py**
 
 Read `app/services/vault_cache.py`. Make two changes:
 
@@ -122,7 +122,7 @@ VALID_TYPES = set(ENTRY_TYPE_CONFIG.keys()) | {
 }
 ```
 
-- [ ] **Step 2: Update vault.py — remove VALID_TYPES from re-export**
+- [x] **Step 2: Update vault.py — remove VALID_TYPES from re-export**
 
 Read `app/services/vault.py`. Remove `VALID_TYPES,` from the `from app.services.vault_cache import (...)` block.
 
@@ -143,7 +143,7 @@ from app.services.vault_cache import (  # noqa: F401
     ...
 ```
 
-- [ ] **Step 3: Copy and run full test suite**
+- [x] **Step 3: Copy and run full test suite**
 
 ```bash
 docker cp app/services/vault_cache.py ikeos:/app/app/services/vault_cache.py
@@ -153,7 +153,7 @@ docker.exe exec ikeos pytest tests/ -q 2>&1 | tail -5
 
 Expected: 263 passed, 0 failures.
 
-- [ ] **Step 4: Rebuild and verify health**
+- [x] **Step 4: Rebuild and verify health**
 
 ```bash
 docker.exe compose up --build -d ikeos 2>&1 | tail -3
@@ -162,7 +162,7 @@ curl -s http://localhost:5009/health
 
 Expected: `ok`
 
-- [ ] **Step 5: Verify status constants are frozenset and VALID_TYPES is gone**
+- [x] **Step 5: Verify status constants are frozenset and VALID_TYPES is gone**
 
 ```bash
 docker.exe exec ikeos python -c "
@@ -186,7 +186,7 @@ EXPERIMENT_STATUSES type: frozenset
 VALID_TYPES correctly removed
 ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/services/vault_cache.py app/services/vault.py
@@ -207,7 +207,7 @@ change — frozenset supports the same 'in' operator."
 
 At the conclusion of every 'Imi session, produce the 8-section output directly to the user (do not commit it as a file).
 
-- [ ] **Step 1: Produce Session 8 output**
+- [x] **Step 1: Produce Session 8 output**
 
 Answer each heading:
 
@@ -233,8 +233,8 @@ Answer each heading:
 
 Session 8 is done when:
 
-- [ ] `docker exec ikeos pytest tests/ -q` shows 263 passed, 0 failures
-- [ ] `VALID_STATUSES`, `DECISION_STATUSES`, `EXPERIMENT_STATUSES` are `frozenset`
-- [ ] `from app.services.vault import VALID_TYPES` raises `ImportError`
-- [ ] `TASK.md` has no `obsidian-capture` references
-- [ ] `curl -s http://localhost:5009/health` returns `ok`
+- [x] `docker exec ikeos pytest tests/ -q` shows 263 passed, 0 failures
+- [x] `VALID_STATUSES`, `DECISION_STATUSES`, `EXPERIMENT_STATUSES` are `frozenset`
+- [x] `from app.services.vault import VALID_TYPES` raises `ImportError`
+- [x] `TASK.md` has no `obsidian-capture` references
+- [x] `curl -s http://localhost:5009/health` returns `ok`

@@ -29,7 +29,7 @@
 - Create: `app/services/session_client.py`
 - Create: `tests/test_session_client.py`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `tests/test_session_client.py`:
 
@@ -122,7 +122,7 @@ def test_create_session_no_metric_on_failure(monkeypatch):
     mock_emit.assert_not_called()
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 ```bash
 docker exec ikeos pytest tests/test_session_client.py -v
@@ -130,7 +130,7 @@ docker exec ikeos pytest tests/test_session_client.py -v
 
 Expected: all 6 FAIL with `ModuleNotFoundError` or `ImportError` (file doesn't exist yet)
 
-- [ ] **Step 3: Create `app/services/session_client.py`**
+- [x] **Step 3: Create `app/services/session_client.py`**
 
 ```python
 import logging
@@ -198,7 +198,7 @@ def create_session(
     return SessionResult(session_id=session_id)
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 ```bash
 docker exec ikeos pytest tests/test_session_client.py -v
@@ -206,7 +206,7 @@ docker exec ikeos pytest tests/test_session_client.py -v
 
 Expected: all 6 PASS
 
-- [ ] **Step 5: Run full test suite to verify no regressions**
+- [x] **Step 5: Run full test suite to verify no regressions**
 
 ```bash
 docker exec ikeos pytest -v
@@ -214,7 +214,7 @@ docker exec ikeos pytest -v
 
 Expected: all existing tests still PASS
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/services/session_client.py tests/test_session_client.py
@@ -229,7 +229,7 @@ git commit -m "feat: add session_client service with SessionResult dataclass"
 - Modify: `app/services/scheduler.py`
 - Modify: `tests/test_scheduler.py`
 
-- [ ] **Step 1: Update the trigger_now tests before touching the implementation**
+- [x] **Step 1: Update the trigger_now tests before touching the implementation**
 
 In `tests/test_scheduler.py`, replace every occurrence of `patch("app.services.scheduler.requests.post", ...)` with `patch("app.services.session_client.requests.post", ...)`.
 
@@ -350,7 +350,7 @@ def test_trigger_now_updates_last_triggered_in_config(sched_vault, monkeypatch):
     assert "T" in config["last_triggered"]  # ISO datetime
 ```
 
-- [ ] **Step 2: Run tests to verify the updated tests now FAIL (before impl change)**
+- [x] **Step 2: Run tests to verify the updated tests now FAIL (before impl change)**
 
 ```bash
 docker exec ikeos pytest tests/test_scheduler.py -v -k "trigger_now"
@@ -358,7 +358,7 @@ docker exec ikeos pytest tests/test_scheduler.py -v -k "trigger_now"
 
 Expected: these tests FAIL because `scheduler.py` still uses `requests.post` directly (wrong mock target)
 
-- [ ] **Step 3: Migrate `trigger_now()` in `app/services/scheduler.py`**
+- [x] **Step 3: Migrate `trigger_now()` in `app/services/scheduler.py`**
 
 At the top of the file, replace:
 
@@ -410,7 +410,7 @@ def trigger_now() -> str | None:
 
 (Removed: `sm_url` local variable, `requests.post(...)` block, `except (requests.RequestException, OSError)` handler, `if not session_id` check.)
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 ```bash
 docker exec ikeos pytest tests/test_scheduler.py -v
@@ -418,7 +418,7 @@ docker exec ikeos pytest tests/test_scheduler.py -v
 
 Expected: all PASS
 
-- [ ] **Step 5: Run full test suite**
+- [x] **Step 5: Run full test suite**
 
 ```bash
 docker exec ikeos pytest -v
@@ -426,7 +426,7 @@ docker exec ikeos pytest -v
 
 Expected: all PASS
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/services/scheduler.py tests/test_scheduler.py
@@ -441,7 +441,7 @@ git commit -m "refactor: migrate trigger_now() to session_client.create_session(
 - Modify: `app/routes/housekeeping.py`
 - Modify: `tests/test_housekeeping.py`
 
-- [ ] **Step 1: Update the run_task tests before touching the implementation**
+- [x] **Step 1: Update the run_task tests before touching the implementation**
 
 In `tests/test_housekeeping.py`, replace `test_run_task_creates_session` and `test_run_task_session_manager_unreachable`:
 
@@ -469,7 +469,7 @@ def test_run_task_session_manager_unreachable(client):
     assert resp.status_code == 502
 ```
 
-- [ ] **Step 2: Run the updated tests to verify they FAIL**
+- [x] **Step 2: Run the updated tests to verify they FAIL**
 
 ```bash
 docker exec ikeos pytest tests/test_housekeeping.py::test_run_task_creates_session tests/test_housekeeping.py::test_run_task_session_manager_unreachable -v
@@ -477,7 +477,7 @@ docker exec ikeos pytest tests/test_housekeeping.py::test_run_task_creates_sessi
 
 Expected: FAIL (housekeeping.py still uses `requests.post` directly)
 
-- [ ] **Step 3: Add the import to `app/routes/housekeeping.py`**
+- [x] **Step 3: Add the import to `app/routes/housekeeping.py`**
 
 After the existing imports, add:
 
@@ -487,7 +487,7 @@ from app.services.session_client import create_session
 
 (Add it after the `from app.services.capabilities import get_capabilities, update_capability` line.)
 
-- [ ] **Step 4: Replace `run_task()` body in `app/routes/housekeeping.py`**
+- [x] **Step 4: Replace `run_task()` body in `app/routes/housekeeping.py`**
 
 Replace the entire `run_task` function:
 
@@ -511,7 +511,7 @@ def run_task(filename: str):
     return jsonify({"ok": True, "session_id": result.session_id}), 200
 ```
 
-- [ ] **Step 5: Run the updated tests to verify they pass**
+- [x] **Step 5: Run the updated tests to verify they pass**
 
 ```bash
 docker exec ikeos pytest tests/test_housekeeping.py::test_run_task_creates_session tests/test_housekeeping.py::test_run_task_session_manager_unreachable -v
@@ -519,7 +519,7 @@ docker exec ikeos pytest tests/test_housekeeping.py::test_run_task_creates_sessi
 
 Expected: both PASS
 
-- [ ] **Step 6: Run full test suite**
+- [x] **Step 6: Run full test suite**
 
 ```bash
 docker exec ikeos pytest -v
@@ -527,7 +527,7 @@ docker exec ikeos pytest -v
 
 Expected: all PASS
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add app/routes/housekeeping.py tests/test_housekeeping.py
@@ -542,7 +542,7 @@ git commit -m "refactor: migrate run_task() to session_client.create_session()"
 - Modify: `app/routes/housekeeping.py`
 - Modify: `tests/test_housekeeping.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Add to `tests/test_housekeeping.py`:
 
@@ -571,7 +571,7 @@ def test_blog_draft_publish_creates_session(client, tmp_path, monkeypatch):
     assert data["session_id"] == "pub-sess-1"
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 ```bash
 docker exec ikeos pytest tests/test_housekeeping.py::test_blog_draft_publish_creates_session -v
@@ -579,7 +579,7 @@ docker exec ikeos pytest tests/test_housekeeping.py::test_blog_draft_publish_cre
 
 Expected: FAIL (publish still uses `requests.post` directly)
 
-- [ ] **Step 3: Replace `blog_draft_publish()` body in `app/routes/housekeeping.py`**
+- [x] **Step 3: Replace `blog_draft_publish()` body in `app/routes/housekeeping.py`**
 
 Replace the entire `blog_draft_publish` function:
 
@@ -611,7 +611,7 @@ def blog_draft_publish():
     return jsonify({"ok": True, "session_id": result.session_id}), 200
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 ```bash
 docker exec ikeos pytest tests/test_housekeeping.py::test_blog_draft_publish_creates_session -v
@@ -619,7 +619,7 @@ docker exec ikeos pytest tests/test_housekeeping.py::test_blog_draft_publish_cre
 
 Expected: PASS
 
-- [ ] **Step 5: Run full test suite**
+- [x] **Step 5: Run full test suite**
 
 ```bash
 docker exec ikeos pytest -v
@@ -627,7 +627,7 @@ docker exec ikeos pytest -v
 
 Expected: all PASS
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/routes/housekeeping.py tests/test_housekeeping.py
@@ -642,7 +642,7 @@ git commit -m "refactor: migrate blog_draft_publish() to session_client.create_s
 - Modify: `app/routes/housekeeping.py`
 - Modify: `tests/test_housekeeping.py`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Add to `tests/test_housekeeping.py`:
 
@@ -699,7 +699,7 @@ def test_blog_draft_rewrite_409_sends_command_to_running_session(client, tmp_pat
     assert data["session_id"] == "existing-rw"
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 ```bash
 docker exec ikeos pytest tests/test_housekeeping.py::test_blog_draft_rewrite_creates_session tests/test_housekeeping.py::test_blog_draft_rewrite_409_sends_command_to_running_session -v
@@ -707,7 +707,7 @@ docker exec ikeos pytest tests/test_housekeeping.py::test_blog_draft_rewrite_cre
 
 Expected: both FAIL (rewrite still uses `requests.post` directly)
 
-- [ ] **Step 3: Replace `blog_draft_rewrite()` body in `app/routes/housekeeping.py`**
+- [x] **Step 3: Replace `blog_draft_rewrite()` body in `app/routes/housekeeping.py`**
 
 Replace the entire `blog_draft_rewrite` function:
 
@@ -753,7 +753,7 @@ def blog_draft_rewrite():
     return jsonify({"ok": True, "session_id": result.session_id}), 200
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 ```bash
 docker exec ikeos pytest tests/test_housekeeping.py::test_blog_draft_rewrite_creates_session tests/test_housekeeping.py::test_blog_draft_rewrite_409_sends_command_to_running_session -v
@@ -761,7 +761,7 @@ docker exec ikeos pytest tests/test_housekeeping.py::test_blog_draft_rewrite_cre
 
 Expected: both PASS
 
-- [ ] **Step 5: Run full test suite**
+- [x] **Step 5: Run full test suite**
 
 ```bash
 docker exec ikeos pytest -v
@@ -769,7 +769,7 @@ docker exec ikeos pytest -v
 
 Expected: all PASS
 
-- [ ] **Step 6: Rebuild container and verify the app starts**
+- [x] **Step 6: Rebuild container and verify the app starts**
 
 ```bash
 docker.exe compose up --build -d ikeos
@@ -778,7 +778,7 @@ docker.exe compose logs ikeos --tail=20
 
 Expected: container starts cleanly, no import errors in logs
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add app/routes/housekeeping.py tests/test_housekeeping.py

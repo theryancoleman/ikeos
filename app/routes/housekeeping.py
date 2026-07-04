@@ -96,7 +96,7 @@ def create_task():
         if not resp.ok:
             return jsonify({"error": "Failed to create task"}), 502
     except requests.RequestException:
-        return jsonify({"error": "obsidian-capture unreachable"}), 502
+        return jsonify({"error": "IkeOS capture service unreachable"}), 502
 
     return jsonify({"ok": True}), 200
 
@@ -125,7 +125,7 @@ def toggle_task(filename: str):
         if not resp.ok:
             return jsonify({"error": "Failed to update task"}), 502
     except requests.RequestException:
-        return jsonify({"error": "obsidian-capture unreachable"}), 502
+        return jsonify({"error": "IkeOS capture service unreachable"}), 502
 
     return jsonify({"ok": True, "enabled": new_enabled}), 200
 
@@ -153,7 +153,7 @@ def reset_task(filename: str):
         if not resp.ok:
             return jsonify({"error": "Failed to reset timer"}), 502
     except requests.RequestException:
-        return jsonify({"error": "obsidian-capture unreachable"}), 502
+        return jsonify({"error": "IkeOS capture service unreachable"}), 502
 
     return jsonify({"ok": True}), 200
 

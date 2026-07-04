@@ -74,7 +74,7 @@ def update_entry_status(project: str, slug: str, new_status: str) -> bool:
     return False
 ```
 
-- [ ] **Step 1: Write three failing tests**
+- [x] **Step 1: Write three failing tests**
 
 Add to `tests/test_vault_entries.py` after `test_capture_json_valid_types_constant_exists_and_is_correct` (the last existing test):
 
@@ -133,7 +133,7 @@ def test_update_entry_status_rejects_experiment_status_for_note(tmp_path):
     assert result is False, "update_entry_status must reject 'running' for notes"
 ```
 
-- [ ] **Step 2: Run failing tests**
+- [x] **Step 2: Run failing tests**
 
 ```bash
 docker cp tests/test_vault_entries.py ikeos:/app/tests/test_vault_entries.py
@@ -147,7 +147,7 @@ Expected:
 
 Note: The third test (`_rejects_experiment_status_for_note`) may already pass because `"running"` is not in `VALID_STATUSES`. That's fine — it documents the intended behaviour. The first two are the meaningful regressions.
 
-- [ ] **Step 3: Fix `update_entry_status()` in `vault_entries.py`**
+- [x] **Step 3: Fix `update_entry_status()` in `vault_entries.py`**
 
 Read `app/services/vault_entries.py`. Replace `update_entry_status()` (lines 216–233):
 
@@ -172,7 +172,7 @@ def update_entry_status(project: str, slug: str, new_status: str) -> bool:
     return False
 ```
 
-- [ ] **Step 4: Run all three new tests — all must pass**
+- [x] **Step 4: Run all three new tests — all must pass**
 
 ```bash
 docker cp app/services/vault_entries.py ikeos:/app/app/services/vault_entries.py
@@ -181,7 +181,7 @@ docker.exe exec ikeos pytest tests/test_vault_entries.py::test_update_entry_stat
 
 Expected: 3 PASSED.
 
-- [ ] **Step 5: Run full test suite**
+- [x] **Step 5: Run full test suite**
 
 ```bash
 docker.exe exec ikeos pytest tests/ -q 2>&1 | tail -5
@@ -189,7 +189,7 @@ docker.exe exec ikeos pytest tests/ -q 2>&1 | tail -5
 
 Expected: 266 passed, 0 failures (263 existing + 3 new).
 
-- [ ] **Step 6: Append decision to `.claude/DECISIONS.md`**
+- [x] **Step 6: Append decision to `.claude/DECISIONS.md`**
 
 Read `.claude/DECISIONS.md` to find the end. Append:
 
@@ -200,7 +200,7 @@ Read `.claude/DECISIONS.md` to find the end. Append:
 `update_entry_status()` (the web-UI status path, called by `POST /projects/<name>/<slug>/status`) previously validated `new_status` against `VALID_STATUSES` before finding the file. This meant experiments could be set to `done` (invalid) and could not be set to `complete` (valid for experiments). Fix: remove the upfront check; after finding the file by type folder, validate against `cfg["valid_statuses"]` from `ENTRY_TYPE_CONFIG`. This is the same pattern `update_entry_status_generic()` uses. The web UI status dropdown now correctly enforces per-type lifecycle rules without needing to know the entry type upfront.
 ```
 
-- [ ] **Step 7: Rebuild and verify health**
+- [x] **Step 7: Rebuild and verify health**
 
 ```bash
 docker.exe compose up --build -d ikeos 2>&1 | tail -3
@@ -209,7 +209,7 @@ curl -s http://localhost:5009/health
 
 Expected: `ok`
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add app/services/vault_entries.py tests/test_vault_entries.py .claude/DECISIONS.md
@@ -233,7 +233,7 @@ after finding the entry file, same pattern as update_entry_status_generic."
 
 CONTRIBUTING.md supplements README.md — README explains what IkeOS is and how to run it; CONTRIBUTING.md explains how to develop it, how the vault is structured, and how to extend it. Keep it practical and concrete. No marketing language. No duplication of README content.
 
-- [ ] **Step 1: Write CONTRIBUTING.md**
+- [x] **Step 1: Write CONTRIBUTING.md**
 
 Create `CONTRIBUTING.md` at the repo root:
 
@@ -367,7 +367,7 @@ See [CLAUDE.md](CLAUDE.md) for the full adapter contract.
 See [.claude/DECISIONS.md](.claude/DECISIONS.md) for the history of architectural decisions.
 ```
 
-- [ ] **Step 2: Verify no broken links**
+- [x] **Step 2: Verify no broken links**
 
 ```bash
 # Check that all referenced files exist
@@ -376,7 +376,7 @@ ls PHILOSOPHY.md .env.example umbrella_registry.yaml.example CLAUDE.md .claude/D
 
 Expected: all six files listed without error.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add CONTRIBUTING.md
@@ -393,7 +393,7 @@ Completes Level B public release readiness."
 
 ## Task 3: Session 9 'Imi Output
 
-- [ ] **Step 1: Produce Session 9 output**
+- [x] **Step 1: Produce Session 9 output**
 
 Answer each heading:
 
@@ -419,9 +419,9 @@ Answer each heading:
 
 Session 9 is done when:
 
-- [ ] `docker exec ikeos pytest tests/ -q` shows 266 passed, 0 failures
-- [ ] `update_entry_status("myproj", "experiment-slug", "done")` returns `False`
-- [ ] `update_entry_status("myproj", "experiment-slug", "complete")` returns `True`
-- [ ] `CONTRIBUTING.md` exists at repo root with no broken file references
-- [ ] `curl -s http://localhost:5009/health` returns `ok`
-- [ ] `DECISIONS.md` has the lifecycle fix entry
+- [x] `docker exec ikeos pytest tests/ -q` shows 266 passed, 0 failures
+- [x] `update_entry_status("myproj", "experiment-slug", "done")` returns `False`
+- [x] `update_entry_status("myproj", "experiment-slug", "complete")` returns `True`
+- [x] `CONTRIBUTING.md` exists at repo root with no broken file references
+- [x] `curl -s http://localhost:5009/health` returns `ok`
+- [x] `DECISIONS.md` has the lifecycle fix entry

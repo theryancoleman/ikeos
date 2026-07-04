@@ -122,7 +122,7 @@ def test_update_entry_status_generic_experiment_complete(tmp_path):
     assert "status/complete" in post.metadata["tags"]
 ```
 
-- [ ] **Step 2: Run failing tests**
+- [x] **Step 2: Run failing tests**
 
 ```bash
 docker exec ikeos pytest tests/test_vault_entries.py::test_write_entry_experiment_creates_in_experiments_folder tests/test_vault_entries.py::test_write_entry_experiment_sets_status_running tests/test_vault_entries.py::test_update_entry_status_generic_experiment_complete -v 2>&1 | tail -15
@@ -130,7 +130,7 @@ docker exec ikeos pytest tests/test_vault_entries.py::test_write_entry_experimen
 
 Expected: 3 FAILED — `"experiment"` not in VALID_TYPES / no experiments folder logic.
 
-- [ ] **Step 3: Update `vault_cache.py` — add experiment constants**
+- [x] **Step 3: Update `vault_cache.py` — add experiment constants**
 
 Apply these four changes to `app/services/vault_cache.py`:
 
@@ -161,7 +161,7 @@ TYPE_TAGS = {
 EXPERIMENT_STATUSES = {"running", "complete", "abandoned"}
 ```
 
-- [ ] **Step 4: Update `vault_entries.py` — four changes**
+- [x] **Step 4: Update `vault_entries.py` — four changes**
 
 **Change A:** In `write_entry()`, add the experiment case alongside the existing `if entry_type == "idea":` / `elif entry_type == "bug":` block. Find this section and add the new elif:
 
@@ -275,7 +275,7 @@ Replace with:
         base_path = _vc.VAULT_PATH / "projects" / project / folder
 ```
 
-- [ ] **Step 5: Run tests — must all pass**
+- [x] **Step 5: Run tests — must all pass**
 
 ```bash
 docker exec ikeos pytest tests/test_vault_entries.py -v 2>&1 | tail -20
@@ -283,7 +283,7 @@ docker exec ikeos pytest tests/test_vault_entries.py -v 2>&1 | tail -20
 
 Expected: all PASSED (existing + 3 new).
 
-- [ ] **Step 6: Update `capture.py` — three locations**
+- [x] **Step 6: Update `capture.py` — three locations**
 
 **Location A:** `patch_entries()` — line 107: add `"experiment"` to the valid types tuple:
 
@@ -330,7 +330,7 @@ Add after the `elif entry_type == "housekeeping-task":` block:
         data["timebox"] = req.get("timebox", "")
 ```
 
-- [ ] **Step 7: Write capture_json experiment test**
+- [x] **Step 7: Write capture_json experiment test**
 
 In `tests/test_capture.py`, add after the existing capture_json tests:
 
@@ -358,7 +358,7 @@ def test_capture_json_experiment(client, tmp_vault):
     assert post.metadata["timebox"] == "one session"
 ```
 
-- [ ] **Step 8: Run capture test**
+- [x] **Step 8: Run capture test**
 
 ```bash
 docker exec ikeos pytest tests/test_capture.py::test_capture_json_experiment -v 2>&1 | tail -10
@@ -366,7 +366,7 @@ docker exec ikeos pytest tests/test_capture.py::test_capture_json_experiment -v 
 
 Expected: PASSED.
 
-- [ ] **Step 9: Update `capture.html` — add Experiment radio and conditional fields**
+- [x] **Step 9: Update `capture.html` — add Experiment radio and conditional fields**
 
 **Add the Experiment radio button** in the `type-radios` div, after the grill-me radio:
 
@@ -415,7 +415,7 @@ function updateFields(type) {
 }
 ```
 
-- [ ] **Step 10: Run the full test suite**
+- [x] **Step 10: Run the full test suite**
 
 ```bash
 docker exec ikeos pytest tests/ -q 2>&1 | tail -5
@@ -423,7 +423,7 @@ docker exec ikeos pytest tests/ -q 2>&1 | tail -5
 
 Expected: all pass, 0 failures.
 
-- [ ] **Step 11: Rebuild and smoke test capture form**
+- [x] **Step 11: Rebuild and smoke test capture form**
 
 ```bash
 docker.exe compose up --build -d ikeos 2>&1 | tail -3
@@ -433,7 +433,7 @@ curl -s http://localhost:5009/health
 
 Open `http://localhost:5009/capture` in a browser. Verify the "Experiment" radio button appears and selecting it shows the hypothesis/expected_outcome/measurement/success_criteria/timebox fields.
 
-- [ ] **Step 12: Commit**
+- [x] **Step 12: Commit**
 
 ```bash
 git add app/services/vault_cache.py app/services/vault_entries.py \
@@ -523,7 +523,7 @@ def test_append_event_returns_false_when_path_unwritable(tmp_path, monkeypatch):
     assert result is False
 ```
 
-- [ ] **Step 2: Run to confirm failure**
+- [x] **Step 2: Run to confirm failure**
 
 ```bash
 docker exec ikeos pytest tests/test_metrics.py -v 2>&1 | tail -10
@@ -531,7 +531,7 @@ docker exec ikeos pytest tests/test_metrics.py -v 2>&1 | tail -10
 
 Expected: `ModuleNotFoundError: No module named 'app.services.metrics'`
 
-- [ ] **Step 3: Create `app/services/metrics.py`**
+- [x] **Step 3: Create `app/services/metrics.py`**
 
 ```python
 import json
@@ -562,7 +562,7 @@ def append_event(event_type: str, payload: dict) -> bool:
         return False
 ```
 
-- [ ] **Step 4: Run tests — must all pass**
+- [x] **Step 4: Run tests — must all pass**
 
 ```bash
 docker exec ikeos pytest tests/test_metrics.py -v 2>&1 | tail -10
@@ -570,7 +570,7 @@ docker exec ikeos pytest tests/test_metrics.py -v 2>&1 | tail -10
 
 Expected: 5 PASSED.
 
-- [ ] **Step 5: Wire `housekeeping.trigger` event into `scheduler.py`**
+- [x] **Step 5: Wire `housekeeping.trigger` event into `scheduler.py`**
 
 In `app/services/scheduler.py`, find `trigger_now()`. After the `_schedule_command(...)` call and `_write_config(config)` call, add the metrics event emission. The full updated `trigger_now()`:
 
@@ -615,7 +615,7 @@ def trigger_now() -> str | None:
     return session_id
 ```
 
-- [ ] **Step 6: Run the full test suite to confirm no regressions**
+- [x] **Step 6: Run the full test suite to confirm no regressions**
 
 ```bash
 docker exec ikeos pytest tests/ -q 2>&1 | tail -5
@@ -623,7 +623,7 @@ docker exec ikeos pytest tests/ -q 2>&1 | tail -5
 
 Expected: all pass.
 
-- [ ] **Step 7: Update `docker-compose.yml` — add METRICS_PATH**
+- [x] **Step 7: Update `docker-compose.yml` — add METRICS_PATH**
 
 In `docker-compose.yml`, find the `environment:` section (currently only `VAULT_PATH=/vault`) and add `METRICS_PATH`:
 
@@ -654,7 +654,7 @@ Wait — a file mount needs the host path of the **directory**, not the file. Th
       - ${CLAUDE_VERSION_PATH}:/claude-config/VERSION:ro
 ```
 
-- [ ] **Step 8: Update `.env.example`**
+- [x] **Step 8: Update `.env.example`**
 
 Add after the existing `VAULT_PATH` line:
 
@@ -663,7 +663,7 @@ Add after the existing `VAULT_PATH` line:
 METRICS_PATH_HOST=/path/to/.claude/metrics
 ```
 
-- [ ] **Step 9: Update your `.env` with the real path**
+- [x] **Step 9: Update your `.env` with the real path**
 
 ```bash
 echo 'METRICS_PATH_HOST=C:\Users\ServerAdmin\.claude\metrics' >> /mnt/c/Server/projects/ikeos/.env
@@ -671,7 +671,7 @@ echo 'METRICS_PATH_HOST=C:\Users\ServerAdmin\.claude\metrics' >> /mnt/c/Server/p
 
 (The `.env` is gitignored — this is safe.)
 
-- [ ] **Step 10: Rebuild and verify metrics path works**
+- [x] **Step 10: Rebuild and verify metrics path works**
 
 ```bash
 docker.exe compose up --build -d ikeos 2>&1 | tail -3
@@ -681,7 +681,7 @@ docker exec ikeos env | grep METRICS_PATH
 
 Expected: `METRICS_PATH=/metrics/events.jsonl`
 
-- [ ] **Step 11: Commit**
+- [x] **Step 11: Commit**
 
 ```bash
 git add app/services/metrics.py tests/test_metrics.py \
@@ -708,7 +708,7 @@ The root cause of the housekeeping permission bug (vault 2026-06-21) is that sub
 
 The IkeOS-side improvement from Task 2 (metrics) gives us observability. This task documents the fix decision and creates the actionable cross-project note.
 
-- [ ] **Step 1: Update bug status to `in-progress` (if not already)**
+- [x] **Step 1: Update bug status to `in-progress` (if not already)**
 
 Verify the bug status:
 
@@ -726,7 +726,7 @@ curl -s -X PATCH http://localhost:5009/entries \
   -d "status=in-progress"
 ```
 
-- [ ] **Step 2: Create cross-project vault entry for claude-config allowlist fix**
+- [x] **Step 2: Create cross-project vault entry for claude-config allowlist fix**
 
 The actionable fix is: add `Bash(python3 *)` and `Bash(python *)` to the allowlist in `claude-config/global/settings.json` so that Python-based housekeeping tasks (like vault-schema-check) run without prompts in unattended sessions.
 
@@ -747,7 +747,7 @@ ls /mnt/c/Server/obsidian-vault/projects/claude-config/ideas/ | grep "python"
 
 Expected: a new `*.md` file for this idea.
 
-- [ ] **Step 3: Append housekeeping fix decision to `.claude/DECISIONS.md`**
+- [x] **Step 3: Append housekeeping fix decision to `.claude/DECISIONS.md`**
 
 Read `.claude/DECISIONS.md` first to see the current last entry, then append:
 
@@ -761,7 +761,7 @@ Experiments use `running → complete | abandoned` rather than the standard `new
 The root cause of vault bug 2026-06-21 (subagents stalling on Bash permission prompts in unattended housekeeping sessions) is not fixable from the IkeOS app layer. IkeOS dispatches a Claude Code session; permission grants are governed by `claude-config/global/settings.json`. The chosen fix: add `Bash(python3 *)` and `Bash(python *)` to the allowlist in `claude-config/global/settings.json`, scoped to the claude-config project context. An idea entry has been created in the claude-config vault project tracking this work. IkeOS side: the `housekeeping.trigger` metrics event (Task 2, Session 5) provides the observability needed to detect failed or stalled runs.
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add .claude/DECISIONS.md
@@ -779,7 +779,7 @@ IkeOS app change. Cross-project note created in claude-config vault."
 
 At the conclusion of every 'Imi session, produce the 8-section output directly to the user (do not commit it as a file).
 
-- [ ] **Step 1: Produce Session 5 output**
+- [x] **Step 1: Produce Session 5 output**
 
 Answer each heading:
 
@@ -805,11 +805,11 @@ Answer each heading:
 
 Session 5 is done when:
 
-- [ ] `docker exec ikeos pytest tests/ -q` shows 0 failures, and the new experiment and metrics tests are included in the count
-- [ ] `curl -s -X POST http://localhost:5009/capture/json -H "Content-Type: application/json" -d '{"type":"experiment","project":"ikeos","title":"Test","body":"","hypothesis":"H","expected_outcome":"O","measurement":"M","success_criteria":"S","timebox":"1 week"}' | python3 -m json.tool` returns `{"ok": true}`
-- [ ] An `experiments/` folder is created in the vault under the ikeos project after the above capture
-- [ ] `docker exec ikeos python -c "from app.services.metrics import append_event; print(append_event('test', {'x':1}))"` prints `True`
-- [ ] A `housekeeping.trigger` event is appended to events.jsonl when the housekeeping trigger endpoint is called
-- [ ] A cross-project idea exists in `claude-config` vault for the Python allowlist fix
-- [ ] DECISIONS.md has entries for experiment status lifecycle and housekeeping fix approach
-- [ ] `curl -s http://localhost:5009/health` returns `ok`
+- [x] `docker exec ikeos pytest tests/ -q` shows 0 failures, and the new experiment and metrics tests are included in the count
+- [x] `curl -s -X POST http://localhost:5009/capture/json -H "Content-Type: application/json" -d '{"type":"experiment","project":"ikeos","title":"Test","body":"","hypothesis":"H","expected_outcome":"O","measurement":"M","success_criteria":"S","timebox":"1 week"}' | python3 -m json.tool` returns `{"ok": true}`
+- [x] An `experiments/` folder is created in the vault under the ikeos project after the above capture
+- [x] `docker exec ikeos python -c "from app.services.metrics import append_event; print(append_event('test', {'x':1}))"` prints `True`
+- [x] A `housekeeping.trigger` event is appended to events.jsonl when the housekeeping trigger endpoint is called
+- [x] A cross-project idea exists in `claude-config` vault for the Python allowlist fix
+- [x] DECISIONS.md has entries for experiment status lifecycle and housekeeping fix approach
+- [x] `curl -s http://localhost:5009/health` returns `ok`

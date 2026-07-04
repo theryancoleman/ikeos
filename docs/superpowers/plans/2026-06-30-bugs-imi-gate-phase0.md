@@ -39,7 +39,7 @@
 - Modify: `app/templates/blog_draft.html:66–218`
 - Modify: `tests/test_housekeeping.py`
 
-- [ ] **Step 1: Write failing tests for auth guard**
+- [x] **Step 1: Write failing tests for auth guard**
 
 Add to `tests/test_housekeeping.py`. Place after the existing housekeeping tests. The `client` fixture is defined in `tests/conftest.py` and uses `create_app({"TESTING": True})`.
 
@@ -96,7 +96,7 @@ def test_blog_draft_rewrite_rejects_missing_token(client, tmp_path, monkeypatch)
     assert resp.status_code == 401
 ```
 
-- [ ] **Step 2: Run tests to confirm they fail**
+- [x] **Step 2: Run tests to confirm they fail**
 
 ```bash
 docker exec ikeos pytest tests/test_housekeeping.py -k "blog_draft_save_rejects or blog_draft_publish_rejects or blog_draft_rewrite_rejects or blog_draft_save_accepts" -v
@@ -104,7 +104,7 @@ docker exec ikeos pytest tests/test_housekeeping.py -k "blog_draft_save_rejects 
 
 Expected: 5 FAILED (401 not returned yet — routes execute without auth).
 
-- [ ] **Step 3: Add `_check_auth()` to the three routes in `housekeeping.py`**
+- [x] **Step 3: Add `_check_auth()` to the three routes in `housekeeping.py`**
 
 In `blog_draft_save` (line 236), add at the top of the function body:
 
@@ -142,7 +142,7 @@ def blog_draft_rewrite():
     # ... rest of function unchanged
 ```
 
-- [ ] **Step 4: Run tests to confirm they pass**
+- [x] **Step 4: Run tests to confirm they pass**
 
 ```bash
 docker exec ikeos pytest tests/test_housekeeping.py -k "blog_draft_save_rejects or blog_draft_publish_rejects or blog_draft_rewrite_rejects or blog_draft_save_accepts" -v
@@ -150,7 +150,7 @@ docker exec ikeos pytest tests/test_housekeeping.py -k "blog_draft_save_rejects 
 
 Expected: 5 PASSED.
 
-- [ ] **Step 5: Pass `capture_token` to `blog_draft.html` template**
+- [x] **Step 5: Pass `capture_token` to `blog_draft.html` template**
 
 In `blog_draft_editor()` (around line 222), add `capture_token` to the render call:
 
@@ -170,7 +170,7 @@ def blog_draft_editor():
     )
 ```
 
-- [ ] **Step 6: Add token to fetch calls in `blog_draft.html`**
+- [x] **Step 6: Add token to fetch calls in `blog_draft.html`**
 
 At the top of the `<script>` block (after existing variable declarations, around line 73), add:
 
@@ -206,7 +206,7 @@ const resp = await fetch('/housekeeping/blog-draft/rewrite', {
 });
 ```
 
-- [ ] **Step 7: Rebuild and run full housekeeping test suite**
+- [x] **Step 7: Rebuild and run full housekeeping test suite**
 
 ```bash
 docker.exe compose up --build -d ikeos && docker exec ikeos pytest tests/test_housekeeping.py -v
@@ -214,7 +214,7 @@ docker.exe compose up --build -d ikeos && docker exec ikeos pytest tests/test_ho
 
 Expected: all tests PASSED.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git -C /mnt/c/Server/projects/ikeos add app/routes/housekeeping.py app/templates/blog_draft.html tests/test_housekeeping.py
@@ -238,7 +238,7 @@ blog_draft.html updated to pass X-Capture-Token in all fetch calls."
 - Modify: `sessions.py`
 - Modify: `tests/test_sessions.py`
 
-- [ ] **Step 1: Write a failing test for concurrent write safety**
+- [x] **Step 1: Write a failing test for concurrent write safety**
 
 Add to `tests/test_sessions.py`:
 
@@ -263,7 +263,7 @@ def test_concurrent_create_sessions_both_persist():
     assert len(set(results)) == 5, "Duplicate session IDs created"
 ```
 
-- [ ] **Step 2: Run test to confirm it is flaky or failing**
+- [x] **Step 2: Run test to confirm it is flaky or failing**
 
 ```bash
 cd /mnt/c/Server/claude-config/services/session-manager && python -m pytest tests/test_sessions.py::test_concurrent_create_sessions_both_persist -v --count=10 2>/dev/null || python -m pytest tests/test_sessions.py::test_concurrent_create_sessions_both_persist -v
@@ -271,7 +271,7 @@ cd /mnt/c/Server/claude-config/services/session-manager && python -m pytest test
 
 Expected: intermittent failure or consistent failure showing <5 sessions saved.
 
-- [ ] **Step 3: Add threading.Lock to `sessions.py`**
+- [x] **Step 3: Add threading.Lock to `sessions.py`**
 
 Replace the entire content of `sessions.py` with:
 
@@ -353,7 +353,7 @@ def remove_session(session_id: str) -> bool:
     return True
 ```
 
-- [ ] **Step 4: Run the concurrent test to confirm it passes**
+- [x] **Step 4: Run the concurrent test to confirm it passes**
 
 ```bash
 cd /mnt/c/Server/claude-config/services/session-manager && python -m pytest tests/test_sessions.py::test_concurrent_create_sessions_both_persist -v
@@ -361,7 +361,7 @@ cd /mnt/c/Server/claude-config/services/session-manager && python -m pytest test
 
 Expected: PASSED.
 
-- [ ] **Step 5: Run the full sessions test suite to check for regressions**
+- [x] **Step 5: Run the full sessions test suite to check for regressions**
 
 ```bash
 cd /mnt/c/Server/claude-config/services/session-manager && python -m pytest tests/test_sessions.py -v
@@ -369,7 +369,7 @@ cd /mnt/c/Server/claude-config/services/session-manager && python -m pytest test
 
 Expected: all PASSED.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git -C /mnt/c/Server/claude-config add services/session-manager/sessions.py services/session-manager/tests/test_sessions.py
@@ -394,7 +394,7 @@ The strategy: run the tests, read the actual failures, fix assertions to match c
 **Files:**
 - Modify: `tests/test_app.py`
 
-- [ ] **Step 1: Run the failing tests and capture output**
+- [x] **Step 1: Run the failing tests and capture output**
 
 ```bash
 cd /mnt/c/Server/claude-config/services/session-manager && python -m pytest tests/test_app.py -v 2>&1 | tee /tmp/test_failures.txt | tail -60
@@ -402,7 +402,7 @@ cd /mnt/c/Server/claude-config/services/session-manager && python -m pytest test
 
 Expected: approximately 14 FAILED. Read each failure message carefully — the actual assertion error text tells you what the code returned vs. what the test expected.
 
-- [ ] **Step 2: Fix `test_container_restart` assertion**
+- [x] **Step 2: Fix `test_container_restart` assertion**
 
 The code at `app.py:389` calls:
 ```python
@@ -424,7 +424,7 @@ def test_container_restart(client, mocker):
     )
 ```
 
-- [ ] **Step 3: Fix `test_container_stop` assertion**
+- [x] **Step 3: Fix `test_container_stop` assertion**
 
 The code at `app.py:400` calls `["bash", "-c", f"docker.exe stop {name}"]`:
 
@@ -441,7 +441,7 @@ def test_container_stop(client, mocker):
     )
 ```
 
-- [ ] **Step 4: Fix `test_container_start` assertion**
+- [x] **Step 4: Fix `test_container_start` assertion**
 
 The code at `app.py:409` calls `["bash", "-c", f"docker.exe start {name}"]`:
 
@@ -458,7 +458,7 @@ def test_container_start(client, mocker):
     )
 ```
 
-- [ ] **Step 5: Fix remaining failures from Step 1 output**
+- [x] **Step 5: Fix remaining failures from Step 1 output**
 
 For each remaining failure in `/tmp/test_failures.txt`, apply the same principle: read the actual response the code returns and update the test assertion to match. Do NOT change `app.py` to match old tests — the tests are wrong, not the code.
 
@@ -469,7 +469,7 @@ Common patterns to look for:
 
 After fixing each failure, note the change and rationale as a comment in the test.
 
-- [ ] **Step 6: Run the full test_app.py suite**
+- [x] **Step 6: Run the full test_app.py suite**
 
 ```bash
 cd /mnt/c/Server/claude-config/services/session-manager && python -m pytest tests/test_app.py -v
@@ -477,7 +477,7 @@ cd /mnt/c/Server/claude-config/services/session-manager && python -m pytest test
 
 Expected: 0 FAILED.
 
-- [ ] **Step 7: Run the complete session manager test suite**
+- [x] **Step 7: Run the complete session manager test suite**
 
 ```bash
 cd /mnt/c/Server/claude-config/services/session-manager && python -m pytest tests/ -v
@@ -485,7 +485,7 @@ cd /mnt/c/Server/claude-config/services/session-manager && python -m pytest test
 
 Expected: 0 FAILED across all test files.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git -C /mnt/c/Server/claude-config add services/session-manager/tests/test_app.py
@@ -509,7 +509,7 @@ Additional response-shape mismatches fixed to match current behavior."
 - Modify: `.gitignore`
 - Create: `umbrella_registry.yaml.example`
 
-- [ ] **Step 1: Confirm `umbrella_registry.yaml` is currently tracked**
+- [x] **Step 1: Confirm `umbrella_registry.yaml` is currently tracked**
 
 ```bash
 git -C /mnt/c/Server/projects/ikeos ls-files umbrella_registry.yaml
@@ -517,7 +517,7 @@ git -C /mnt/c/Server/projects/ikeos ls-files umbrella_registry.yaml
 
 Expected: outputs `umbrella_registry.yaml` (it is tracked).
 
-- [ ] **Step 2: Add to `.gitignore`**
+- [x] **Step 2: Add to `.gitignore`**
 
 Open `.gitignore` and add these lines in the "App secrets" section (after `.env`):
 
@@ -526,7 +526,7 @@ Open `.gitignore` and add these lines in the "App secrets" section (after `.env`
 umbrella_registry.yaml
 ```
 
-- [ ] **Step 3: Create `umbrella_registry.yaml.example`**
+- [x] **Step 3: Create `umbrella_registry.yaml.example`**
 
 Create the file at `/mnt/c/Server/projects/ikeos/umbrella_registry.yaml.example`:
 
@@ -560,7 +560,7 @@ my-standalone-project:
   components: []
 ```
 
-- [ ] **Step 4: Untrack the personal file from git**
+- [x] **Step 4: Untrack the personal file from git**
 
 ```bash
 git -C /mnt/c/Server/projects/ikeos rm --cached umbrella_registry.yaml
@@ -568,7 +568,7 @@ git -C /mnt/c/Server/projects/ikeos rm --cached umbrella_registry.yaml
 
 Expected: `rm 'umbrella_registry.yaml'`
 
-- [ ] **Step 5: Verify gitignore took effect**
+- [x] **Step 5: Verify gitignore took effect**
 
 ```bash
 git -C /mnt/c/Server/projects/ikeos status umbrella_registry.yaml
@@ -576,7 +576,7 @@ git -C /mnt/c/Server/projects/ikeos status umbrella_registry.yaml
 
 Expected: `umbrella_registry.yaml` is listed as untracked but ignored — it should NOT appear in `git status` output (ignored files are hidden). If it appears as untracked (not ignored), the gitignore rule may not have propagated — run `git check-ignore -v umbrella_registry.yaml` to debug.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git -C /mnt/c/Server/projects/ikeos add .gitignore umbrella_registry.yaml.example
@@ -596,7 +596,7 @@ blocker."
 
 **Working directory:** `/mnt/c/Server/projects/ikeos`
 
-- [ ] **Step 1: Search for stale naming in committed files**
+- [x] **Step 1: Search for stale naming in committed files**
 
 ```bash
 git -C /mnt/c/Server/projects/ikeos grep -i "obsidian.capture\|obsidian_capture" -- '*.md' '*.py' '*.html' '*.yaml' '*.yml' '*.txt' '*.json' '.gitignore' '.env.example'
@@ -604,14 +604,14 @@ git -C /mnt/c/Server/projects/ikeos grep -i "obsidian.capture\|obsidian_capture"
 
 Expected: zero matches. If any are found, go to Step 2. If none, skip to Step 3.
 
-- [ ] **Step 2: Fix any matches found**
+- [x] **Step 2: Fix any matches found**
 
 For each match:
 - If in a user-facing string (README, CLAUDE.md, DECISIONS.md header, template, route docstring): change to "IkeOS"
 - If in a code identifier (variable name, vault project slug): these can remain as-is — the slug `obsidian-capture` is a historical vault identifier that isn't user-facing
 - If in a comment describing old behavior: update to reflect current name
 
-- [ ] **Step 3: Verify DECISIONS.md header**
+- [x] **Step 3: Verify DECISIONS.md header**
 
 ```bash
 head -1 /mnt/c/Server/projects/ikeos/.claude/DECISIONS.md
@@ -627,7 +627,7 @@ If it still says "Obsidian Capture", fix it:
 
 Use the Edit tool: old_string = `# Architectural Decisions — Obsidian Capture`, new_string = `# Architectural Decisions — IkeOS`.
 
-- [ ] **Step 4: Commit if any changes were made**
+- [x] **Step 4: Commit if any changes were made**
 
 ```bash
 git -C /mnt/c/Server/projects/ikeos add -A
@@ -657,7 +657,7 @@ If no changes were needed, skip the commit and note "Naming already clean."
 - Modify: `app/__init__.py` — add nav entry if needed
 - Modify: `tests/test_metrics.py` — extend with new route tests
 
-- [ ] **Step 1: Check existing test_metrics.py to understand current coverage**
+- [x] **Step 1: Check existing test_metrics.py to understand current coverage**
 
 ```bash
 cat /mnt/c/Server/projects/ikeos/tests/test_metrics.py
@@ -665,7 +665,7 @@ cat /mnt/c/Server/projects/ikeos/tests/test_metrics.py
 
 Read the file. Understand what `append_event` tests already exist. Add new tests only for the Flask routes.
 
-- [ ] **Step 2: Write failing tests for `GET /metrics`**
+- [x] **Step 2: Write failing tests for `GET /metrics`**
 
 Add to `tests/test_metrics.py`. These tests use the `client` fixture from `conftest.py`.
 
@@ -730,7 +730,7 @@ def test_metrics_event_post_appends_event(client, tmp_path, monkeypatch):
     assert "timestamp" in record
 ```
 
-- [ ] **Step 3: Run tests to confirm they fail**
+- [x] **Step 3: Run tests to confirm they fail**
 
 ```bash
 docker exec ikeos pytest tests/test_metrics.py -k "metrics_view or metrics_event" -v
@@ -738,7 +738,7 @@ docker exec ikeos pytest tests/test_metrics.py -k "metrics_view or metrics_event
 
 Expected: FAILED (routes don't exist yet).
 
-- [ ] **Step 4: Add `read_events()` to `app/services/metrics.py`**
+- [x] **Step 4: Add `read_events()` to `app/services/metrics.py`**
 
 Add this function at the end of `app/services/metrics.py`. It reads `METRICS_PATH` at call-time so tests can patch `app.services.metrics.METRICS_PATH` correctly.
 
@@ -763,7 +763,7 @@ def read_events(limit: int = 50) -> list[dict]:
         return []
 ```
 
-- [ ] **Step 5: Add routes to `agents.py`**
+- [x] **Step 5: Add routes to `agents.py`**
 
 Add the following to `app/routes/agents.py`. Check the top of the file for existing imports before adding. `CAPTURE_TOKEN` may already be defined; do not redefine it.
 
@@ -804,7 +804,7 @@ Add any missing imports to the top of `agents.py`:
 
 **Important:** If `CAPTURE_TOKEN` is already defined at module level in `agents.py`, do not redefine it — check first with `grep -n "CAPTURE_TOKEN" app/routes/agents.py`.
 
-- [ ] **Step 6: Create `app/templates/metrics.html`**
+- [x] **Step 6: Create `app/templates/metrics.html`**
 
 ```html
 {% extends "base.html" %}
@@ -852,7 +852,7 @@ Add any missing imports to the top of `agents.py`:
 {% endblock %}
 ```
 
-- [ ] **Step 7: Add `/metrics` to the nav in `base.html`**
+- [x] **Step 7: Add `/metrics` to the nav in `base.html`**
 
 Find the nav in `app/templates/base.html`. Add a Metrics link in the appropriate nav section (near Housekeeping or at the end of the main nav items):
 
@@ -862,7 +862,7 @@ Find the nav in `app/templates/base.html`. Add a Metrics link in the appropriate
 
 If the nav uses a list structure, follow the existing pattern exactly.
 
-- [ ] **Step 8: Run the metrics tests**
+- [x] **Step 8: Run the metrics tests**
 
 ```bash
 docker.exe compose up --build -d ikeos && docker exec ikeos pytest tests/test_metrics.py -v
@@ -870,7 +870,7 @@ docker.exe compose up --build -d ikeos && docker exec ikeos pytest tests/test_me
 
 Expected: all PASSED.
 
-- [ ] **Step 9: Smoke test in browser context**
+- [x] **Step 9: Smoke test in browser context**
 
 ```bash
 curl -sf http://localhost:5009/metrics | grep -c "Metrics"
@@ -878,7 +878,7 @@ curl -sf http://localhost:5009/metrics | grep -c "Metrics"
 
 Expected: output `1` or higher (page renders with the Metrics heading).
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git -C /mnt/c/Server/projects/ikeos add app/routes/agents.py app/templates/metrics.html app/templates/base.html tests/test_metrics.py
@@ -897,11 +897,11 @@ was already wired in scheduler.py; this closes the read-back gap."
 
 This plan is done when:
 
-- [ ] `docker exec ikeos pytest tests/test_housekeeping.py -v` — 0 FAILED, auth guard tests passing
-- [ ] `cd /mnt/c/Server/claude-config/services/session-manager && python -m pytest tests/ -v` — 0 FAILED across all session manager tests
-- [ ] `docker exec ikeos pytest tests/test_metrics.py -v` — 0 FAILED
-- [ ] `docker exec ikeos pytest` — full IkeOS suite 0 FAILED
-- [ ] `git -C /mnt/c/Server/projects/ikeos ls-files umbrella_registry.yaml` — empty output (not tracked)
-- [ ] `curl -sf http://localhost:5009/metrics` — returns HTTP 200 with Metrics heading
-- [ ] `curl -sf http://localhost:5009/housekeeping/blog-draft/save -X POST` — returns 401 (no token)
-- [ ] All commits on main with conventional commit messages
+- [x] `docker exec ikeos pytest tests/test_housekeeping.py -v` — 0 FAILED, auth guard tests passing
+- [x] `cd /mnt/c/Server/claude-config/services/session-manager && python -m pytest tests/ -v` — 0 FAILED across all session manager tests
+- [x] `docker exec ikeos pytest tests/test_metrics.py -v` — 0 FAILED
+- [x] `docker exec ikeos pytest` — full IkeOS suite 0 FAILED
+- [x] `git -C /mnt/c/Server/projects/ikeos ls-files umbrella_registry.yaml` — empty output (not tracked)
+- [x] `curl -sf http://localhost:5009/metrics` — returns HTTP 200 with Metrics heading
+- [x] `curl -sf http://localhost:5009/housekeeping/blog-draft/save -X POST` — returns 401 (no token)
+- [x] All commits on main with conventional commit messages

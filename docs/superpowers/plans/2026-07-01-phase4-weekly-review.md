@@ -31,7 +31,7 @@
 
 No tests for Docker config — verify by checking the container starts clean.
 
-- [ ] **Step 1.1: Add env var to docker-compose.yml**
+- [x] **Step 1.1: Add env var to docker-compose.yml**
 
 In `docker-compose.yml`, in the `environment:` block (alongside `AIOS_BLOG_POSTS_DIR`), add:
 
@@ -39,7 +39,7 @@ In `docker-compose.yml`, in the `environment:` block (alongside `AIOS_BLOG_POSTS
       - WEEKLY_REVIEW_OUTPUT_DIR=/weekly-reviews
 ```
 
-- [ ] **Step 1.2: Add volume mount to docker-compose.yml**
+- [x] **Step 1.2: Add volume mount to docker-compose.yml**
 
 In `docker-compose.yml`, in the `volumes:` block (alongside the blog-posts mount), add:
 
@@ -49,7 +49,7 @@ In `docker-compose.yml`, in the `volumes:` block (alongside the blog-posts mount
 
 The fallback `/tmp/ikeos-no-weekly-reviews` means Docker starts cleanly even when `WEEKLY_REVIEW_OUTPUT_PATH` is not set in `.env`. The app code checks if `/weekly-reviews` has any `*.md` files before reading — an empty or missing directory is a valid "no review yet" state.
 
-- [ ] **Step 1.3: Document in .env.example**
+- [x] **Step 1.3: Document in .env.example**
 
 In `.env.example`, after the `AIOS_BLOG_PROJECT_DIR` line, add:
 
@@ -59,7 +59,7 @@ In `.env.example`, after the `AIOS_BLOG_PROJECT_DIR` line, add:
 WEEKLY_REVIEW_OUTPUT_PATH=/path/to/claude-config/library/weekly-reviews
 ```
 
-- [ ] **Step 1.4: Rebuild and confirm clean start**
+- [x] **Step 1.4: Rebuild and confirm clean start**
 
 ```bash
 docker.exe compose up --build -d ikeos
@@ -68,7 +68,7 @@ docker.exe compose logs --tail=20 ikeos
 
 Expected: no errors about missing volumes or env vars.
 
-- [ ] **Step 1.5: Commit**
+- [x] **Step 1.5: Commit**
 
 ```bash
 git -C /mnt/c/Server/projects/ikeos add docker-compose.yml .env.example
@@ -85,7 +85,7 @@ git -C /mnt/c/Server/projects/ikeos commit -m "chore: add weekly-reviews volume 
 
 Read `app/routes/housekeeping.py` before editing — understand the existing module-level vars (`AIOS_BLOG_POSTS_DIR`, `HOUSEKEEPING_PROJECT_DIR`) and helper patterns (`_blog_draft_paths`, `_latest_blog_draft`). The new code follows the same patterns.
 
-- [ ] **Step 2.1: Write the failing tests**
+- [x] **Step 2.1: Write the failing tests**
 
 Read `tests/test_housekeeping.py` to find the import block at the top. The file uses `from unittest.mock import patch, MagicMock` and `import app.routes.housekeeping as hk_mod`. Add these 5 tests at the bottom of the file (after the last existing test):
 
@@ -156,7 +156,7 @@ def test_weekly_review_run_creates_session_when_enabled(client, monkeypatch):
     assert data["session_id"] == "review-sess-1"
 ```
 
-- [ ] **Step 2.2: Run tests to confirm they fail**
+- [x] **Step 2.2: Run tests to confirm they fail**
 
 ```bash
 docker exec ikeos pytest tests/test_housekeeping.py::test_weekly_review_returns_200_with_no_review_dir tests/test_housekeeping.py::test_weekly_review_run_returns_403_when_capability_disabled -v
@@ -164,7 +164,7 @@ docker exec ikeos pytest tests/test_housekeeping.py::test_weekly_review_returns_
 
 Expected: FAIL with `404` (route does not exist yet).
 
-- [ ] **Step 2.3: Add module-level var and helper to housekeeping.py**
+- [x] **Step 2.3: Add module-level var and helper to housekeeping.py**
 
 At the top of `app/routes/housekeeping.py`, after `AIOS_BLOG_PROJECT_DIR = os.environ.get(...)`, add:
 
@@ -186,7 +186,7 @@ def _latest_weekly_review() -> str | None:
     return reviews[0].name if reviews else None
 ```
 
-- [ ] **Step 2.4: Update _housekeeping_context() to include weekly review**
+- [x] **Step 2.4: Update _housekeeping_context() to include weekly review**
 
 In `_housekeeping_context()`, add `weekly_review_file=_latest_weekly_review()` to the returned dict:
 
@@ -209,7 +209,7 @@ def _housekeeping_context() -> dict:
     )
 ```
 
-- [ ] **Step 2.5: Add the two new routes**
+- [x] **Step 2.5: Add the two new routes**
 
 Add these two routes after `blog_draft_session_status()` and before `get_schedule()`:
 
@@ -253,7 +253,7 @@ def weekly_review_run():
     return jsonify({"ok": True, "session_id": result.session_id}), 200
 ```
 
-- [ ] **Step 2.6: Run all 5 new tests — should pass**
+- [x] **Step 2.6: Run all 5 new tests — should pass**
 
 ```bash
 docker exec ikeos pytest tests/test_housekeeping.py::test_weekly_review_returns_200_with_no_review_dir tests/test_housekeeping.py::test_weekly_review_returns_200_with_no_files tests/test_housekeeping.py::test_weekly_review_returns_latest_file_content tests/test_housekeeping.py::test_weekly_review_run_returns_403_when_capability_disabled tests/test_housekeeping.py::test_weekly_review_run_creates_session_when_enabled -v
@@ -261,7 +261,7 @@ docker exec ikeos pytest tests/test_housekeeping.py::test_weekly_review_returns_
 
 Expected: all 5 PASS.
 
-- [ ] **Step 2.7: Run full test suite**
+- [x] **Step 2.7: Run full test suite**
 
 ```bash
 docker exec ikeos pytest tests/ -q
@@ -269,7 +269,7 @@ docker exec ikeos pytest tests/ -q
 
 Expected: 333+ passed, 0 failed.
 
-- [ ] **Step 2.8: Commit**
+- [x] **Step 2.8: Commit**
 
 ```bash
 git -C /mnt/c/Server/projects/ikeos add app/routes/housekeeping.py tests/test_housekeeping.py
@@ -285,7 +285,7 @@ git -C /mnt/c/Server/projects/ikeos commit -m "feat: add weekly review routes an
 
 No unit tests for templates — verified visually after rebuild.
 
-- [ ] **Step 3.1: Create the template**
+- [x] **Step 3.1: Create the template**
 
 Create `app/templates/weekly_review.html` with this content:
 
@@ -373,7 +373,7 @@ async function runWeeklyReview(btn) {
 {% endblock %}
 ```
 
-- [ ] **Step 3.2: Rebuild and verify the route renders**
+- [x] **Step 3.2: Rebuild and verify the route renders**
 
 ```bash
 docker.exe compose up --build -d ikeos
@@ -382,7 +382,7 @@ curl -s http://localhost:5009/housekeeping/weekly-review | grep -i "Weekly Platf
 
 Expected: the page title appears in the HTML.
 
-- [ ] **Step 3.3: Commit**
+- [x] **Step 3.3: Commit**
 
 ```bash
 git -C /mnt/c/Server/projects/ikeos add app/templates/weekly_review.html
@@ -398,7 +398,7 @@ git -C /mnt/c/Server/projects/ikeos commit -m "feat: add weekly platform review 
 
 This adds a "Weekly Platform Review" status widget to the housekeeping page, mirroring the existing "Weekly Blog Draft" widget pattern. It shows the latest review filename (linked to the viewer) and a "Run Review" button (only when capability is enabled).
 
-- [ ] **Step 4.1: Add the status widget to housekeeping.html**
+- [x] **Step 4.1: Add the status widget to housekeeping.html**
 
 In `app/templates/housekeeping.html`, after the closing `</div>` of the "Weekly Blog Draft" `hk-widget` block (around line 109), add:
 
@@ -430,7 +430,7 @@ In `app/templates/housekeeping.html`, after the closing `</div>` of the "Weekly 
   </div>
 ```
 
-- [ ] **Step 4.2: Add the runWeeklyReview() JS function**
+- [x] **Step 4.2: Add the runWeeklyReview() JS function**
 
 In `app/templates/housekeeping.html`, in the `<script>` block (after the existing `runTask()` function and before `deleteTask()`), add:
 
@@ -466,7 +466,7 @@ async function runWeeklyReview(btn) {
 }
 ```
 
-- [ ] **Step 4.3: Rebuild and verify the widget appears**
+- [x] **Step 4.3: Rebuild and verify the widget appears**
 
 ```bash
 docker.exe compose up --build -d ikeos
@@ -475,7 +475,7 @@ curl -s http://localhost:5009/housekeeping | grep -i "Weekly Platform Review"
 
 Expected: the widget text appears in the page HTML.
 
-- [ ] **Step 4.4: Run full test suite to confirm no regressions**
+- [x] **Step 4.4: Run full test suite to confirm no regressions**
 
 ```bash
 docker exec ikeos pytest tests/ -q
@@ -483,7 +483,7 @@ docker exec ikeos pytest tests/ -q
 
 Expected: 333+ passed, 0 failed.
 
-- [ ] **Step 4.5: Commit**
+- [x] **Step 4.5: Commit**
 
 ```bash
 git -C /mnt/c/Server/projects/ikeos add app/templates/housekeeping.html

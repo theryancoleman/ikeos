@@ -36,7 +36,7 @@
 
 Both files are committed but should not be. `app/static/bundle.css` is a generated build artifact — it was added to `.gitignore` in Session 2 but never untracked. `umbrella_registry.yaml` contains personal project topology with Windows paths — it must be replaced by an example file contributors can copy and adapt.
 
-- [ ] **Step 1: Verify both files are currently tracked**
+- [x] **Step 1: Verify both files are currently tracked**
 
 ```bash
 git ls-files app/static/bundle.css umbrella_registry.yaml
@@ -48,7 +48,7 @@ app/static/bundle.css
 umbrella_registry.yaml
 ```
 
-- [ ] **Step 2: Add `umbrella_registry.yaml` to .gitignore**
+- [x] **Step 2: Add `umbrella_registry.yaml` to .gitignore**
 
 Read the current `.gitignore` and append this line in the "Build artifacts" or a new "Project config" section:
 
@@ -66,7 +66,7 @@ app/static/bundle.css
 
 Append `umbrella_registry.yaml` after `app/static/bundle.css`.
 
-- [ ] **Step 3: Create `umbrella_registry.yaml.example`**
+- [x] **Step 3: Create `umbrella_registry.yaml.example`**
 
 Write this content exactly:
 
@@ -105,7 +105,7 @@ my-tool:
   components: []
 ```
 
-- [ ] **Step 4: Untrack both files**
+- [x] **Step 4: Untrack both files**
 
 ```bash
 git rm --cached app/static/bundle.css
@@ -118,7 +118,7 @@ rm 'app/static/bundle.css'
 rm 'umbrella_registry.yaml'
 ```
 
-- [ ] **Step 5: Verify the files are now untracked**
+- [x] **Step 5: Verify the files are now untracked**
 
 ```bash
 git status app/static/bundle.css umbrella_registry.yaml
@@ -132,7 +132,7 @@ ls app/static/bundle.css umbrella_registry.yaml
 
 Expected: both files still exist on disk (untracking does not delete them).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add .gitignore umbrella_registry.yaml.example
@@ -154,14 +154,14 @@ documented format for contributors to copy and adapt."
 
 The services/ tree currently shows only `vault.py`. There are three other services: `scheduler.py`, `skills.py`, and `umbrella.py`. A contributor reading CLAUDE.md would not know these exist.
 
-- [ ] **Step 1: Read the current architecture section**
+- [x] **Step 1: Read the current architecture section**
 
 ```bash
 grep -n "services/" /mnt/c/Server/projects/ikeos/CLAUDE.md
 ls /mnt/c/Server/projects/ikeos/app/services/
 ```
 
-- [ ] **Step 2: Update the services/ tree**
+- [x] **Step 2: Update the services/ tree**
 
 Find this section in `CLAUDE.md`:
 
@@ -180,7 +180,7 @@ Replace with:
 │   └── umbrella.py      # Reads umbrella_registry.yaml, resolves project component trees
 ```
 
-- [ ] **Step 3: Verify no personal references introduced**
+- [x] **Step 3: Verify no personal references introduced**
 
 ```bash
 grep -n "192\.168\|homeautomation\|ServerAdmin\|C:\\\\Server" /mnt/c/Server/projects/ikeos/CLAUDE.md
@@ -188,7 +188,7 @@ grep -n "192\.168\|homeautomation\|ServerAdmin\|C:\\\\Server" /mnt/c/Server/proj
 
 Expected: no output.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add CLAUDE.md
@@ -210,7 +210,7 @@ Define what IkeOS measures, why each signal matters, and what format stores it. 
 
 The storage format is JSON-lines (`.jsonl`): one JSON object per line, append-only, readable with any tool, no database required.
 
-- [ ] **Step 1: Write `docs/metrics-schema.md`**
+- [x] **Step 1: Write `docs/metrics-schema.md`**
 
 Write this exact content:
 
@@ -383,7 +383,7 @@ These are computed from raw events — not stored as events themselves.
 | Token usage per session | Deferred | Claude Code does not currently expose this directly |
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add docs/metrics-schema.md
@@ -403,7 +403,7 @@ not measured. Instrumentation follows in a later phase."
 
 Define the format for engineering experiments. The key insight from the audit: "before implementing, define the format against a real example." This task defines the format AND includes one retrospective real experiment so the format is validated against something that actually happened.
 
-- [ ] **Step 1: Write `docs/experiment-framework.md`**
+- [x] **Step 1: Write `docs/experiment-framework.md`**
 
 Write this exact content:
 
@@ -532,7 +532,7 @@ Adding `experiment` as a first-class vault entry type requires:
 This is deferred to Session 4+. Until then, experiments can be written as `notes/` entries with `type: experiment` in the body, or as Markdown files in `docs/`.
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add docs/experiment-framework.md
@@ -553,7 +553,7 @@ actually happened. Vault entry type integration deferred to Session 4."
 
 A contributor who clones IkeOS today has no guide for: how the vault is structured, how to run tests, how to add a project, what the TASK.md workflow is, or what `.claude/` means. This gap was the final "Reject" item in the Session 2 audit.
 
-- [ ] **Step 1: Write `CONTRIBUTING.md`**
+- [x] **Step 1: Write `CONTRIBUTING.md`**
 
 Write this exact content:
 
@@ -737,7 +737,7 @@ Brief explanation of *why* the decision was made. One paragraph maximum.
 ```
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add CONTRIBUTING.md
@@ -754,7 +754,7 @@ adapter contract. Addresses the final Reject item from the 'Imi audit."
 
 At the conclusion of every 'Imi session, produce the 8-section output. Report it directly to the user (do not commit it as a file).
 
-- [ ] **Step 1: Produce Session 3 output**
+- [x] **Step 1: Produce Session 3 output**
 
 Answer each heading:
 
@@ -780,10 +780,10 @@ Answer each heading:
 
 Session 3 is done when:
 
-- [ ] `git ls-files app/static/bundle.css umbrella_registry.yaml` returns empty (both untracked)
-- [ ] `umbrella_registry.yaml.example` exists with documented format
-- [ ] `CLAUDE.md` services/ tree shows all four services (vault.py, scheduler.py, skills.py, umbrella.py)
-- [ ] `docs/metrics-schema.md` exists with 7 event types defined
-- [ ] `docs/experiment-framework.md` exists with format and real retrospective example
-- [ ] `CONTRIBUTING.md` exists covering vault structure, dev loop, tests, task sizing, commit style
-- [ ] All commits on `main` with conventional commit messages
+- [x] `git ls-files app/static/bundle.css umbrella_registry.yaml` returns empty (both untracked)
+- [x] `umbrella_registry.yaml.example` exists with documented format
+- [x] `CLAUDE.md` services/ tree shows all four services (vault.py, scheduler.py, skills.py, umbrella.py)
+- [x] `docs/metrics-schema.md` exists with 7 event types defined
+- [x] `docs/experiment-framework.md` exists with format and real retrospective example
+- [x] `CONTRIBUTING.md` exists covering vault structure, dev loop, tests, task sizing, commit style
+- [x] All commits on `main` with conventional commit messages

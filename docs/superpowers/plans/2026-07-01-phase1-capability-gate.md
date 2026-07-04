@@ -37,7 +37,7 @@ New service. No Flask imports. Reads/writes `capabilities.json` in the vault at
 - Create: `app/services/capabilities.py`
 - Create: `tests/test_capabilities.py`
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 Create `tests/test_capabilities.py`:
 
@@ -185,7 +185,7 @@ def test_update_capability_raises_for_unknown_name(cap_vault, monkeypatch):
         caps_mod.update_capability("nonexistent", True)
 ```
 
-- [ ] **Step 2: Run tests to confirm they fail**
+- [x] **Step 2: Run tests to confirm they fail**
 
 ```bash
 docker exec ikeos pytest tests/test_capabilities.py -v 2>&1 | tail -20
@@ -193,7 +193,7 @@ docker exec ikeos pytest tests/test_capabilities.py -v 2>&1 | tail -20
 
 Expected: `ModuleNotFoundError` or `ImportError` — `app.services.capabilities` does not exist yet.
 
-- [ ] **Step 3: Create `app/services/capabilities.py`**
+- [x] **Step 3: Create `app/services/capabilities.py`**
 
 ```python
 import json
@@ -261,7 +261,7 @@ def update_capability(name: str, enabled: bool, actor: str = "architect") -> dic
     return caps[name]
 ```
 
-- [ ] **Step 4: Run tests to confirm they pass**
+- [x] **Step 4: Run tests to confirm they pass**
 
 ```bash
 docker exec ikeos pytest tests/test_capabilities.py -v
@@ -269,7 +269,7 @@ docker exec ikeos pytest tests/test_capabilities.py -v
 
 Expected: all PASSED.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git -C /mnt/c/Server/projects/ikeos add app/services/capabilities.py tests/test_capabilities.py
@@ -293,7 +293,7 @@ schedule — it just exits early when the gate is off. Tests import `_job` direc
 - Modify: `app/services/scheduler.py` (lines around `_job`)
 - Modify: `tests/test_scheduler.py`
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 Add to the bottom of `tests/test_scheduler.py`:
 
@@ -324,7 +324,7 @@ def test_job_calls_trigger_when_capability_enabled(sched_vault, monkeypatch):
 
 Note: `_hk_dir` and `sched_vault` are already defined at the top of `test_scheduler.py`. These new tests reuse them — no new fixtures needed.
 
-- [ ] **Step 2: Run to confirm they fail**
+- [x] **Step 2: Run to confirm they fail**
 
 ```bash
 docker exec ikeos pytest tests/test_scheduler.py -k "test_job_skips or test_job_calls" -v
@@ -332,7 +332,7 @@ docker exec ikeos pytest tests/test_scheduler.py -k "test_job_skips or test_job_
 
 Expected: `test_job_skips` FAILS (trigger IS called even when disabled). `test_job_calls` may pass or fail depending on import caching.
 
-- [ ] **Step 3: Modify `_job()` in `app/services/scheduler.py`**
+- [x] **Step 3: Modify `_job()` in `app/services/scheduler.py`**
 
 Find the existing `_job` function (currently 3 lines) and replace it:
 
@@ -346,7 +346,7 @@ def _job() -> None:
     trigger_now()
 ```
 
-- [ ] **Step 4: Run to confirm they pass**
+- [x] **Step 4: Run to confirm they pass**
 
 ```bash
 docker exec ikeos pytest tests/test_scheduler.py -v
@@ -354,7 +354,7 @@ docker exec ikeos pytest tests/test_scheduler.py -v
 
 Expected: all PASSED, including the two new tests.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git -C /mnt/c/Server/projects/ikeos add app/services/scheduler.py tests/test_scheduler.py
@@ -378,7 +378,7 @@ Two new routes:
 - Modify: `app/routes/housekeeping.py`
 - Modify: `tests/test_housekeeping.py`
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 Add to the bottom of `tests/test_housekeeping.py`:
 
@@ -451,7 +451,7 @@ def test_patch_capability_rejects_missing_enabled_field(client, monkeypatch):
     assert resp.status_code == 400
 ```
 
-- [ ] **Step 2: Run to confirm they fail**
+- [x] **Step 2: Run to confirm they fail**
 
 ```bash
 docker exec ikeos pytest tests/test_housekeeping.py -k "capability" -v
@@ -459,7 +459,7 @@ docker exec ikeos pytest tests/test_housekeeping.py -k "capability" -v
 
 Expected: 404 NOT FOUND errors — routes don't exist yet.
 
-- [ ] **Step 3: Add routes to `app/routes/housekeeping.py`**
+- [x] **Step 3: Add routes to `app/routes/housekeeping.py`**
 
 At the top of the file, add to the existing imports line:
 
@@ -492,7 +492,7 @@ def patch_capability(name: str):
         return jsonify({"error": str(e)}), 404
 ```
 
-- [ ] **Step 4: Run to confirm they pass**
+- [x] **Step 4: Run to confirm they pass**
 
 ```bash
 docker exec ikeos pytest tests/test_housekeeping.py -k "capability" -v
@@ -500,7 +500,7 @@ docker exec ikeos pytest tests/test_housekeeping.py -k "capability" -v
 
 Expected: all PASSED.
 
-- [ ] **Step 5: Run the full housekeeping suite to check regressions**
+- [x] **Step 5: Run the full housekeeping suite to check regressions**
 
 ```bash
 docker exec ikeos pytest tests/test_housekeeping.py -v
@@ -508,7 +508,7 @@ docker exec ikeos pytest tests/test_housekeeping.py -v
 
 Expected: 0 FAILED.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git -C /mnt/c/Server/projects/ikeos add app/routes/housekeeping.py tests/test_housekeeping.py
@@ -530,7 +530,7 @@ section in `housekeeping.html`. Each capability shows its status and a toggle bu
 - Modify: `app/routes/housekeeping.py` (`_housekeeping_context` function)
 - Modify: `app/templates/housekeeping.html`
 
-- [ ] **Step 1: Add `capabilities` to `_housekeeping_context()`**
+- [x] **Step 1: Add `capabilities` to `_housekeeping_context()`**
 
 Find `_housekeeping_context()` in `app/routes/housekeeping.py` (around line 344). Add
 the import and the capabilities key to the returned dict:
@@ -554,7 +554,7 @@ def _housekeeping_context() -> dict:
     )
 ```
 
-- [ ] **Step 2: Add capabilities panel to `housekeeping.html`**
+- [x] **Step 2: Add capabilities panel to `housekeeping.html`**
 
 Open `app/templates/housekeeping.html`. Find the `<section class="hk-schedule-section">` block. Insert the following **before** it (i.e., between `</header>` and `<section class="hk-schedule-section">`):
 
@@ -593,7 +593,7 @@ Open `app/templates/housekeeping.html`. Find the `<section class="hk-schedule-se
   </section>
 ```
 
-- [ ] **Step 3: Add `toggleCapability` JS to `housekeeping.html`**
+- [x] **Step 3: Add `toggleCapability` JS to `housekeeping.html`**
 
 Find the `<script>` block in `housekeeping.html`. Add the following function inside it (before the closing `</script>` tag):
 
@@ -635,7 +635,7 @@ async function toggleCapability(name, enable) {
 Note: `captureToken` is already defined in the existing `<script>` block as
 `const captureToken = {{ capture_token | tojson }};` — do not redefine it.
 
-- [ ] **Step 4: Rebuild and smoke test**
+- [x] **Step 4: Rebuild and smoke test**
 
 ```bash
 docker.exe compose up --build -d ikeos
@@ -644,7 +644,7 @@ curl -s http://localhost:5009/housekeeping | grep -i "capabilities\|ENABLED\|DIS
 
 Expected: output contains "Capabilities" section text.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git -C /mnt/c/Server/projects/ikeos add app/routes/housekeeping.py app/templates/housekeeping.html
@@ -667,7 +667,7 @@ Pass capability state to `metrics.html` and render a status panel above the even
 - Modify: `app/templates/metrics.html`
 - Modify: `tests/test_metrics.py`
 
-- [ ] **Step 1: Write a failing test**
+- [x] **Step 1: Write a failing test**
 
 Add to `tests/test_metrics.py`:
 
@@ -683,7 +683,7 @@ def test_metrics_view_shows_capability_status(client, tmp_path, monkeypatch):
     assert "housekeeping_scheduler" in body.lower() or "housekeeping scheduler" in body.lower()
 ```
 
-- [ ] **Step 2: Run to confirm it fails**
+- [x] **Step 2: Run to confirm it fails**
 
 ```bash
 docker exec ikeos pytest tests/test_metrics.py::test_metrics_view_shows_capability_status -v
@@ -691,7 +691,7 @@ docker exec ikeos pytest tests/test_metrics.py::test_metrics_view_shows_capabili
 
 Expected: FAILED — "housekeeping" not yet in the metrics template.
 
-- [ ] **Step 3: Update `metrics_view()` in `app/routes/agents.py`**
+- [x] **Step 3: Update `metrics_view()` in `app/routes/agents.py`**
 
 Find `metrics_view()` (around line 184) and add the capabilities import and argument:
 
@@ -704,7 +704,7 @@ def metrics_view() -> str:
     return render_template("metrics.html", events=events, capabilities=capabilities)
 ```
 
-- [ ] **Step 4: Add capability status panel to `metrics.html`**
+- [x] **Step 4: Add capability status panel to `metrics.html`**
 
 Open `app/templates/metrics.html`. After `</header>` and before the `{% if not events %}` block, insert:
 
@@ -742,7 +742,7 @@ Open `app/templates/metrics.html`. After `</header>` and before the `{% if not e
   </section>
 ```
 
-- [ ] **Step 5: Run the metrics test suite**
+- [x] **Step 5: Run the metrics test suite**
 
 ```bash
 docker exec ikeos pytest tests/test_metrics.py -v
@@ -750,7 +750,7 @@ docker exec ikeos pytest tests/test_metrics.py -v
 
 Expected: all PASSED.
 
-- [ ] **Step 6: Rebuild and smoke test**
+- [x] **Step 6: Rebuild and smoke test**
 
 ```bash
 docker.exe compose up --build -d ikeos
@@ -759,7 +759,7 @@ curl -s http://localhost:5009/metrics | grep -i "capability\|scheduler"
 
 Expected: output contains capability status table text.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git -C /mnt/c/Server/projects/ikeos add app/routes/agents.py app/templates/metrics.html tests/test_metrics.py
@@ -776,12 +776,12 @@ capability's enabled state and when it was last enabled."
 
 This plan is done when:
 
-- [ ] `docker exec ikeos pytest tests/test_capabilities.py -v` — 0 FAILED
-- [ ] `docker exec ikeos pytest tests/test_scheduler.py -v` — 0 FAILED, gate tests passing
-- [ ] `docker exec ikeos pytest tests/test_housekeeping.py -v` — 0 FAILED, capability route tests passing
-- [ ] `docker exec ikeos pytest tests/test_metrics.py -v` — 0 FAILED
-- [ ] `docker exec ikeos pytest` — full suite 0 FAILED
-- [ ] `curl -s http://localhost:5009/housekeeping/capabilities` — returns `{"capabilities": {"housekeeping_scheduler": {"enabled": false, ...}}}`
-- [ ] `curl -s http://localhost:5009/metrics` — renders capability status panel
-- [ ] `curl -s http://localhost:5009/housekeeping` — renders Capabilities section above Schedule section
-- [ ] Toggling housekeeping_scheduler via UI PATCH changes state and emits a metrics event
+- [x] `docker exec ikeos pytest tests/test_capabilities.py -v` — 0 FAILED
+- [x] `docker exec ikeos pytest tests/test_scheduler.py -v` — 0 FAILED, gate tests passing
+- [x] `docker exec ikeos pytest tests/test_housekeeping.py -v` — 0 FAILED, capability route tests passing
+- [x] `docker exec ikeos pytest tests/test_metrics.py -v` — 0 FAILED
+- [x] `docker exec ikeos pytest` — full suite 0 FAILED
+- [x] `curl -s http://localhost:5009/housekeeping/capabilities` — returns `{"capabilities": {"housekeeping_scheduler": {"enabled": false, ...}}}`
+- [x] `curl -s http://localhost:5009/metrics` — renders capability status panel
+- [x] `curl -s http://localhost:5009/housekeeping` — renders Capabilities section above Schedule section
+- [x] Toggling housekeeping_scheduler via UI PATCH changes state and emits a metrics event

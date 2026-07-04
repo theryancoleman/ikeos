@@ -40,7 +40,7 @@
 - Does it outlast the current toolchain (adapter principle)?
 - Would a new contributor be confused by it?
 
-- [ ] **Step 1: Read core files**
+- [x] **Step 1: Read core files**
 
 ```bash
 wc -l app/services/vault.py app/routes/*.py
@@ -50,7 +50,7 @@ cat umbrella_registry.yaml
 cat .gitignore 2>/dev/null || echo "no .gitignore"
 ```
 
-- [ ] **Step 2: Run audit classification**
+- [x] **Step 2: Run audit classification**
 
 Evaluate each area below. Classify as **Adopt** (keep as-is), **Pilot** (keep with caveats / experiment), **Defer** (good idea, not now), or **Reject** (not aligned with IkeOS principles or philosophy). Write rationale for each.
 
@@ -80,7 +80,7 @@ Areas to classify:
 - Templates: does the repo provide a `TASK.md` template that contributors can use?
 - Contributor experience: is there enough to onboard someone without a call?
 
-- [ ] **Step 3: Write `docs/imi-audit.md`**
+- [x] **Step 3: Write `docs/imi-audit.md`**
 
 ```markdown
 # IkeOS Platform Audit — Project 'Imi Session 2
@@ -122,7 +122,7 @@ _List Defer items with enough context for a future session to pick them up._
 _Answer this question honestly. List every assumption, every missing step, every piece of tribal knowledge._
 ```
 
-- [ ] **Step 4: Commit audit**
+- [x] **Step 4: Commit audit**
 
 ```bash
 git add docs/imi-audit.md
@@ -138,7 +138,7 @@ git commit -m "docs: add 'Imi platform audit — Session 2 classification"
 
 The project `CLAUDE.md` is the Claude Code adapter contract — public, committed, no personal references. Personal config (IPs, credentials, vault paths) lives in the user-level global `~/.claude/CLAUDE.md` only.
 
-- [ ] **Step 1: Rewrite `CLAUDE.md`**
+- [x] **Step 1: Rewrite `CLAUDE.md`**
 
 Replace the entire file with the following content. Do not preserve the old "Obsidian Capture" framing — this is now the IkeOS platform adapter contract.
 
@@ -266,7 +266,7 @@ Task size determines the execution loop:
 - Run tests: `docker exec ikeos pytest`
 ```
 
-- [ ] **Step 2: Verify no personal references remain**
+- [x] **Step 2: Verify no personal references remain**
 
 ```bash
 grep -n "192\.168\|homeautomation\|ServerAdmin\|C:\\\\Server\|obsidian-capture\|obsidian_capture" CLAUDE.md
@@ -274,7 +274,7 @@ grep -n "192\.168\|homeautomation\|ServerAdmin\|C:\\\\Server\|obsidian-capture\|
 
 Expected output: no matches.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add CLAUDE.md
@@ -297,7 +297,7 @@ Personal config lives in the user-level ~/.claude/CLAUDE.md only."
 
 The base compose must work on any machine without Traefik. Personal infrastructure goes in the override.
 
-- [ ] **Step 1: Update `.env.example`**
+- [x] **Step 1: Update `.env.example`**
 
 Add the two new path variables:
 
@@ -310,7 +310,7 @@ SESSION_MANAGER_URL=http://host.docker.internal:5010
 HOUSEKEEPING_PROJECT_DIR=/path/to/your/project-dir
 ```
 
-- [ ] **Step 2: Rewrite `docker-compose.yml` as the portable base**
+- [x] **Step 2: Rewrite `docker-compose.yml` as the portable base**
 
 ```yaml
 services:
@@ -326,7 +326,7 @@ services:
       - ${CLAUDE_VERSION_PATH}:/claude-config/VERSION:ro
 ```
 
-- [ ] **Step 3: Create `docker-compose.homelab.yml`**
+- [x] **Step 3: Create `docker-compose.homelab.yml`**
 
 ```yaml
 # Homelab overlay — adds Traefik routing for homelab deployments.
@@ -353,7 +353,7 @@ networks:
     external: true
 ```
 
-- [ ] **Step 4: Verify portable base works**
+- [x] **Step 4: Verify portable base works**
 
 ```bash
 # Test that the base compose can be parsed without traefik_network existing
@@ -362,7 +362,7 @@ docker.exe compose config --quiet
 
 Expected: exits 0, no error about missing network.
 
-- [ ] **Step 5: Rebuild and verify the container starts**
+- [x] **Step 5: Rebuild and verify the container starts**
 
 ```bash
 docker.exe compose up --build -d ikeos
@@ -372,7 +372,7 @@ curl -sf http://localhost:5009/health
 
 Expected: `ok`
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add docker-compose.yml docker-compose.homelab.yml .env.example
@@ -393,7 +393,7 @@ without a Traefik instance."
 
 The README is the first thing a stranger reads. It must explain what IkeOS is, what they need to run it, and how to get started — without assuming any knowledge of the homelab setup.
 
-- [ ] **Step 1: Rewrite `README.md`**
+- [x] **Step 1: Rewrite `README.md`**
 
 ```markdown
 # IkeOS
@@ -485,7 +485,7 @@ See [CLAUDE.md](CLAUDE.md) for the full architecture and Claude Code adapter con
 See [.claude/DECISIONS.md](.claude/DECISIONS.md) for the history of architectural decisions.
 ```
 
-- [ ] **Step 2: Verify no personal references remain**
+- [x] **Step 2: Verify no personal references remain**
 
 ```bash
 grep -n "192\.168\|homeautomation\|ServerAdmin\|obsidian-capture\|C:\\\\Server" README.md
@@ -493,7 +493,7 @@ grep -n "192\.168\|homeautomation\|ServerAdmin\|obsidian-capture\|C:\\\\Server" 
 
 Expected: no matches.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add README.md
@@ -514,13 +514,13 @@ References PHILOSOPHY.md as the entry point for understanding intent."
 
 Two small fixes surfaced by the audit: agent-memory shouldn't be committed (runtime reviewer state), and the DECISIONS.md header still says "Obsidian Capture".
 
-- [ ] **Step 1: Check current .gitignore**
+- [x] **Step 1: Check current .gitignore**
 
 ```bash
 cat .gitignore 2>/dev/null || echo "MISSING"
 ```
 
-- [ ] **Step 2: Update or create `.gitignore`**
+- [x] **Step 2: Update or create `.gitignore`**
 
 Ensure these entries are present:
 
@@ -545,7 +545,7 @@ app/static/bundle.css
 
 Note: `app/static/bundle.css` is generated at build time by `scripts/bundle_css.py` — it should not be edited directly and ideally not committed. However, if the current repo has it tracked, do not force-remove it now; flag it in `docs/imi-audit.md` as a follow-up (removing tracked files mid-project is disruptive).
 
-- [ ] **Step 3: Fix DECISIONS.md header**
+- [x] **Step 3: Fix DECISIONS.md header**
 
 ```bash
 # Verify the current header
@@ -561,7 +561,7 @@ to:
 # Architectural Decisions — IkeOS
 ```
 
-- [ ] **Step 4: Verify agent-memory is now gitignored**
+- [x] **Step 4: Verify agent-memory is now gitignored**
 
 ```bash
 git status .claude/agent-memory/
@@ -569,7 +569,7 @@ git status .claude/agent-memory/
 
 Expected: the directory is untracked (not staged).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add .gitignore .claude/DECISIONS.md
@@ -586,7 +586,7 @@ from 'Obsidian Capture' to 'IkeOS' to match the platform name."
 
 At the conclusion of every 'Imi session, produce the following. Write it as a comment directly below this task in the plan file (or as a separate note to the user — do not commit it as a file).
 
-- [ ] **Step 1: Produce Session 2 output**
+- [x] **Step 1: Produce Session 2 output**
 
 Answer each heading in 2–5 bullet points:
 
@@ -620,11 +620,11 @@ One sentence: what should Session 3 start with?
 
 Session 2 is done when:
 
-- [ ] `docs/imi-audit.md` exists and every row in the classification table is filled
-- [ ] `CLAUDE.md` contains no references to `192.168`, `homeautomation`, `C:\Server`, `ServerAdmin`, or `obsidian-capture`
-- [ ] `README.md` contains no hardcoded IPs or personal paths
-- [ ] `docker compose config --quiet` exits 0 on the base compose file
-- [ ] `curl -sf http://localhost:5009/health` returns `ok` after rebuild
-- [ ] `.claude/DECISIONS.md` first line reads `# Architectural Decisions — IkeOS`
-- [ ] `git status .claude/agent-memory/` shows untracked (not staged)
-- [ ] All commits are on `main` with conventional commit messages
+- [x] `docs/imi-audit.md` exists and every row in the classification table is filled
+- [x] `CLAUDE.md` contains no references to `192.168`, `homeautomation`, `C:\Server`, `ServerAdmin`, or `obsidian-capture`
+- [x] `README.md` contains no hardcoded IPs or personal paths
+- [x] `docker compose config --quiet` exits 0 on the base compose file
+- [x] `curl -sf http://localhost:5009/health` returns `ok` after rebuild
+- [x] `.claude/DECISIONS.md` first line reads `# Architectural Decisions — IkeOS`
+- [x] `git status .claude/agent-memory/` shows untracked (not staged)
+- [x] All commits are on `main` with conventional commit messages
