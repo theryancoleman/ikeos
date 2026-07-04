@@ -17,6 +17,7 @@ from app.services.platform import project_slug
 from app.services.reviews import latest_review_name, read_latest_review
 from app.services.scheduler import get_config_with_next_run, update_config
 from app.services.session_client import get_session_status
+from app.services.metrics import read_events_by_type
 from app.services.vault import (
     delete_housekeeping_task,
     read_housekeeping_heartbeat,
@@ -253,6 +254,7 @@ def _housekeeping_context() -> dict:
         blog_draft=latest_draft_name(),
         weekly_review_file=latest_review_name(),
         capabilities=get_capabilities(),
+        recent_runs=read_events_by_type("housekeeping.run", limit=10),
     )
 
 

@@ -209,6 +209,34 @@
     </form>
   </section>
 
+  {% if recent_runs %}
+  <section class="card" style="margin-top:1.5rem">
+    <h2>Recent Runs</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Trigger</th>
+          <th>Run</th>
+          <th>Failed</th>
+          <th>Skipped</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for run in recent_runs %}
+        <tr>
+          <td>{{ run.timestamp | replace("T", " ") | replace("+00:00", "") }}</td>
+          <td>{{ run.get("trigger", "—") }}</td>
+          <td>{{ run.get("tasks_run", "—") }}</td>
+          <td class="{{ 'error' if run.get('tasks_failed', 0) > 0 else '' }}">{{ run.get("tasks_failed", "—") }}</td>
+          <td>{{ run.get("tasks_skipped", "—") }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% endif %}
+
 </div>
 
 <script>

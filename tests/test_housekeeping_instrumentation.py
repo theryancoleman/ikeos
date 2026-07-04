@@ -164,3 +164,34 @@ def test_patch_housekeeping_task_does_not_emit_run_event(tmp_path, client):
 
     assert resp.status_code == 200
     assert len(emitted) == 0
+
+
+def test_housekeeping_context_includes_recent_runs(tmp_path):
+    """_housekeeping_context() must include recent_runs list from metrics."""
+    import json
+    from app.routes.housekeeping import _housekeeping_context
+
+    events_file = tmp_path / "events.jsonl"
+    events_file.write_text(
+        json.dumps({"event": "housekeeping.run", "tasks_run": 3, "tasks_failed": 0,
+                    "tasks_skipped": 0, "trigger": "scheduled",
+                    "timestamp": "2026-07-04T10:00:00+00:00"}) + "\n" +
+        json.dumps({"event": "session.created", "project": "ikeos",
+                    "timestamp": "2026-07-04T09:00:00+00:00"}) + "\n",
+        encoding="utf-8",
+    )
+
+    with patch("app.services.metrics.METRICS_PATH", events_file), \
+         patch("app.services.vault_cache.VAULT_PATH", tmp_path), \
+         patch("app.routes.housekeeping.CAPTURE_TOKEN", "tok"), \
+         patch("app.routes.housekeeping.get_config_with_next_run", return_value={}), \
+         patch("app.routes.housekeeping.latest_draft_name", return_value=None), \
+         patch("app.routes.housekeeping.latest_review_name", return_value=None), \
+         patch("app.routes.housekeeping.get_capabilities", return_value=[]):
+        ctx = _housekeeping_context()
+
+    assert "recent_runs" in ctx
+    runs = ctx["recent_runs"]
+    assert len(runs) == 1
+    assert runs[0]["event"] == "housekeeping.run"
+    assert runs[0]["tasks_run"] == 3
