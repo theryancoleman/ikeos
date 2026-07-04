@@ -56,7 +56,12 @@ def test_compute_task_status_disabled(tmp_path):
 
 def test_compute_task_status_ok_when_consecutive_failures_is_int_zero(tmp_path):
     """PATCH sets consecutive_failures as int 0; must not be treated as error."""
-    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
+    from datetime import datetime as _dt
+    frozen = _dt(2026, 6, 29, 12, 0, 0)
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path), \
+         patch("app.services.vault_housekeeping.datetime") as mock_dt:
+        mock_dt.now.return_value = frozen
+        mock_dt.fromisoformat.side_effect = _dt.fromisoformat
         from app.services.vault_housekeeping import _compute_task_status
         status = _compute_task_status({
             "enabled": "true",

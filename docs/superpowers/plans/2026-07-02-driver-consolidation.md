@@ -29,7 +29,7 @@
 **Interfaces:**
 - Produces: the public v0 wire contract that Tasks 2–4 implement and that the Phase-2 extraction plan depends on.
 
-- [ ] **Step 1: Write the document.** Content must cover, precisely:
+- [x] **Step 1: Write the document.** Content must cover, precisely:
 
 ````markdown
 # IkeOS Session Driver API — v0
@@ -90,9 +90,9 @@ This is v0: shaped by the Claude Code reference driver. Breaking changes will bu
 to `/v1/` paths. Additive optional request fields (like `model`) are non-breaking.
 ````
 
-- [ ] **Step 2: Add README pointer.** In `README.md`, where the architecture/adapter contract is referenced, add: `The wire contract for session drivers is documented in [docs/SESSION_DRIVER_API.md](docs/SESSION_DRIVER_API.md).`
+- [x] **Step 2: Add README pointer.** In `README.md`, where the architecture/adapter contract is referenced, add: `The wire contract for session drivers is documented in [docs/SESSION_DRIVER_API.md](docs/SESSION_DRIVER_API.md).`
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add docs/SESSION_DRIVER_API.md README.md
@@ -110,7 +110,7 @@ git commit -m "docs: publish session driver API contract v0"
 **Interfaces:**
 - Produces: `project_slug() -> str` (env `PLATFORM_PROJECT_SLUG`, default `"claude-config"`); `config_version_path() -> str` (env `CONFIG_VERSION_PATH`, default `"/claude-config/VERSION"`, empty string means "disabled"). Tasks 4, 5, 8, 11 consume these.
 
-- [ ] **Step 1: Write failing tests** (`tests/test_platform.py`):
+- [x] **Step 1: Write failing tests** (`tests/test_platform.py`):
 
 ```python
 from app.services.platform import config_version_path, project_slug
@@ -136,9 +136,9 @@ def test_config_version_path_blank_disables(monkeypatch):
     assert config_version_path() == ""
 ```
 
-- [ ] **Step 2: Run to verify failure.** `python3 -m pytest tests/test_platform.py -v` — expect `ModuleNotFoundError`/import error.
+- [x] **Step 2: Run to verify failure.** `python3 -m pytest tests/test_platform.py -v` — expect `ModuleNotFoundError`/import error.
 
-- [ ] **Step 3: Implement** `app/services/platform.py`:
+- [x] **Step 3: Implement** `app/services/platform.py`:
 
 ```python
 """Identity of the platform's own configuration project.
@@ -160,9 +160,9 @@ def config_version_path() -> str:
     return os.environ.get("CONFIG_VERSION_PATH", "/claude-config/VERSION")
 ```
 
-- [ ] **Step 4: Run tests — expect 4 passed.**
+- [x] **Step 4: Run tests — expect 4 passed.**
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/services/platform.py tests/test_platform.py
@@ -185,7 +185,7 @@ git commit -m "feat: add platform config helpers for project slug and version pa
   - `send_command(session_id: str, command: str, *, escape_first: bool = False) -> bool`
   - `get_session_status(session_id: str) -> dict | None`
 
-- [ ] **Step 1: Write failing tests** — append to `tests/test_session_client.py` (match the file's existing mock style):
+- [x] **Step 1: Write failing tests** — append to `tests/test_session_client.py` (match the file's existing mock style):
 
 ```python
 from app.services.session_client import (
@@ -263,9 +263,9 @@ def test_get_session_status_missing_or_down(monkeypatch):
         assert get_session_status("s1") is None
 ```
 
-- [ ] **Step 2: Run — expect ImportError failures** on the three new names.
+- [x] **Step 2: Run — expect ImportError failures** on the three new names.
 
-- [ ] **Step 3: Implement.** In `app/services/session_client.py`: add `session_manager_url()`; use it inside `create_session` (replacing the inline `sm_url = os.environ.get(...)` at line 30); add `model` keyword to `create_session` and include `payload["model"] = model` only when `model is not None`; add `send_command` and `get_session_status`:
+- [x] **Step 3: Implement.** In `app/services/session_client.py`: add `session_manager_url()`; use it inside `create_session` (replacing the inline `sm_url = os.environ.get(...)` at line 30); add `model` keyword to `create_session` and include `payload["model"] = model` only when `model is not None`; add `send_command` and `get_session_status`:
 
 ```python
 def session_manager_url() -> str:
@@ -321,9 +321,9 @@ def get_session_status(session_id: str) -> dict | None:
     return resp.json()
 ```
 
-- [ ] **Step 4: Run the whole file — all old and new tests pass.** `python3 -m pytest tests/test_session_client.py -v`
+- [x] **Step 4: Run the whole file — all old and new tests pass.** `python3 -m pytest tests/test_session_client.py -v`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/services/session_client.py tests/test_session_client.py
@@ -347,7 +347,7 @@ git commit -m "feat: session client gains url helper, model param, send_command,
   - `publish_blog_draft(draft_name: str, bluesky_name: str, model: str | None = None) -> SessionResult`
   - `rewrite_blog_draft(draft_name: str, feedback: str, model: str | None = None) -> SessionResult`
 
-- [ ] **Step 1: Write failing tests** (`tests/test_driver.py`). Patch `app.services.driver.create_session` / `app.services.driver.send_command`:
+- [x] **Step 1: Write failing tests** (`tests/test_driver.py`). Patch `app.services.driver.create_session` / `app.services.driver.send_command`:
 
 ```python
 from unittest.mock import patch
@@ -420,9 +420,9 @@ def test_rewrite_reports_error_when_resend_fails(monkeypatch):
     assert result.ok is False
 ```
 
-- [ ] **Step 2: Run — expect import errors.**
+- [x] **Step 2: Run — expect import errors.**
 
-- [ ] **Step 3: Implement** `app/services/driver.py`:
+- [x] **Step 3: Implement** `app/services/driver.py`:
 
 ```python
 """Claude Code adapter: maps IkeOS intents onto driver sessions.
@@ -518,9 +518,9 @@ def rewrite_blog_draft(draft_name: str, feedback: str, model: str | None = None)
     return result
 ```
 
-- [ ] **Step 4: Run `tests/test_driver.py` — 7 passed.**
+- [x] **Step 4: Run `tests/test_driver.py` — 7 passed.**
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/services/driver.py tests/test_driver.py
@@ -539,7 +539,7 @@ git commit -m "feat: add driver intent layer owning all engine prompt constructi
 - Consumes: `run_scheduled_housekeeping` (Task 4), `project_slug` (Task 2).
 - Produces: `trigger_now() -> str | None` (unchanged signature — routes keep calling it).
 
-- [ ] **Step 1: Modify `scheduler.py`.** Replace the import of `create_session` with `from app.services.driver import run_scheduled_housekeeping` and `from app.services.platform import project_slug`. `_schedule_path()` becomes:
+- [x] **Step 1: Modify `scheduler.py`.** Replace the import of `create_session` with `from app.services.driver import run_scheduled_housekeeping` and `from app.services.platform import project_slug`. `_schedule_path()` becomes:
 
 ```python
 def _schedule_path() -> Path:
@@ -573,11 +573,11 @@ def trigger_now() -> str | None:
 
 Session naming and `HOUSEKEEPING_PROJECT_DIR` handling now live in the driver — delete them here.
 
-- [ ] **Step 2: Update `tests/test_scheduler.py`.** Read the file; wherever it patches `app.services.scheduler.create_session`, patch `app.services.scheduler.run_scheduled_housekeeping` instead, returning `SessionResult(session_id=...)` as before. Assertions about session name/command move to `tests/test_driver.py` (already covered by Task 4) — delete any duplicates here rather than porting them.
+- [x] **Step 2: Update `tests/test_scheduler.py`.** Read the file; wherever it patches `app.services.scheduler.create_session`, patch `app.services.scheduler.run_scheduled_housekeeping` instead, returning `SessionResult(session_id=...)` as before. Assertions about session name/command move to `tests/test_driver.py` (already covered by Task 4) — delete any duplicates here rather than porting them.
 
-- [ ] **Step 3: Run.** `python3 -m pytest tests/test_scheduler.py tests/test_driver.py -v` — all pass.
+- [x] **Step 3: Run.** `python3 -m pytest tests/test_scheduler.py tests/test_driver.py -v` — all pass.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add app/services/scheduler.py tests/test_scheduler.py
@@ -602,7 +602,7 @@ git commit -m "refactor: scheduler triggers housekeeping via driver intent layer
   - `reviews.latest_review_name() -> str | None`
   - `reviews.read_latest_review() -> tuple[str, str] | None` — `(filename, content)`
 
-- [ ] **Step 1: Write failing tests** (`tests/test_blog_drafts.py`), using `tmp_path` and `monkeypatch.setenv("AIOS_BLOG_POSTS_DIR", ...)` / `("WEEKLY_REVIEW_OUTPUT_DIR", ...)`:
+- [x] **Step 1: Write failing tests** (`tests/test_blog_drafts.py`), using `tmp_path` and `monkeypatch.setenv("AIOS_BLOG_POSTS_DIR", ...)` / `("WEEKLY_REVIEW_OUTPUT_DIR", ...)`:
 
 ```python
 import pytest
@@ -663,9 +663,9 @@ def test_latest_review(tmp_path, monkeypatch):
     assert reviews.read_latest_review() == ("2026-06-28-weekly-review.md", "r")
 ```
 
-- [ ] **Step 2: Run — expect import errors.**
+- [x] **Step 2: Run — expect import errors.**
 
-- [ ] **Step 3: Implement.** `app/services/blog_drafts.py` — port `_blog_draft_paths` logic from `housekeeping.py:23-38`, but read `AIOS_BLOG_POSTS_DIR` at **call time** (the current module-level read makes tests and container reconfiguration brittle):
+- [x] **Step 3: Implement.** `app/services/blog_drafts.py` — port `_blog_draft_paths` logic from `housekeeping.py:23-38`, but read `AIOS_BLOG_POSTS_DIR` at **call time** (the current module-level read makes tests and container reconfiguration brittle):
 
 ```python
 """Blog draft file access — sole owner of aios-blog post file I/O."""
@@ -750,9 +750,9 @@ def read_latest_review() -> tuple[str, str] | None:
     return latest.name, latest.read_text(encoding="utf-8")
 ```
 
-- [ ] **Step 4: Run `tests/test_blog_drafts.py` — 6 passed.**
+- [x] **Step 4: Run `tests/test_blog_drafts.py` — 6 passed.**
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/services/blog_drafts.py app/services/reviews.py tests/test_blog_drafts.py
@@ -770,7 +770,7 @@ git commit -m "feat: move blog draft and weekly review file I/O into services"
 **Interfaces:**
 - Produces: `require_capture_token` decorator (Tasks 8, 9 apply it). Reads `CAPTURE_TOKEN` at request time; returns `503 {"error": "Service unavailable"}` when unset, `401 {"error": "Unauthorized"}` on mismatch — byte-identical JSON to the current inline checks in `housekeeping.py:85-90` and `agents.py:193-196`.
 
-- [ ] **Step 1: Write failing tests** (`tests/test_auth.py`) using a throwaway Flask app:
+- [x] **Step 1: Write failing tests** (`tests/test_auth.py`) using a throwaway Flask app:
 
 ```python
 from flask import Flask, jsonify
@@ -806,9 +806,9 @@ def test_correct_token_passes(monkeypatch):
     assert resp.status_code == 200
 ```
 
-- [ ] **Step 2: Run — expect import error.**
+- [x] **Step 2: Run — expect import error.**
 
-- [ ] **Step 3: Implement** `app/routes/auth.py`:
+- [x] **Step 3: Implement** `app/routes/auth.py`:
 
 ```python
 """Shared request auth for vault-mutating and session-spawning endpoints."""
@@ -830,9 +830,9 @@ def require_capture_token(f):
     return wrapper
 ```
 
-- [ ] **Step 4: Run `tests/test_auth.py` — 3 passed.**
+- [x] **Step 4: Run `tests/test_auth.py` — 3 passed.**
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/routes/auth.py tests/test_auth.py
@@ -851,7 +851,7 @@ git commit -m "feat: shared capture-token auth decorator"
 - Consumes: `driver.run_housekeeping_task/run_platform_review/publish_blog_draft/rewrite_blog_draft` (Task 4), `blog_drafts.*`, `reviews.*` (Task 6), `require_capture_token` (Task 7), `session_client.get_session_status` (Task 3), `platform.project_slug` (Task 2).
 - Produces: identical HTTP behavior on every route (same paths, same status codes, same JSON shapes).
 
-- [ ] **Step 1: Rewrite the module.** The full mapping — every other route/helper keeps its current body:
+- [x] **Step 1: Rewrite the module.** The full mapping — every other route/helper keeps its current body:
   - Delete module constants `SESSION_MANAGER_URL`, `AIOS_BLOG_POSTS_DIR`, `AIOS_BLOG_PROJECT_DIR`, `WEEKLY_REVIEW_OUTPUT_DIR`, `HOUSEKEEPING_PROJECT_DIR`, the `import requests` usage for session-manager calls, and helpers `_blog_draft_paths`, `_latest_blog_draft`, `_latest_weekly_review`, `_check_auth` (lines 16-20, 23-48, 85-90). Keep `CAPTURE_URL`/`CAPTURE_TOKEN` (still used for capture-API proxying and template context) and `_capture_headers`, `_age_str`, `_widget_status`.
   - New imports: `from app.routes.auth import require_capture_token`; `from app.services import blog_drafts, reviews`; `from app.services.driver import publish_blog_draft as driver_publish, rewrite_blog_draft as driver_rewrite, run_housekeeping_task, run_platform_review`; `from app.services.platform import project_slug`; `from app.services.session_client import get_session_status`. Drop `from app.services.session_client import create_session` and `from pathlib import Path`.
   - Every route that called `_check_auth()` (toggle_task, reset_task, delete_task, blog_draft_save, blog_draft_publish, blog_draft_rewrite, weekly_review_run, patch_schedule, patch_capability) instead gets `@require_capture_token` directly under its `@bp.route` line, and the two-line auth block is deleted from the body.
@@ -897,7 +897,7 @@ def blog_draft_rewrite():
   - `weekly_review` + `_latest_weekly_review` usages: use `reviews.read_latest_review()` / `reviews.latest_review_name()`.
   - `weekly_review_run`: keep the capability gate; session creation becomes `result = run_platform_review()`.
 
-- [ ] **Step 2: Update `tests/test_housekeeping.py`.** Read it; update patch targets per this table (assertions/status codes stay identical):
+- [x] **Step 2: Update `tests/test_housekeeping.py`.** Read it; update patch targets per this table (assertions/status codes stay identical):
 
 | old patch target | new patch target |
 |---|---|
@@ -906,9 +906,9 @@ def blog_draft_rewrite():
 | module constants `AIOS_BLOG_POSTS_DIR` etc. (if monkeypatched as attributes) | `monkeypatch.setenv(...)` — services read env at call time now |
 | `app.routes.housekeeping.requests` (session-status/rewrite paths) | `app.routes.housekeeping.get_session_status` / driver functions |
 
-- [ ] **Step 3: Run.** `python3 -m pytest tests/test_housekeeping.py -v` — all pass. Then full suite `-q` — no regressions.
+- [x] **Step 3: Run.** `python3 -m pytest tests/test_housekeeping.py -v` — all pass. Then full suite `-q` — no regressions.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add app/routes/housekeeping.py tests/test_housekeeping.py
@@ -927,7 +927,7 @@ git commit -m "refactor: housekeeping routes are thin — driver intents, file s
 - Consumes: `session_manager_url` (Task 3), `require_capture_token` (Task 7).
 - Produces: identical proxy behavior; the hardcoded `SESSION_MANAGER_URL` module constant (line 11) is gone.
 
-- [ ] **Step 1: Modify.** Delete line 11 (`SESSION_MANAGER_URL = "http://host.docker.internal:5010"`) and the module-level `CAPTURE_TOKEN` (line 12). Add `from app.services.session_client import session_manager_url` and `from app.routes.auth import require_capture_token`. `_proxy` becomes:
+- [x] **Step 1: Modify.** Delete line 11 (`SESSION_MANAGER_URL = "http://host.docker.internal:5010"`) and the module-level `CAPTURE_TOKEN` (line 12). Add `from app.services.session_client import session_manager_url` and `from app.routes.auth import require_capture_token`. `_proxy` becomes:
 
 ```python
 def _proxy(method: str, path: str, **kwargs):
@@ -938,11 +938,11 @@ def _proxy(method: str, path: str, **kwargs):
 
 `metrics_event` (lines 191-206): add `@require_capture_token` under the route decorator and delete the inline token checks (lines 193-196).
 
-- [ ] **Step 2: Update `tests/test_agents.py`** if it references the deleted constant or patches the inline auth — same substitution rules as Task 8.
+- [x] **Step 2: Update `tests/test_agents.py`** if it references the deleted constant or patches the inline auth — same substitution rules as Task 8.
 
-- [ ] **Step 3: Run `tests/test_agents.py` + full suite — pass.**
+- [x] **Step 3: Run `tests/test_agents.py` + full suite — pass.**
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add app/routes/agents.py tests/test_agents.py
@@ -962,7 +962,7 @@ git commit -m "refactor: agents proxy uses shared session-manager url and auth d
 
 Rationale: with gunicorn `--workers N>1`, each worker starts its own APScheduler and the housekeeping job fires N times — N unattended permission-skipping sessions. The Dockerfile pins `--workers 1` today; this guard makes the failure loud instead of silent if that ever changes.
 
-- [ ] **Step 1: Write failing test** (append to `tests/test_scheduler.py`):
+- [x] **Step 1: Write failing test** (append to `tests/test_scheduler.py`):
 
 ```python
 import sys
@@ -978,9 +978,9 @@ def test_scheduler_lock_is_exclusive(tmp_path):
     assert _acquire_scheduler_lock(lock_file) is False  # second acquisition in-process fails
 ```
 
-- [ ] **Step 2: Run — expect ImportError on `_acquire_scheduler_lock`** (POSIX) or SKIPPED (Windows — in that case verify the implementation inside the container in Task 12 instead).
+- [x] **Step 2: Run — expect ImportError on `_acquire_scheduler_lock`** (POSIX) or SKIPPED (Windows — in that case verify the implementation inside the container in Task 12 instead).
 
-- [ ] **Step 3: Implement.** In `scheduler.py`, add near the top:
+- [x] **Step 3: Implement.** In `scheduler.py`, add near the top:
 
 ```python
 _lock_handle = None  # keeps the scheduler lock fd alive for process lifetime
@@ -1021,9 +1021,9 @@ In `start(app)`, immediately after the `TESTING` early-return:
 
 Keep the existing `--workers 1` warning log.
 
-- [ ] **Step 4: Run `tests/test_scheduler.py` — passes (or skips on Windows).**
+- [x] **Step 4: Run `tests/test_scheduler.py` — passes (or skips on Windows).**
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/services/scheduler.py tests/test_scheduler.py
@@ -1041,7 +1041,7 @@ git commit -m "feat: scheduler refuses to start twice under multi-worker gunicor
 **Interfaces:**
 - Consumes: `platform.project_slug`, `platform.config_version_path` (Task 2).
 
-- [ ] **Step 1: `app/__init__.py`** — replace the context processor (lines 70-77):
+- [x] **Step 1: `app/__init__.py`** — replace the context processor (lines 70-77):
 
 ```python
     from app.services.platform import config_version_path
@@ -1058,7 +1058,7 @@ git commit -m "feat: scheduler refuses to start twice under multi-worker gunicor
             return {"config_version": None}
 ```
 
-- [ ] **Step 2: `capabilities.py`** — `_capabilities_path()` (line 27-29) uses `project_slug()`:
+- [x] **Step 2: `capabilities.py`** — `_capabilities_path()` (line 27-29) uses `project_slug()`:
 
 ```python
 from app.services.platform import project_slug
@@ -1069,9 +1069,9 @@ def _capabilities_path() -> Path:
     return vault / "projects" / project_slug() / "housekeeping" / "capabilities.json"
 ```
 
-- [ ] **Step 3: `browse.py:38`** — `read_housekeeping_heartbeat("claude-config")` → `read_housekeeping_heartbeat(project_slug())` (add the import).
+- [x] **Step 3: `browse.py:38`** — `read_housekeeping_heartbeat("claude-config")` → `read_housekeeping_heartbeat(project_slug())` (add the import).
 
-- [ ] **Step 4: `.env.example`** — append:
+- [x] **Step 4: `.env.example`** — append:
 
 ```
 # Vault project slug that stores the platform's own housekeeping/config state
@@ -1080,9 +1080,9 @@ PLATFORM_PROJECT_SLUG=claude-config
 CONFIG_VERSION_PATH=/claude-config/VERSION
 ```
 
-- [ ] **Step 5: `CONTRIBUTING.md` skills-registry section (lines ~124-137)** — the documented entry schema lists fields the code never reads. Align doc to code: the schema is exactly `command`, `category`, `description`, optional `added`/`updated` (dates drive the 14-day new/updated badges in `app/services/skills.py`). Shrink the doc; do not grow the code.
+- [x] **Step 5: `CONTRIBUTING.md` skills-registry section (lines ~124-137)** — the documented entry schema lists fields the code never reads. Align doc to code: the schema is exactly `command`, `category`, `description`, optional `added`/`updated` (dates drive the 14-day new/updated badges in `app/services/skills.py`). Shrink the doc; do not grow the code.
 
-- [ ] **Step 6: Extend `tests/test_platform.py`** with a context-processor test:
+- [x] **Step 6: Extend `tests/test_platform.py`** with a context-processor test:
 
 ```python
 def test_version_badge_disabled_when_path_blank(monkeypatch, client):
@@ -1091,7 +1091,7 @@ def test_version_badge_disabled_when_path_blank(monkeypatch, client):
     assert resp.status_code == 200  # app boots; badge suppression is render-level
 ```
 
-- [ ] **Step 7: Full suite `-q` — green. Commit**
+- [x] **Step 7: Full suite `-q` — green. Commit**
 
 ```bash
 git add app/__init__.py app/services/capabilities.py app/routes/browse.py .env.example CONTRIBUTING.md tests/test_platform.py
@@ -1104,9 +1104,9 @@ git commit -m "feat: platform project slug and config version path are env-confi
 
 **Files:** none new.
 
-- [ ] **Step 1: Full suite.** `python3 -m pytest tests/ -q` — compare against the pre-Task-1 baseline count; every previously passing test still passes, plus the new ones.
+- [x] **Step 1: Full suite.** `python3 -m pytest tests/ -q` — compare against the pre-Task-1 baseline count; every previously passing test still passes, plus the new ones.
 
-- [ ] **Step 2: Grep gates.** All must return nothing:
+- [x] **Step 2: Grep gates.** All must return nothing:
 
 ```bash
 grep -rn "initial_command" app/routes/ app/services/scheduler.py   # only driver.py + session_client.py may hit
@@ -1114,12 +1114,12 @@ grep -rn "host.docker.internal:5010" app/ --include="*.py" | grep -v session_cli
 grep -rn '"claude-config"' app/ --include="*.py" | grep -v platform.py
 ```
 
-- [ ] **Step 3: Rebuild and smoke.** `docker.exe compose up --build -d` (use the compose file the running deployment actually uses — check `docker.exe compose ls` first). Then:
+- [x] **Step 3: Rebuild and smoke.** `docker.exe compose up --build -d` (use the compose file the running deployment actually uses — check `docker.exe compose ls` first). Then:
   - `curl -s http://localhost:5009/health` → `ok`
   - `curl -s http://localhost:5009/housekeeping | head -c 200` → HTML renders
   - Version badge still shows on any page (CONFIG_VERSION_PATH default unchanged)
   - Container logs clean: `docker.exe compose logs --tail=30`
 
-- [ ] **Step 4: Close the vault loop.** PATCH the ikeos idea `2026-07-02-add-model-parameter-to-create-session-for-ai-model.md` to `status=done` via the capture API (the ikeos side is now implemented; the session-manager side remains tracked in claude-config).
+- [x] **Step 4: Close the vault loop.** PATCH the ikeos idea `2026-07-02-add-model-parameter-to-create-session-for-ai-model.md` to `status=done` via the capture API (the ikeos side is now implemented; the session-manager side remains tracked in claude-config).
 
-- [ ] **Step 5: Merge checkpoint — STOP and confirm with the user** before `git merge` to main (repo convention: direct merge, no PR; merging requires explicit confirmation per git workflow rules). After merge, remind that `git push` also requires user confirmation.
+- [x] **Step 5: Merge checkpoint — STOP and confirm with the user** before `git merge` to main (repo convention: direct merge, no PR; merging requires explicit confirmation per git workflow rules). After merge, remind that `git push` also requires user confirmation.
