@@ -25,7 +25,9 @@ def get_reflection_health() -> dict | None:
     try:
         sig_data = json.loads(signals_path.read_text(encoding="utf-8"))
         met_data = json.loads(metrics_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
+        if not isinstance(sig_data, dict) or not isinstance(met_data, dict):
+            raise ValueError("unexpected JSON root type")
+    except (OSError, json.JSONDecodeError, ValueError) as exc:
         logger.warning("Failed to read reflection health files: %s", exc)
         return None
 
@@ -35,7 +37,7 @@ def get_reflection_health() -> dict | None:
     pending = [s for s in active if s.get("occurrences", 0) >= _PROMOTION_THRESHOLD]
 
     abrupt = next((s for s in signals if s.get("pattern") == _ABRUPT_PATTERN), None)
-    abrupt_count = abrupt["occurrences"] if abrupt else 0
+    abrupt_count = abrupt.get("occurrences", 0) if abrupt else 0
 
     snapshots = met_data.get("snapshots", [])
     latest = snapshots[-1] if snapshots else None
