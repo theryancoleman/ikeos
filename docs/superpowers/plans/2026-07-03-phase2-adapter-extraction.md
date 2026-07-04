@@ -61,7 +61,7 @@ Session-manager env vars (set in `adapters/claude-code/session-manager/.env`):
 
 **Files:** `/mnt/c/Server/projects/ikeos/.env`, `/mnt/c/Server/claude-config/services/session-manager/.env`
 
-- [ ] **Step 1: Generate a new 48-character token**
+- [x] **Step 1: Generate a new 48-character token**
 
 ```bash
 python3 -c "import secrets; print(secrets.token_urlsafe(36))"
@@ -69,15 +69,15 @@ python3 -c "import secrets; print(secrets.token_urlsafe(36))"
 
 Copy the output. This is `NEW_TOKEN`.
 
-- [ ] **Step 2: Update ikeos .env**
+- [x] **Step 2: Update ikeos .env**
 
 Read `/mnt/c/Server/projects/ikeos/.env`, find the `CAPTURE_TOKEN=` line, replace the value with `NEW_TOKEN`. Save using the Edit tool. Ensure the line has no trailing `\r` (use Unix line endings only on this line — it was causing gunicorn to reject the header).
 
-- [ ] **Step 3: Update session-manager .env**
+- [x] **Step 3: Update session-manager .env**
 
 Read `/mnt/c/Server/claude-config/services/session-manager/.env`, find `IKEOS_CAPTURE_TOKEN=`, replace value with `NEW_TOKEN`. Save.
 
-- [ ] **Step 4: Restart ikeos container**
+- [x] **Step 4: Restart ikeos container**
 
 ```bash
 docker.exe compose -f /mnt/c/Server/projects/ikeos/docker-compose.yml up --build -d ikeos
@@ -89,7 +89,7 @@ docker.exe ps --filter name=ikeos --format "{{.Status}}"
 ```
 Expected: `Up ... (healthy)`
 
-- [ ] **Step 5: Restart session-manager**
+- [x] **Step 5: Restart session-manager**
 
 The session-manager runs as a bare Python process in a tmux pane. Find and restart it:
 ```bash
@@ -101,7 +101,7 @@ tmux send-keys -t <session-name> "C-c" Enter
 tmux send-keys -t <session-name> "bash /mnt/c/Server/claude-config/services/session-manager/start.sh" Enter
 ```
 
-- [ ] **Step 6: Verify PATCH /entries works with new token**
+- [x] **Step 6: Verify PATCH /entries works with new token**
 
 ```bash
 NEW_TOKEN=$(grep CAPTURE_TOKEN /mnt/c/Server/projects/ikeos/.env | cut -d= -f2 | tr -d '\r')
@@ -114,7 +114,7 @@ curl -s -X PATCH http://localhost:5009/entries \
 
 Expected: `{"message":"Status updated"}` (200). If 401: the container didn't pick up the new token — check docker logs.
 
-- [ ] **Step 7: Sweep ikeos git history for old token**
+- [x] **Step 7: Sweep ikeos git history for old token**
 
 ```bash
 OLD_TOKEN=<the token that was in ikeos/.env BEFORE this task>
@@ -124,7 +124,7 @@ git -C /mnt/c/Server/projects/ikeos log -p --all --source -- . | grep -c "$OLD_T
 
 Expected: 0 matches. If any found: stop and report — the history needs BFG/filter-repo cleanup before extraction.
 
-- [ ] **Step 8: Sweep claude-config git history for old token**
+- [x] **Step 8: Sweep claude-config git history for old token**
 
 ```bash
 OLD_TOKEN=<same old token>
@@ -133,7 +133,7 @@ git -C /mnt/c/Server/claude-config log -p --all --source -- . | grep -c "$OLD_TO
 
 Expected: 0 matches.
 
-- [ ] **Step 9: Update claude-config vault entry to done**
+- [x] **Step 9: Update claude-config vault entry to done**
 
 ```bash
 CAPTURE_TOKEN=$(grep CAPTURE_TOKEN /mnt/c/Server/projects/ikeos/.env | cut -d= -f2 | tr -d '\r')
@@ -146,7 +146,7 @@ curl -s -X PATCH http://localhost:5009/entries \
 
 Expected: `{"message":"Status updated"}`
 
-- [ ] **Step 10: Commit ikeos .env change (NO — .env is gitignored)**
+- [x] **Step 10: Commit ikeos .env change (NO — .env is gitignored)**
 
 `.env` is gitignored. Nothing to commit for Task 0. Verify:
 ```bash
@@ -162,7 +162,7 @@ Expected: no `.env` in the output.
 
 **Files (create):** `adapters/claude-code/session-manager/` — all files listed in File Map above
 
-- [ ] **Step 1: Create directory structure**
+- [x] **Step 1: Create directory structure**
 
 ```bash
 mkdir -p /mnt/c/Server/projects/ikeos/adapters/claude-code/session-manager/tests
@@ -170,11 +170,11 @@ mkdir -p /mnt/c/Server/projects/ikeos/adapters/claude-code/skills
 mkdir -p /mnt/c/Server/projects/ikeos/adapters/claude-code/hooks
 ```
 
-- [ ] **Step 2: Read session-manager app.py**
+- [x] **Step 2: Read session-manager app.py**
 
 Read `/mnt/c/Server/claude-config/services/session-manager/app.py` in full.
 
-- [ ] **Step 3: Write sanitized app.py**
+- [x] **Step 3: Write sanitized app.py**
 
 Write `adapters/claude-code/session-manager/app.py`. The content is identical to the source **except** replace the hardcoded `INFRASTRUCTURE_MACHINES` block (lines ~181–184):
 
@@ -205,7 +205,7 @@ INFRASTRUCTURE_MACHINES = _load_infrastructure_machines()
 
 All other lines are copied exactly. No other changes.
 
-- [ ] **Step 4: Copy remaining session-manager files verbatim**
+- [x] **Step 4: Copy remaining session-manager files verbatim**
 
 ```bash
 cp /mnt/c/Server/claude-config/services/session-manager/sessions.py \
@@ -230,7 +230,7 @@ cp /mnt/c/Server/claude-config/services/session-manager/tests/test_tmux.py \
    /mnt/c/Server/projects/ikeos/adapters/claude-code/session-manager/tests/test_tmux.py
 ```
 
-- [ ] **Step 5: Write session-manager .env.example**
+- [x] **Step 5: Write session-manager .env.example**
 
 Write `adapters/claude-code/session-manager/.env.example`:
 
@@ -254,7 +254,7 @@ PROTECTED_CONTAINERS=
 INFRASTRUCTURE_MACHINES=[]
 ```
 
-- [ ] **Step 6: Write session-manager .gitignore**
+- [x] **Step 6: Write session-manager .gitignore**
 
 Write `adapters/claude-code/session-manager/.gitignore`:
 
@@ -266,7 +266,7 @@ __pycache__/
 .pytest_cache/
 ```
 
-- [ ] **Step 7: Run session-manager tests against the sanitized copy**
+- [x] **Step 7: Run session-manager tests against the sanitized copy**
 
 The tests run against the source tree, not the destination. Since the session-manager imports use relative imports (no package), the tests must run from within the adapter directory:
 
@@ -278,7 +278,7 @@ python3 -m pytest tests/ -v --tb=short 2>&1 | tail -30
 
 Expected: All tests pass (same as source). If any test fails due to `INFRASTRUCTURE_MACHINES` change, fix the test to patch the env var instead of the global.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git -C /mnt/c/Server/projects/ikeos add adapters/claude-code/session-manager/
@@ -339,11 +339,11 @@ IKEOS_URL="${IKEOS_URL:-http://localhost:5009}"
 curl ... "${IKEOS_URL}/capture"
 ```
 
-- [ ] **Step 1: Read source file**
+- [x] **Step 1: Read source file**
 
 Read `/mnt/c/Server/claude-config/global/commands/housekeeping.md` in full.
 
-- [ ] **Step 2: Write parameterized version**
+- [x] **Step 2: Write parameterized version**
 
 Write `adapters/claude-code/skills/housekeeping.md` with all replacements above applied. The file should be functionally identical to the source except every hardcoded path/URL reads from env.
 
@@ -352,7 +352,7 @@ Update the frontmatter description to:
 description: Run the periodic housekeeping routine — discover vault tasks, run due ones as subagents, update vault state. Requires VAULT_PATH, IKEOS_URL, and CAPTURE_TOKEN env vars.
 ```
 
-- [ ] **Step 3: Spot-check the output**
+- [x] **Step 3: Spot-check the output**
 
 ```bash
 grep -n "obsidian-vault\|localhost:5009\|claude-config/library\|192.168\|ryancoleman\|C:\\\\Server" \
@@ -361,7 +361,7 @@ grep -n "obsidian-vault\|localhost:5009\|claude-config/library\|192.168\|ryancol
 
 Expected: 0 matches. If any remain, fix them.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git -C /mnt/c/Server/projects/ikeos add adapters/claude-code/skills/housekeeping.md
@@ -415,15 +415,15 @@ if not VAULT or not VAULT.exists():
     print("Error: VAULT_PATH not set or does not exist."); sys.exit(1)
 ```
 
-- [ ] **Step 1: Read source file**
+- [x] **Step 1: Read source file**
 
 Read `/mnt/c/Server/claude-config/global/commands/triage.md` in full.
 
-- [ ] **Step 2: Write parameterized version**
+- [x] **Step 2: Write parameterized version**
 
 Write `adapters/claude-code/skills/triage.md` with all replacements applied. Update frontmatter description to note required env vars.
 
-- [ ] **Step 3: Spot-check**
+- [x] **Step 3: Spot-check**
 
 ```bash
 grep -n "obsidian-vault\|localhost:5009\|Server/claude-config\|192.168\|ryancoleman\|C:\\\\Server" \
@@ -432,7 +432,7 @@ grep -n "obsidian-vault\|localhost:5009\|Server/claude-config\|192.168\|ryancole
 
 Expected: 0 matches.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git -C /mnt/c/Server/projects/ikeos add adapters/claude-code/skills/triage.md
@@ -487,15 +487,15 @@ if not blog_dir:
 
 Replace the hardcoded blog path with `os.path.join(blog_dir, f"{year}-W{week:02d}.md")`.
 
-- [ ] **Step 1: Read source file**
+- [x] **Step 1: Read source file**
 
 Read `/mnt/c/Server/claude-config/global/commands/close-session.md` in full.
 
-- [ ] **Step 2: Write parameterized version**
+- [x] **Step 2: Write parameterized version**
 
 Write `adapters/claude-code/skills/close-session.md` with all replacements applied. Update frontmatter description.
 
-- [ ] **Step 3: Spot-check**
+- [x] **Step 3: Spot-check**
 
 ```bash
 grep -n "obsidian-vault\|localhost:5009\|Server/claude-config\|aios-blog\|192.168\|ryancoleman\|C:\\\\Server\|/mnt/c/Server" \
@@ -504,7 +504,7 @@ grep -n "obsidian-vault\|localhost:5009\|Server/claude-config\|aios-blog\|192.16
 
 Expected: 0 matches.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git -C /mnt/c/Server/projects/ikeos add adapters/claude-code/skills/close-session.md
@@ -551,15 +551,15 @@ _ikeos = os.environ.get("IKEOS_URL", "http://localhost:5009").rstrip("/")
 req = urllib.request.Request(f"{_ikeos}/entries", data=data, method="PATCH")
 ```
 
-- [ ] **Step 1: Read source file**
+- [x] **Step 1: Read source file**
 
 Read `/mnt/c/Server/claude-config/global/commands/schema-check.md` in full.
 
-- [ ] **Step 2: Write parameterized version**
+- [x] **Step 2: Write parameterized version**
 
 Write `adapters/claude-code/skills/schema-check.md` with all replacements applied. Update frontmatter description.
 
-- [ ] **Step 3: Spot-check**
+- [x] **Step 3: Spot-check**
 
 ```bash
 grep -n "obsidian-vault\|localhost:5009\|Server/claude-config\|192.168\|ryancoleman\|C:\\\\Server\|/mnt/c/Server" \
@@ -568,7 +568,7 @@ grep -n "obsidian-vault\|localhost:5009\|Server/claude-config\|192.168\|ryancole
 
 Expected: 0 matches.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git -C /mnt/c/Server/projects/ikeos add adapters/claude-code/skills/schema-check.md
@@ -621,23 +621,23 @@ if [ -z "$SIGNALS_FILE" ]; then
 fi
 ```
 
-- [ ] **Step 1: Read promote.md source**
+- [x] **Step 1: Read promote.md source**
 
 Read `/mnt/c/Server/claude-config/global/commands/promote.md` in full.
 
-- [ ] **Step 2: Write parameterized promote.md**
+- [x] **Step 2: Write parameterized promote.md**
 
 Write `adapters/claude-code/skills/promote.md`. Replace `http://localhost:5009/capture` with `${IKEOS_URL:-http://localhost:5009}/capture` in the curl command. Update `C:\Users\ServerAdmin\.claude\memory\` references to `~/.claude/memory/`. All other content is identical.
 
-- [ ] **Step 3: Read stophook-reflection.sh source**
+- [x] **Step 3: Read stophook-reflection.sh source**
 
 Read `/mnt/c/Server/claude-config/scripts/stophook-reflection.sh` in full.
 
-- [ ] **Step 4: Write parameterized stophook-reflection.sh**
+- [x] **Step 4: Write parameterized stophook-reflection.sh**
 
 Write `adapters/claude-code/hooks/stophook-reflection.sh` with the path discovery replacement above. Everything else is identical.
 
-- [ ] **Step 5: Spot-check both files**
+- [x] **Step 5: Spot-check both files**
 
 ```bash
 grep -n "obsidian-vault\|localhost:5009\|/mnt/c/Server/claude-config\|192.168\|ryancoleman\|C:\\\\Server\|ServerAdmin" \
@@ -647,7 +647,7 @@ grep -n "obsidian-vault\|localhost:5009\|/mnt/c/Server/claude-config\|192.168\|r
 
 Expected: 0 matches.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git -C /mnt/c/Server/projects/ikeos add adapters/claude-code/skills/promote.md adapters/claude-code/hooks/
@@ -664,7 +664,7 @@ git -C /mnt/c/Server/projects/ikeos commit -m "feat: add adapters/claude-code/sk
 - `adapters/claude-code/README.md`
 - `adapters/claude-code/.env.example`
 
-- [ ] **Step 1: Write adapters/claude-code/.env.example**
+- [x] **Step 1: Write adapters/claude-code/.env.example**
 
 ```bash
 # IkeOS Claude Code Adapter — environment variables
@@ -691,7 +691,7 @@ VAULT_PATH=/path/to/your/obsidian/vault
 # BLOG_NOTES_DIR=/path/to/your/blog/weekly-notes
 ```
 
-- [ ] **Step 2: Write adapters/claude-code/README.md**
+- [x] **Step 2: Write adapters/claude-code/README.md**
 
 Write `adapters/claude-code/README.md` with these sections:
 
@@ -780,7 +780,7 @@ Register it in your Claude Code hooks config (`~/.claude/settings.json`):
 | `INFRASTRUCTURE_MACHINES` | No | `[]` | JSON array `[{"name":"...","host":"..."}]` |
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git -C /mnt/c/Server/projects/ikeos add adapters/claude-code/README.md adapters/claude-code/.env.example
@@ -793,7 +793,7 @@ git -C /mnt/c/Server/projects/ikeos commit -m "docs: add adapters/claude-code RE
 
 **Goal:** Record the extraction decision, mark vault entries done, verify no sensitive data leaked into the committed tree.
 
-- [ ] **Step 1: Append to DECISIONS.md**
+- [x] **Step 1: Append to DECISIONS.md**
 
 Read `/mnt/c/Server/projects/ikeos/.claude/DECISIONS.md`, then append:
 
@@ -803,14 +803,14 @@ Read `/mnt/c/Server/projects/ikeos/.claude/DECISIONS.md`, then append:
 Execution of the 2026-07-02 decision (Skills and session-manager move INTO ikeos). All IkeOS-coupled Claude Code artifacts now live in `adapters/claude-code/`: five parameterized skills (/housekeeping, /triage, /close-session, /schema-check, /promote), the stophook reflection script, and the session-manager service (reference implementation of the SESSION_DRIVER_API). Parameterization contract: IKEOS_URL, CAPTURE_TOKEN, VAULT_PATH, CLAUDE_CONFIG_DIR, BLOG_NOTES_DIR. The single code change in session-manager: INFRASTRUCTURE_MACHINES is now loaded from an env var (JSON array) instead of being hardcoded. CAPTURE_TOKEN was rotated before extraction; both repo git histories were swept for the old token (0 matches found). install docs in adapters/claude-code/README.md.
 ```
 
-- [ ] **Step 2: Commit DECISIONS.md**
+- [x] **Step 2: Commit DECISIONS.md**
 
 ```bash
 git -C /mnt/c/Server/projects/ikeos add .claude/DECISIONS.md
 git -C /mnt/c/Server/projects/ikeos commit -m "docs: record adapter extraction decision in DECISIONS.md"
 ```
 
-- [ ] **Step 3: Final sensitive-data sweep across entire adapters/ tree**
+- [x] **Step 3: Final sensitive-data sweep across entire adapters/ tree**
 
 ```bash
 grep -rn "192.168\|100.74\|ryancoleman\|ServerAdmin\|C:\\\\Server\|/mnt/c/Server\|localhost:5009" \
@@ -819,7 +819,7 @@ grep -rn "192.168\|100.74\|ryancoleman\|ServerAdmin\|C:\\\\Server\|/mnt/c/Server
 
 Expected: 0 matches. If any found: fix the file, re-verify, re-commit.
 
-- [ ] **Step 4: Mark vault entries done**
+- [x] **Step 4: Mark vault entries done**
 
 ```bash
 CAPTURE_TOKEN=$(grep CAPTURE_TOKEN /mnt/c/Server/projects/ikeos/.env | cut -d= -f2 | tr -d '\r')
@@ -846,7 +846,7 @@ curl -s -X PATCH http://localhost:5009/entries \
   -d "status=done"
 ```
 
-- [ ] **Step 5: Final git log review**
+- [x] **Step 5: Final git log review**
 
 ```bash
 git -C /mnt/c/Server/projects/ikeos log --oneline -15
