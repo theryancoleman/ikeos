@@ -29,8 +29,10 @@ def test_dashboard_shows_reflection_health_widget(tmp_path, client):
     assert resp.status_code == 200
     body = resp.data.decode()
     assert "Reflection Health" in body
-    assert "4" in body          # active_signals
+    assert "Active signals" in body
+    assert ">4<" in body        # active_signals value between tags
     assert "75%" in body        # acceptance_rate rendered as percentage
+    assert "2026-W27" in body   # last_snapshot_week
 
 
 def test_dashboard_handles_missing_reflection_health(tmp_path, client):
