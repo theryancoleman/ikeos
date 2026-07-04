@@ -1,5 +1,6 @@
 import os
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from werkzeug.exceptions import BadRequest
 from app.services.vault import (
     get_projects_with_meta, write_entry, update_entry_status_generic,
     update_housekeeping_fields, ENTRY_TYPE_CONFIG, DECISION_STATUSES,
@@ -43,47 +44,52 @@ def capture_form():
 
 @bp.route("/capture", methods=["POST"])
 def capture_submit():
-    entry_type = request.form["type"]
+    try:
+        form = request.form
+    except BadRequest:
+        return jsonify({"error": "Form data could not be parsed. For non-ASCII content (em-dashes, curly quotes, etc.), use --data-urlencode instead of -d with curl."}), 400
+
+    entry_type = form["type"]
     data = {
         "type": entry_type,
-        "title": request.form["title"],
-        "description": request.form.get("description", ""),
-        "body": request.form.get("body", ""),
-        "domains": request.form.getlist("domains"),
+        "title": form["title"],
+        "description": form.get("description", ""),
+        "body": form.get("body", ""),
+        "domains": form.getlist("domains"),
     }
 
     # Decision entries don't require a project in the form
     if entry_type == "decision":
-        project = request.form.get("project", "")
+        project = form.get("project", "")
         if project:
             data["project"] = project.lower().strip()
     else:
-        project = request.form["project"]
+        project = form["project"]
         if project == "__future__":
-            project = request.form.get("future_project_name", "").strip() or "future"
+            project = form.get("future_project_name", "").strip() or "future"
         data["project"] = project.lower().strip()
-        component = request.form.get("component", "").strip() or None
+        component = form.get("component", "").strip() or None
         if component:
             data["component"] = component
 
     if entry_type == "idea":
-        data["priority"] = request.form.get("priority", "medium")
-        data["effort"] = request.form.get("effort", "medium")
-        data["why"] = request.form.get("why", "").strip()
+        data["priority"] = form.get("priority", "medium")
+        data["effort"] = form.get("effort", "medium")
+        data["why"] = form.get("why", "").strip()
     elif entry_type == "bug":
-        data["severity"] = request.form.get("severity", "medium")
-        data["steps"] = request.form.get("steps", "")
+        data["severity"] = form.get("severity", "medium")
+        data["steps"] = form.get("steps", "")
     elif entry_type == "experiment":
-        data["hypothesis"] = request.form.get("hypothesis", "").strip()
-        data["expected_outcome"] = request.form.get("expected_outcome", "").strip()
-        data["measurement"] = request.form.get("measurement", "").strip()
-        data["success_criteria"] = request.form.get("success_criteria", "").strip()
-        data["timebox"] = request.form.get("timebox", "").strip()
+        data["hypothesis"] = form.get("hypothesis", "").strip()
+        data["expected_outcome"] = form.get("expected_outcome", "").strip()
+        data["measurement"] = form.get("measurement", "").strip()
+        data["success_criteria"] = form.get("success_criteria", "").strip()
+        data["timebox"] = form.get("timebox", "").strip()
 
     write_entry(data)
     flash("Saved. The vault remembers.")
 
-    if request.form.get("stay") == "1":
+    if form.get("stay") == "1":
         return redirect(url_for("capture.capture_form", project=project if entry_type != "decision" else ""))
     return redirect(url_for("browse.tasks"))
 

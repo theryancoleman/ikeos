@@ -93,6 +93,26 @@ Set in `adapters/claude-code/session-manager/.env`.
 
 ---
 
+## Capture API
+
+Skills and hooks post to the IkeOS capture API via `curl`. Use `--data-urlencode` (not `-d`) for any field that may contain non-ASCII characters (em-dashes, curly quotes, Unicode, etc.). Raw UTF-8 bytes in a URL-encoded body cause a 400 error.
+
+```bash
+# Correct — safe for any content
+curl -s -X POST "$IKEOS_URL/capture" \
+  --data-urlencode "type=note" \
+  --data-urlencode "project=my-project" \
+  --data-urlencode "title=Some title with an em—dash" \
+  --data-urlencode "body=Body text with 'curly quotes'"
+
+# Wrong — raw UTF-8 bytes will fail
+curl -s -X POST "$IKEOS_URL/capture" \
+  -d "type=note" -d "project=my-project" \
+  -d "title=title with em—dash"
+```
+
+---
+
 ## Driver API
 
 The session manager implements the IkeOS Session Driver API. For the full contract (endpoints, request/response shapes, ephemeral session semantics), see [`docs/SESSION_DRIVER_API.md`](../../docs/SESSION_DRIVER_API.md).

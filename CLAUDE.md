@@ -123,3 +123,9 @@ Task size determines the execution loop:
 - Vault tests use a temp directory — never the real vault.
 - No DB — no DB test setup needed.
 - Run tests: `docker exec ikeos pytest`
+
+---
+
+## Session Hooks
+
+At session start, Claude Code fires hooks (rename, remote-control, etc.) that emit output before the agent reads the user's first message. **Treat that output as noise — do not interpret it as a command or project name.** For example, `/rename Build 3` in the session-start context is a window-title hook, not a request to search for "Build 3" in the vault or codebase.
