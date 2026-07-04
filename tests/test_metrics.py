@@ -129,3 +129,47 @@ def test_metrics_view_shows_capability_status(client, tmp_path, monkeypatch):
     assert "Capability Status" in body
     # The capability name is rendered as "Housekeeping Scheduler" (title-cased, underscores→spaces)
     assert "housekeeping" in body.lower()
+
+
+# ---------------------------------------------------------------------------
+# Tests for read_events_by_type
+# ---------------------------------------------------------------------------
+
+
+def test_read_events_by_type_filters_correctly(tmp_path):
+    from app.services.metrics import read_events_by_type
+    events_file = tmp_path / "events.jsonl"
+    lines = [
+        json.dumps({"event": "housekeeping.run", "tasks_run": 3, "timestamp": "2026-07-01T10:00:00+00:00"}),
+        json.dumps({"event": "session.created", "project": "ikeos", "timestamp": "2026-07-01T09:00:00+00:00"}),
+        json.dumps({"event": "housekeeping.run", "tasks_run": 5, "timestamp": "2026-07-02T10:00:00+00:00"}),
+    ]
+    events_file.write_text("\n".join(lines), encoding="utf-8")
+
+    with patch("app.services.metrics.METRICS_PATH", events_file):
+        result = read_events_by_type("housekeeping.run", limit=10)
+
+    assert len(result) == 2
+    assert all(e["event"] == "housekeeping.run" for e in result)
+    # newest first
+    assert result[0]["tasks_run"] == 5
+    assert result[1]["tasks_run"] == 3
+
+
+def test_read_events_by_type_respects_limit(tmp_path):
+    from app.services.metrics import read_events_by_type
+    events_file = tmp_path / "events.jsonl"
+    lines = [json.dumps({"event": "housekeeping.run", "tasks_run": i, "timestamp": f"2026-07-0{i+1}T00:00:00+00:00"}) for i in range(5)]
+    events_file.write_text("\n".join(lines), encoding="utf-8")
+
+    with patch("app.services.metrics.METRICS_PATH", events_file):
+        result = read_events_by_type("housekeeping.run", limit=3)
+
+    assert len(result) == 3
+
+
+def test_read_events_by_type_missing_file(tmp_path):
+    from app.services.metrics import read_events_by_type
+    with patch("app.services.metrics.METRICS_PATH", tmp_path / "nonexistent.jsonl"):
+        result = read_events_by_type("housekeeping.run")
+    assert result == []

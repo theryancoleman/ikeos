@@ -41,3 +41,9 @@ def read_events(limit: int = 50) -> list[dict]:
         return events
     except OSError:
         return []
+
+
+def read_events_by_type(event_type: str, limit: int = 50) -> list[dict]:
+    """Return up to `limit` most-recent events matching `event_type`, newest first."""
+    all_events = read_events(limit=limit * 10)  # over-fetch to have room to filter
+    return [e for e in all_events if e.get("event") == event_type][:limit]
