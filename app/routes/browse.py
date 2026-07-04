@@ -8,6 +8,7 @@ from app.services.umbrella import get_components
 from app.services.skills import get_skills_by_category
 from app.services.blog_drafts import latest_draft_name
 from app.services.platform import project_slug
+from app.services.reflection import get_reflection_health
 
 bp = Blueprint("browse", __name__)
 
@@ -40,6 +41,7 @@ def tasks():
     hk_age = _age_str(heartbeat.get("last_run"))
     hk_status = _widget_status(heartbeat)
     blog_draft = latest_draft_name()
+    reflection_health = get_reflection_health()
 
     return render_template(
         "dashboard.html",
@@ -51,6 +53,7 @@ def tasks():
         hk_age=hk_age,
         hk_status=hk_status,
         blog_draft=blog_draft,
+        reflection_health=reflection_health,
     )
 
 

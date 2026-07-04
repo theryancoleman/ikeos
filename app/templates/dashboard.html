@@ -118,6 +118,41 @@
         <a href="{{ url_for('housekeeping.index') }}" class="hk-widget-link">Manage tasks →</a>
       </div>
     </section>
+
+    {% if reflection_health %}
+    <!-- ── Reflection Health ── -->
+    <section>
+      <div class="ike-eyebrow">Reflection Health</div>
+      <div class="widget-card">
+        <div class="widget-row">
+          <span class="label">Active signals (45d)</span>
+          <span class="value">{{ reflection_health.active_signals }}</span>
+        </div>
+        <div class="widget-row">
+          <span class="label">Pending promotion</span>
+          <span class="value {{ 'warn' if reflection_health.pending_promotion > 0 else '' }}">{{ reflection_health.pending_promotion }}</span>
+        </div>
+        {% if reflection_health.acceptance_rate is not none %}
+        <div class="widget-row">
+          <span class="label">Acceptance rate</span>
+          <span class="value">{{ (reflection_health.acceptance_rate * 100) | int }}%</span>
+        </div>
+        {% endif %}
+        {% if reflection_health.abrupt_endings > 0 %}
+        <div class="widget-row warn">
+          <span class="label">Abrupt endings</span>
+          <span class="value">{{ reflection_health.abrupt_endings }}</span>
+        </div>
+        {% endif %}
+        {% if reflection_health.last_snapshot_week %}
+        <div class="widget-row muted">
+          <span class="label">Last snapshot</span>
+          <span class="value">{{ reflection_health.last_snapshot_week }}</span>
+        </div>
+        {% endif %}
+      </div>
+    </section>
+    {% endif %}
   </div>
 
 </div>
