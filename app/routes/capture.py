@@ -11,6 +11,15 @@ from app.services.metrics import append_event
 
 bp = Blueprint("capture", __name__)
 
+_VALID_TRIGGERS = {"scheduled", "manual", "retry"}
+
+
+def _safe_int(value, default: int = 0) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
 
 def _get_capture_token():
     """Get CAPTURE_TOKEN from environment, return None if unset."""
@@ -184,11 +193,14 @@ def patch_housekeeping():
         return jsonify({"error": "Entry not found or no valid fields provided"}), 404
 
     if entry_type == "housekeeping-heartbeat" and "tasks_run" in fields:
+        trigger = fields.get("trigger", "scheduled")
+        if trigger not in _VALID_TRIGGERS:
+            trigger = "scheduled"
         append_event("housekeeping.run", {
-            "trigger": fields.get("trigger", "scheduled"),
-            "tasks_run": int(fields.get("tasks_run") or 0),
-            "tasks_failed": int(fields.get("tasks_failed") or 0),
-            "tasks_skipped": int(fields.get("tasks_skipped") or 0),
+            "trigger": trigger,
+            "tasks_run": _safe_int(fields.get("tasks_run")),
+            "tasks_failed": _safe_int(fields.get("tasks_failed")),
+            "tasks_skipped": _safe_int(fields.get("tasks_skipped")),
         })
 
     return jsonify({"message": "Updated"}), 200
