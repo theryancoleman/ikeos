@@ -225,11 +225,11 @@
       <tbody>
         {% for run in recent_runs %}
         <tr>
-          <td>{{ run.timestamp | replace("T", " ") | replace("+00:00", "") }}</td>
-          <td>{{ run.get("trigger", "—") }}</td>
-          <td>{{ run.get("tasks_run", "—") }}</td>
-          <td class="{{ 'error' if run.get('tasks_failed', 0) > 0 else '' }}">{{ run.get("tasks_failed", "—") }}</td>
-          <td>{{ run.get("tasks_skipped", "—") }}</td>
+          <td>{{ (run.timestamp | default("")) | replace("T", " ") | replace("+00:00", "") or "—" }}</td>
+          <td>{{ run.trigger | default("—") }}</td>
+          <td>{{ run.tasks_run | default("—") }}</td>
+          <td class="{{ 'error' if (run.tasks_failed | default(0)) > 0 else '' }}">{{ run.tasks_failed | default("—") }}</td>
+          <td>{{ run.tasks_skipped | default("—") }}</td>
         </tr>
         {% endfor %}
       </tbody>

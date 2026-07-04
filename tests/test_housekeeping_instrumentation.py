@@ -166,6 +166,31 @@ def test_patch_housekeeping_task_does_not_emit_run_event(tmp_path, client):
     assert len(emitted) == 0
 
 
+def test_housekeeping_page_renders_recent_runs_without_error(tmp_path, monkeypatch):
+    """GET /housekeeping with a non-empty metrics file must render without UndefinedError."""
+    import json
+    events_file = tmp_path / "events.jsonl"
+    events_file.write_text(
+        json.dumps({"event": "housekeeping.run", "tasks_run": 2, "tasks_failed": 1,
+                    "tasks_skipped": 0, "trigger": "manual",
+                    "timestamp": "2026-07-04T10:00:00+00:00"}) + "\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("CAPTURE_TOKEN", "test-token")
+    app = create_app()
+    app.config["TESTING"] = True
+    with patch("app.services.metrics.METRICS_PATH", events_file), \
+         patch("app.services.vault_cache.VAULT_PATH", tmp_path):
+        with app.test_client() as c:
+            resp = c.get("/housekeeping")
+
+    assert resp.status_code == 200
+    body = resp.data.decode()
+    assert "Recent Runs" in body
+    assert "manual" in body
+    assert "2026-07-04" in body
+
+
 def test_housekeeping_context_includes_recent_runs(tmp_path):
     """_housekeeping_context() must include recent_runs list from metrics."""
     import json
