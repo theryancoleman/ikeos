@@ -159,13 +159,21 @@ def test_read_events_by_type_filters_correctly(tmp_path):
 def test_read_events_by_type_respects_limit(tmp_path):
     from app.services.metrics import read_events_by_type
     events_file = tmp_path / "events.jsonl"
-    lines = [json.dumps({"event": "housekeeping.run", "tasks_run": i, "timestamp": f"2026-07-0{i+1}T00:00:00+00:00"}) for i in range(5)]
+    # Write 5 events with tasks_run 0..4 (oldest first in file)
+    lines = [
+        json.dumps({"event": "housekeeping.run", "tasks_run": i,
+                    "timestamp": f"2026-07-{i + 1:02d}T00:00:00+00:00"})
+        for i in range(5)
+    ]
     events_file.write_text("\n".join(lines), encoding="utf-8")
 
     with patch("app.services.metrics.METRICS_PATH", events_file):
         result = read_events_by_type("housekeeping.run", limit=3)
 
     assert len(result) == 3
+    # newest first: tasks_run 4, 3, 2
+    assert result[0]["tasks_run"] == 4
+    assert result[-1]["tasks_run"] == 2
 
 
 def test_read_events_by_type_missing_file(tmp_path):
