@@ -172,4 +172,5 @@ def delete_housekeeping_task(project: str, filename: str) -> bool:
     except Exception:
         return False
     filepath.unlink()
+    _vc._invalidate_cache()
     return True

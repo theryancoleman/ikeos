@@ -103,7 +103,8 @@ def update_status(name, slug):
     new_status = request.form.get("status", "")
     success = update_entry_status(name, slug, new_status)
     flash("Status updated." if success else "Could not update status.")
-    next_url = request.form.get("next") or url_for("browse.project", name=name)
+    next_raw = request.form.get("next", "")
+    next_url = next_raw if next_raw.startswith("/") else url_for("browse.project", name=name)
     return redirect(next_url)
 
 

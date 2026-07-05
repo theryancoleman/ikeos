@@ -197,6 +197,10 @@ def read_entries(project: str = None, status_filter: list = None, component: str
 
 
 def read_entry(project: str, slug: str) -> dict | None:
+    if ".." in project or "/" in project or "\\" in project:
+        return None
+    if ".." in slug or "/" in slug or "\\" in slug:
+        return None
     proj_dir = _vc.VAULT_PATH / "projects" / project
     for cfg in _vc.ENTRY_TYPE_CONFIG.values():
         filepath = proj_dir / cfg["folder"] / f"{slug}.md"
@@ -274,6 +278,7 @@ def update_entry_status_generic(entry_type: str, project: str | None, filename: 
         _vc._invalidate_cache()
         return True
     except Exception:
+        logger.exception("Failed to update status for %s/%s/%s to %s", entry_type, project, filename, new_status)
         return False
 
 
