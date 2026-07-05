@@ -62,7 +62,7 @@
         <td class="metrics-detail">
           {% for k, v in ev.items() %}
             {% if k not in ('event', 'timestamp') %}
-              <span class="metrics-kv"><span class="metrics-key">{{ k }}</span>: {{ v }}</span>
+              <span class="metrics-kv"><span class="metrics-key">{{ k | e }}</span>: {{ v | e }}</span>
             {% endif %}
           {% endfor %}
         </td>

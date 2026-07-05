@@ -159,16 +159,16 @@
             <td class="hk-date">{{ task.next_run or '—' }}</td>
             <td class="hk-actions">
               <button class="pill"
-                      onclick="toggleTask('{{ task.filename | forceescape }}', this)"
+                      onclick="toggleTask({{ task.filename | tojson | forceescape }}, this)"
                       data-enabled="{{ task.enabled | string | lower }}">
                 {{ 'Disable' if (task.enabled | string | lower) == 'true' else 'Enable' }}
               </button>
               <button class="pill"
-                      onclick="resetTask('{{ task.filename | forceescape }}', this)">Reset</button>
+                      onclick="resetTask({{ task.filename | tojson | forceescape }}, this)">Reset</button>
               <button class="pill pill-primary-filled"
-                      onclick="runTask('{{ task.filename | forceescape }}', this)">Run</button>
+                      onclick="runTask({{ task.filename | tojson | forceescape }}, this)">Run</button>
               <button class="pill pill-danger"
-                      onclick="deleteTask('{{ task.filename | forceescape }}', this)">Delete</button>
+                      onclick="deleteTask({{ task.filename | tojson | forceescape }}, this)">Delete</button>
             </td>
           </tr>
           {% endfor %}

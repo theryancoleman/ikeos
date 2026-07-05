@@ -173,6 +173,7 @@ def delete_task(filename: str):
 
 
 @bp.route("/housekeeping/tasks/<filename>/run", methods=["POST"])
+@require_capture_token
 def run_task(filename: str):
     result = run_housekeeping_task(filename)
     if result.already_running:
