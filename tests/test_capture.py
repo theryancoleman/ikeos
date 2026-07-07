@@ -806,6 +806,74 @@ def test_patch_housekeeping_heartbeat(client, tmp_path, monkeypatch):
     assert resp.status_code == 200
 
 
+def test_patch_housekeeping_heartbeat_includes_task_results(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("CAPTURE_TOKEN", "test-token-secret")
+    captured = []
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
+        (tmp_path / "projects" / "claude-config").mkdir(parents=True)
+        from app.services.vault import write_entry
+        write_entry({"type": "housekeeping-heartbeat", "project": "claude-config", "title": "HB"})
+        with patch("app.routes.capture.append_event", side_effect=lambda *a, **kw: captured.append((a, kw))):
+            resp = client.patch(
+                "/entries/housekeeping",
+                json={
+                    "project": "claude-config",
+                    "type": "housekeeping-heartbeat",
+                    "filename": "last-run",
+                    "fields": {
+                        "last_run": "2026-07-07T12:00:00",
+                        "tasks_run": "3",
+                        "tasks_failed": "1",
+                        "tasks_skipped": "1",
+                        "task_results": [
+                            {"name": "Research cycle", "project": "claude-config", "outcome": "ok"},
+                            {"name": "Weak signals", "project": "claude-config", "outcome": "failed", "error": "Judge timeout"},
+                            {"name": "Skills audit", "project": "claude-config", "outcome": "skipped"},
+                        ],
+                    },
+                },
+                headers={"X-Capture-Token": "test-token-secret"},
+            )
+    assert resp.status_code == 200
+    assert len(captured) == 1
+    event_type, payload = captured[0][0]
+    assert event_type == "housekeeping.run"
+    assert payload["task_results"] == [
+        {"name": "Research cycle", "project": "claude-config", "outcome": "ok"},
+        {"name": "Weak signals", "project": "claude-config", "outcome": "failed", "error": "Judge timeout"},
+        {"name": "Skills audit", "project": "claude-config", "outcome": "skipped"},
+    ]
+
+
+def test_patch_housekeeping_heartbeat_empty_task_results_when_absent(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("CAPTURE_TOKEN", "test-token-secret")
+    captured = []
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
+        (tmp_path / "projects" / "claude-config").mkdir(parents=True)
+        from app.services.vault import write_entry
+        write_entry({"type": "housekeeping-heartbeat", "project": "claude-config", "title": "HB"})
+        with patch("app.routes.capture.append_event", side_effect=lambda *a, **kw: captured.append((a, kw))):
+            resp = client.patch(
+                "/entries/housekeeping",
+                json={
+                    "project": "claude-config",
+                    "type": "housekeeping-heartbeat",
+                    "filename": "last-run",
+                    "fields": {
+                        "last_run": "2026-07-07T12:00:00",
+                        "tasks_run": "2",
+                        "tasks_failed": "0",
+                        "tasks_skipped": "0",
+                    },
+                },
+                headers={"X-Capture-Token": "test-token-secret"},
+            )
+    assert resp.status_code == 200
+    assert len(captured) == 1
+    event_type, payload = captured[0][0]
+    assert payload["task_results"] == []
+
+
 def test_patch_housekeeping_invalid_type_returns_400(client, tmp_path, monkeypatch):
     monkeypatch.setenv("CAPTURE_TOKEN", "test-token-secret")
     with patch("app.services.vault_cache.VAULT_PATH", tmp_path):

@@ -196,11 +196,14 @@ def patch_housekeeping():
         trigger = fields.get("trigger", "scheduled")
         if trigger not in _VALID_TRIGGERS:
             trigger = "scheduled"
+        raw_results = fields.get("task_results")
+        task_results = raw_results if isinstance(raw_results, list) else []
         append_event("housekeeping.run", {
             "trigger": trigger,
             "tasks_run": _safe_int(fields.get("tasks_run")),
             "tasks_failed": _safe_int(fields.get("tasks_failed")),
             "tasks_skipped": _safe_int(fields.get("tasks_skipped")),
+            "task_results": task_results,
         })
 
     return jsonify({"message": "Updated"}), 200
