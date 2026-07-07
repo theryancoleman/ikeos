@@ -581,7 +581,8 @@ def test_get_capabilities_returns_200(client):
     assert "housekeeping_scheduler" in data["capabilities"]
 
 
-def test_get_capabilities_scheduler_disabled_by_default(client):
+def test_get_capabilities_scheduler_disabled_by_default(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("VAULT_PATH", str(tmp_path))
     resp = client.get("/housekeeping/capabilities")
     assert resp.status_code == 200
     cap = resp.get_json()["capabilities"]["housekeeping_scheduler"]
