@@ -234,8 +234,8 @@
         </tr>
         {% if results %}
         <tr>
-          <td colspan="5" style="padding:0 0.5rem 0.5rem 1.5rem; border-top:none">
-            <details{% if (run.tasks_failed | default(0)) > 0 %} open{% endif %}>
+          <td colspan="5" style="padding:0 0.5rem 0.5rem 1.5rem; border-top:0">
+            <details{% if (run.tasks_failed | default(0) | int) > 0 %} open{% endif %}>
               <summary style="cursor:pointer; color:var(--muted); font-size:0.85rem">
                 task detail ({{ results | length }})
               </summary>
