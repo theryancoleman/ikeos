@@ -325,7 +325,7 @@ if not heartbeat.exists():
     urllib.request.urlopen(urllib.request.Request(f"{_ikeos_url}/capture", data=data))
 ```
 
-Then update it — write the following Python to `/tmp/hk_phase7_update.py` (substituting `TASKS_RUN_COUNT`, `TASKS_FAILED_COUNT`, `TASKS_SKIPPED_COUNT`), then run `python3 /tmp/hk_phase7_update.py`:
+Then update it — write the following Python to `/tmp/hk_phase7_update.py` (substituting `TASKS_RUN_COUNT`, `TASKS_FAILED_COUNT`, `TASKS_SKIPPED_COUNT`, and `TASK_RESULTS` with the actual values collected during Phase 5), then run `python3 /tmp/hk_phase7_update.py`:
 
 ```python
 import urllib.request, json, os, datetime
