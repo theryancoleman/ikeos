@@ -224,6 +224,7 @@
       </thead>
       <tbody>
         {% for run in recent_runs %}
+        {% set results = run.task_results | default([]) %}
         <tr>
           <td>{{ (run.timestamp | default("")) | replace("T", " ") | replace("+00:00", "") or "—" }}</td>
           <td>{{ run.trigger | default("—") }}</td>
@@ -231,6 +232,25 @@
           <td class="{{ 'error' if (run.tasks_failed | default(0)) > 0 else '' }}">{{ run.tasks_failed | default("—") }}</td>
           <td>{{ run.tasks_skipped | default("—") }}</td>
         </tr>
+        {% if results %}
+        <tr>
+          <td colspan="5" style="padding:0 0.5rem 0.5rem 1.5rem; border-top:none">
+            <details{% if (run.tasks_failed | default(0)) > 0 %} open{% endif %}>
+              <summary style="cursor:pointer; color:var(--muted); font-size:0.85rem">
+                task detail ({{ results | length }})
+              </summary>
+              <ul style="margin:0.4rem 0 0 1rem; padding:0; list-style:none; font-size:0.85rem; font-family:monospace">
+                {% for t in results %}
+                <li class="{{ 'error' if t.outcome == 'failed' else '' }}" style="padding:0.1rem 0">
+                  {% if t.outcome == 'ok' %}✓{% elif t.outcome == 'failed' %}✗{% else %}—{% endif %}
+                  {{ t.name | default("unknown") }}{% if t.outcome == 'failed' and t.error %} — {{ t.error }}{% endif %}
+                </li>
+                {% endfor %}
+              </ul>
+            </details>
+          </td>
+        </tr>
+        {% endif %}
         {% endfor %}
       </tbody>
     </table>
