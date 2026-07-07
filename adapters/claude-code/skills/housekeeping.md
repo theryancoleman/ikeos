@@ -217,6 +217,12 @@ For each completed subagent, dispatch a **judge subagent** with this prompt:
 > or  
 > `{"pass": false, "reason": "what is missing or wrong according to the success definition"}`
 
+As you process each task, also maintain a `TASK_RESULTS` list to pass to Phase 7. Append one entry per task outcome:
+
+- **Pass:** `{"name": "<task title>", "project": "<task project>", "outcome": "ok"}`
+- **Fail:** `{"name": "<task title>", "project": "<task project>", "outcome": "failed", "error": "<judge reason>"}`
+- **Skip (not due):** `{"name": "<task title>", "project": "<task project>", "outcome": "skipped"}`
+
 ---
 
 ## Phase 6: Update vault state
@@ -336,6 +342,7 @@ payload = {
         "tasks_run": TASKS_RUN_COUNT,
         "tasks_failed": TASKS_FAILED_COUNT,
         "tasks_skipped": TASKS_SKIPPED_COUNT,
+        "task_results": TASK_RESULTS,
     },
 }
 req = urllib.request.Request(f"{_ikeos_url}/entries/housekeeping", method="PATCH")
@@ -364,3 +371,5 @@ Tasks run: 3   Passed: 2   Failed: 1
 Tasks skipped (not due): 1
 Tasks warned (no history): 1
 ```
+
+> **Consistency check:** The ✓/✗/— symbols in this Phase 8 report must match the `outcome` values in `TASK_RESULTS` sent in Phase 7. A task that shows ✗ here must have `"outcome": "failed"` in TASK_RESULTS, and vice versa.
