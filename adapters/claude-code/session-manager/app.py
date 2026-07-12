@@ -378,12 +378,17 @@ def send_slash_command(session_id):
         abort(404)
     data = request.get_json()
     command = data["command"]
-    # escape_first accepted for backward compatibility; send_prompt always escapes
-    def _send():
-        if not send_prompt(session["tmux_session"], command, min_delay=0.5):
-            app.logger.warning("send_slash_command: send_prompt timed out for command %r on session %s",
-                               command, session["tmux_session"])
-    threading.Thread(target=_send, daemon=True).start()
+    # raw=True or bare digit (permission response) → bypass idle-wait and Escape so
+    # the keystroke lands directly without dismissing a permission dialog first.
+    is_raw = data.get("raw", False) or re.match(r'^\d+$', command.strip())
+    if is_raw:
+        send_command(session["tmux_session"], command)
+    else:
+        def _send():
+            if not send_prompt(session["tmux_session"], command, min_delay=0.5):
+                app.logger.warning("send_slash_command: send_prompt timed out for command %r on session %s",
+                                   command, session["tmux_session"])
+        threading.Thread(target=_send, daemon=True).start()
     if command in ("/clear", "/compact"):
         update_session(session_id, message_count=0, compaction_detected=False)
     return jsonify({"ok": True})
