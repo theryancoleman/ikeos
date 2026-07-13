@@ -46,10 +46,10 @@ def run_housekeeping_task(filename: str, model: str | None = None) -> SessionRes
 
 def run_platform_review(model: str | None = None) -> SessionResult:
     return create_session(
-        name="weekly-platform-review",
+        name=f"weekly-platform-review-{datetime.now().strftime('%Y%m%d')}",
         project=project_slug(),
         project_dir=_housekeeping_project_dir(),
-        initial_command="/platform-review",
+        initial_command="/deep-research-weekly",
         model=model,
     )
 
