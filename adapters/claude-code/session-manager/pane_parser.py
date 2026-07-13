@@ -28,8 +28,28 @@ def parse_rc_dialog_open(pane_output: str) -> bool:
     return "Enter to select" in pane_output and "claude.ai/code/session_" in pane_output
 
 
+_IDLE_STATUS = "? for shortcuts"      # status bar when Claude is at the input prompt
+_IDLE_STATUS_BYPASS = "bypass permissions on"  # status bar in --dangerously-skip-permissions mode
+_ACTIVE_STATUS = "esc to interrupt"   # status bar when Claude is generating/thinking/working
+
+
 def parse_activity(pane_output: str) -> str:
-    """Return 'thinking' | 'working' | 'idle' based on visible pane content."""
+    """Return 'not_started' | 'thinking' | 'working' | 'idle' based on visible pane content.
+
+    Status bar anchors the state machine:
+      - Neither string: Claude Code TUI hasn't initialised yet → 'not_started'
+      - 'esc to interrupt': Claude is actively processing → at least 'working'
+      - '? for shortcuts' or 'bypass permissions on': Claude is at the idle input
+        prompt → 'idle' (unless a more specific active pattern is also present)
+
+    Using the status bar prevents firing startup commands into an uninitialised pane,
+    which previously caused ESC to be prepended to slash commands, stripping the '/'
+    and turning them into plain user text.
+    """
+    # Not started: Claude Code TUI hasn't shown any status bar variant yet.
+    is_idle_bar = _IDLE_STATUS in pane_output or _IDLE_STATUS_BYPASS in pane_output
+    if not is_idle_bar and _ACTIVE_STATUS not in pane_output:
+        return "not_started"
     # Extended thinking: ✻ with active (duration) format, e.g. "✻ Razzmatazzing… (2m 6s)"
     # Excludes completion lines like "✻ Brewed for 21s" which use "for Xs" not "(Xs)"
     if re.search(r"✻ .+\(\d", pane_output) or "almost done thinking" in pane_output:
@@ -41,6 +61,11 @@ def parse_activity(pane_output: str) -> str:
     tail = "\n".join(pane_output.splitlines()[-6:])
     if re.search(r"◯ .+\d+s", tail) or re.search(r"↓\s+\d", tail):
         return "working"
+    # 'esc to interrupt' present but no specific active pattern = generating plain text.
+    # This closes the blind spot where text generation looked idle to the old parser.
+    if _ACTIVE_STATUS in pane_output:
+        return "working"
+    # '? for shortcuts' or 'bypass permissions on' = genuinely idle at the input prompt.
     return "idle"
 
 
