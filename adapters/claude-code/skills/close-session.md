@@ -175,13 +175,16 @@ Check whether the current project accumulated any session-specific permissions t
 
 ## 5a. Capture blog notes for the weekly digest
 
-Ask the user **three questions, one at a time**. Wait for each answer before asking the next.
+**Draft all three answers from session context first**, then present them as a block for the user to approve, edit, or skip — one prompt, not three sequential questions.
 
-1. **"Highlight: What was the most interesting or impactful thing we built or decided this session?"**
-2. **"Why: Why did that matter — what problem did it solve or what goal does it advance?"**
-3. **"Challenge: What was the hardest problem you faced this session, and how did it get resolved? (Skip if none.)"**
+Format:
+> **Highlight:** [your draft]
+> **Why:** [your draft]
+> **Challenge:** [your draft — or "(none)" if nothing notable]
+>
+> _Approve, edit any, or say "skip" to skip all blog notes._
 
-If the user says "skip", "none", or similar for any prompt, record it as blank.
+If the user approves or edits, use their final text. If the user says "skip" for any item, record it as blank. Do not write the file if all three are blank/skipped.
 
 After collecting all three answers, calculate the current ISO week:
 ```python3
