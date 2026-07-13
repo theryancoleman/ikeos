@@ -15,7 +15,7 @@ from app.services.driver import (
 )
 from app.services.platform import project_slug
 from app.services.reviews import latest_review_name, read_latest_review
-from app.services.scheduler import get_config_with_next_run, update_config
+from app.services.scheduler import get_config_with_next_run, trigger_now, update_config
 from app.services.session_client import get_session_status
 from app.services.metrics import read_events_by_type
 from app.services.vault import (
@@ -305,6 +305,15 @@ def weekly_review_run():
     if not result.ok:
         return jsonify({"error": "Failed to create review session"}), 502
     return jsonify({"ok": True, "session_id": result.session_id}), 200
+
+
+@bp.route("/housekeeping/run", methods=["POST"])
+@require_capture_token
+def run_housekeeping():
+    session_id = trigger_now()
+    if session_id is None:
+        return jsonify({"error": "Failed to start housekeeping session"}), 502
+    return jsonify({"ok": True, "session_id": session_id}), 200
 
 
 @bp.route("/housekeeping/schedule", methods=["GET"])

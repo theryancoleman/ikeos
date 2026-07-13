@@ -88,7 +88,10 @@
       <div class="hk-schedule-footer">
         <button class="pill pill-primary" id="sched-save"
                 onclick="saveSchedule()" style="display:none">Save</button>
+        <button class="pill pill-primary" id="hk-run-now-btn"
+                onclick="runHousekeeping(this)">Run Now</button>
         <span class="hk-form-msg" id="sched-msg"></span>
+        <span id="hk-run-now-msg" style="font-size:0.85rem; color:var(--color-muted); margin-left:8px;"></span>
       </div>
     </div>
   </section>
@@ -314,6 +317,32 @@ async function runTask(filename, btn) {
     btn.textContent = 'Run';
     btn.disabled = false;
     alert('Network error — could not launch session.');
+  }
+}
+
+async function runHousekeeping(btn) {
+  const msg = document.getElementById('hk-run-now-msg');
+  btn.disabled = true;
+  btn.textContent = 'Starting…';
+  if (msg) msg.textContent = '';
+  try {
+    const resp = await fetch('/housekeeping/run', {
+      method: 'POST',
+      headers: {'X-Capture-Token': _captureToken},
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      btn.textContent = 'Run Now';
+      btn.disabled = false;
+      if (msg) msg.textContent = data.error || 'Error starting housekeeping.';
+    } else {
+      btn.textContent = 'Running…';
+      if (msg) msg.textContent = `Session started: ${data.session_id}`;
+    }
+  } catch (e) {
+    btn.textContent = 'Run Now';
+    btn.disabled = false;
+    if (msg) msg.textContent = 'Network error.';
   }
 }
 
