@@ -12,7 +12,7 @@ PLUGIN_BASE = os.environ.get(
 )
 CLAUDE_CMD = [
     CLAUDE_BIN,
-    "--model", "sonnet",
+    "--model", "claude-sonnet-5",
     "--plugin-dir", f"{PLUGIN_BASE}/superpowers/5.1.0",
     "--plugin-dir", f"{PLUGIN_BASE}/frontend-design/unknown",
     "--plugin-dir", f"{PLUGIN_BASE}/github/unknown",
