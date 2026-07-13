@@ -320,8 +320,11 @@ async function runTask(filename, btn) {
   }
 }
 
+let _hkPollTimer = null;
+
 async function runHousekeeping(btn) {
   const msg = document.getElementById('hk-run-now-msg');
+  if (_hkPollTimer) { clearTimeout(_hkPollTimer); _hkPollTimer = null; }
   btn.disabled = true;
   btn.textContent = 'Starting…';
   if (msg) msg.textContent = '';
@@ -337,13 +340,43 @@ async function runHousekeeping(btn) {
       if (msg) msg.textContent = data.error || 'Error starting housekeeping.';
     } else {
       btn.textContent = 'Running…';
-      if (msg) msg.textContent = `Session started: ${data.session_id}`;
+      if (msg) msg.textContent = 'Session launched — checking status…';
+      _pollHousekeepingStatus(data.session_id, btn, msg);
     }
   } catch (e) {
     btn.textContent = 'Run Now';
     btn.disabled = false;
     if (msg) msg.textContent = 'Network error.';
   }
+}
+
+function _pollHousekeepingStatus(sessionId, btn, msg) {
+  _hkPollTimer = setTimeout(async () => {
+    try {
+      const resp = await fetch(`/housekeeping/run-status?session_id=${sessionId}`);
+      const data = await resp.json();
+      if (data.active) {
+        const act = data.activity || 'working';
+        if (msg) msg.textContent = `Running (${act})`;
+        _pollHousekeepingStatus(sessionId, btn, msg);
+      } else {
+        btn.textContent = 'Run Now';
+        btn.disabled = false;
+        if (data.last_run) {
+          const failed = parseInt(data.tasks_failed) || 0;
+          const run = parseInt(data.tasks_run) || 0;
+          const outcome = failed > 0 ? `${failed} failed` : 'all passed';
+          if (msg) msg.textContent = `Done — ${run} tasks, ${outcome} · last run ${data.last_run.replace('T', ' ').replace('Z', '')} UTC`;
+        } else {
+          if (msg) msg.textContent = 'Session ended — no heartbeat written (check logs)';
+        }
+      }
+    } catch (e) {
+      btn.textContent = 'Run Now';
+      btn.disabled = false;
+      if (msg) msg.textContent = 'Could not poll status.';
+    }
+  }, 15000);
 }
 
 async function runWeeklyReview(btn) {

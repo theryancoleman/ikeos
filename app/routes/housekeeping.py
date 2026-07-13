@@ -316,6 +316,28 @@ def run_housekeeping():
     return jsonify({"ok": True, "session_id": session_id}), 200
 
 
+@bp.route("/housekeeping/run-status")
+def housekeeping_run_status():
+    """Poll whether a housekeeping session is still active and surface the latest heartbeat."""
+    session_id = request.args.get("session_id", "").strip()
+    active = False
+    activity = None
+    if session_id:
+        data = get_session_status(session_id)
+        if data is not None and data.get("status") == "active":
+            active = True
+            activity = data.get("activity")
+    heartbeat = read_housekeeping_heartbeat(project_slug())
+    return jsonify({
+        "active": active,
+        "activity": activity,
+        "last_run": heartbeat.get("last_run"),
+        "tasks_run": heartbeat.get("tasks_run", "0"),
+        "tasks_failed": heartbeat.get("tasks_failed", "0"),
+        "tasks_skipped": heartbeat.get("tasks_skipped", "0"),
+    })
+
+
 @bp.route("/housekeeping/schedule", methods=["GET"])
 def get_schedule():
     return jsonify(get_config_with_next_run()), 200

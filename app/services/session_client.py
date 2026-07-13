@@ -85,14 +85,19 @@ def send_command(session_id: str, command: str, *, escape_first: bool = False) -
 
 
 def get_session_status(session_id: str) -> dict | None:
-    """Session object from the driver, or None if unknown/unreachable."""
+    """Session object from the driver, or None if unknown/unreachable.
+
+    The session manager exposes GET /sessions (list) but not GET /sessions/<id>,
+    so we filter the list client-side.
+    """
     try:
         resp = requests.get(
-            f"{session_manager_url()}/sessions/{session_id}",
+            f"{session_manager_url()}/sessions",
             timeout=3,
         )
     except requests.RequestException:
         return None
     if not resp.ok:
         return None
-    return resp.json()
+    sessions = resp.json()
+    return next((s for s in sessions if s.get("id") == session_id), None)
