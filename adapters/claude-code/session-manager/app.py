@@ -128,7 +128,7 @@ def _run_session_startup(
             app.logger.warning("_run_session_startup: send_prompt timed out sending /remote-control to %s", tmux_session)
             return
     if initial_command:
-        if not send_prompt(tmux_session, initial_command):
+        if not send_prompt(tmux_session, initial_command, escape_first=False):
             app.logger.warning("_run_session_startup: send_prompt timed out sending initial_command to %s", tmux_session)
             return
         if session_id:

@@ -101,19 +101,25 @@ def send_prompt(
     *,
     min_delay: float = 5.0,
     timeout: float = 60.0,
+    escape_first: bool = True,
 ) -> bool:
     """Send a command to a Claude Code session when the pane is at an idle prompt.
 
-    Waits min_delay seconds, polls for idle state, sends Escape to dismiss any open panel,
-    polls for idle again, then sends the command.
+    Waits min_delay seconds, polls for idle state, optionally sends Escape to
+    dismiss any open panel, polls for idle again, then sends the command.
     Returns True if sent, False if the session disappeared or timed out.
+
+    escape_first should be False when the previous command's Enter may not yet
+    have been processed — sending Escape in that gap cancels the pending Enter
+    and causes the two commands' text to merge in Claude Code's input buffer.
     """
     time.sleep(min_delay)
     if not wait_until_idle(name, timeout=timeout):
         return False
-    send_key(name, "Escape")
-    if not wait_until_idle(name, timeout=5.0, poll_interval=0.5):
-        return False
+    if escape_first:
+        send_key(name, "Escape")
+        if not wait_until_idle(name, timeout=5.0, poll_interval=0.5):
+            return False
     send_command(name, command)
     # Brief pause so Claude has a moment to start processing before the caller
     # re-checks for idle. Without this, parse_activity returns "idle" in the
