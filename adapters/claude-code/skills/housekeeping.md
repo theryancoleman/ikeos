@@ -373,3 +373,13 @@ Tasks warned (no history): 1
 ```
 
 > **Consistency check:** The ✓/✗/— symbols in this Phase 8 report must match the `outcome` values in `TASK_RESULTS` sent in Phase 7. A task that shows ✗ here must have `"outcome": "failed"` in TASK_RESULTS, and vice versa.
+
+---
+
+## Final step: Signal completion
+
+After the Phase 8 report is printed, write the sentinel file so the session manager knows the run finished and can clean up the session:
+
+```bash
+mkdir -p /tmp/ikeos-done && touch /tmp/ikeos-done/housekeeping
+```

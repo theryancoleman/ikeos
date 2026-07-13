@@ -21,6 +21,26 @@ from pane_parser import (
 
 app = Flask(__name__)
 
+_DONE_DIR = Path("/tmp/ikeos-done")
+
+
+def _sentinel_for_session(tmux_session: str) -> Path:
+    """Map a tmux session name to its sentinel file path.
+
+    Skills write to a fixed path per session type (they don't know the
+    date-suffixed session name). Sessions are deduplicated by name so only
+    one housekeeping or platform-review session runs at a time — no collision.
+    """
+    if tmux_session.startswith("housekeeping-"):
+        return _DONE_DIR / "housekeeping"
+    if tmux_session.startswith("weekly-platform-review-"):
+        return _DONE_DIR / "platform-review"
+    if tmux_session.startswith("blog-publish-"):
+        return _DONE_DIR / "blog-publish"
+    if tmux_session.startswith("blog-rewrite-"):
+        return _DONE_DIR / "blog-rewrite"
+    return _DONE_DIR / tmux_session
+
 
 def _refresh(session: dict) -> dict:
     name = session["tmux_session"]
@@ -49,52 +69,47 @@ def _refresh(session: dict) -> dict:
 
 
 def _wait_for_completion_and_remove(tmux_session: str, session_id: str, project: str = "") -> None:
-    """After an initial command is sent, watch until it finishes, then kill+remove the session.
+    """Watch for a sentinel file written by the skill on successful completion.
 
-    Phase 1: wait up to 5 minutes for the pane to enter a non-idle state (Claude starts work).
-    Phase 2: wait up to 2 hours for the pane to return to idle (work complete).
-    Falls through to cleanup on timeout or session disappearance.
+    The skill writes /tmp/ikeos-done/<type> (e.g. "housekeeping", "platform-review")
+    as its final step. _sentinel_for_session() maps the session name to that path.
+
+    Falls through to cleanup after a 4-hour TTL or if the tmux session disappears.
+    If the skill fails before writing the sentinel the session stays alive in tmux
+    so it can be inspected — the TTL is the only cleanup in that case.
     """
-    # Phase 1: wait for non-idle
-    deadline = time.monotonic() + 300
-    while time.monotonic() < deadline:
-        time.sleep(15)
-        if not has_session(tmux_session):
-            _post_metric("agent.session_end", {
-                "session_id": session_id,
-                "project": project,
-                "name": tmux_session,
-                "reason": "timeout",
-            })
-            remove_session(session_id)
-            return
-        if parse_activity(capture_pane(tmux_session)) != "idle":
-            break
+    _DONE_DIR.mkdir(parents=True, exist_ok=True)
+    sentinel = _sentinel_for_session(tmux_session)
+    # Remove any stale sentinel left by a previous run.
+    sentinel.unlink(missing_ok=True)
 
-    # Phase 2: wait for idle (command finished)
-    deadline = time.monotonic() + 7200
+    deadline = time.monotonic() + 14400  # 4-hour TTL
     while time.monotonic() < deadline:
-        time.sleep(30)
+        time.sleep(5)
         if not has_session(tmux_session):
             _post_metric("agent.session_end", {
                 "session_id": session_id,
                 "project": project,
                 "name": tmux_session,
-                "reason": "timeout",
+                "reason": "session_disappeared",
             })
             remove_session(session_id)
+            sentinel.unlink(missing_ok=True)
             return
-        if parse_activity(capture_pane(tmux_session)) == "idle":
+        if sentinel.exists():
+            sentinel.unlink(missing_ok=True)
             _post_metric("agent.session_end", {
                 "session_id": session_id,
                 "project": project,
                 "name": tmux_session,
+                "reason": "completed",
             })
             kill_session(tmux_session)
             remove_session(session_id)
             return
 
-    # Timeout: clean up anyway
+    # TTL expired: clean up regardless.
+    sentinel.unlink(missing_ok=True)
     if has_session(tmux_session):
         kill_session(tmux_session)
     _post_metric("agent.session_end", {
