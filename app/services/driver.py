@@ -49,7 +49,7 @@ def run_platform_review(model: str | None = None) -> SessionResult:
         name=f"weekly-platform-review-{datetime.now().strftime('%Y%m%d')}",
         project=project_slug(),
         project_dir=_housekeeping_project_dir(),
-        initial_command="/deep-research-weekly",
+        initial_command="/platform-review",
         model=model,
     )
 

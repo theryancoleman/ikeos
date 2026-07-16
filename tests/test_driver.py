@@ -36,7 +36,7 @@ def test_platform_review_command():
     with patch("app.services.driver.create_session", return_value=OK) as cs:
         run_platform_review()
     assert cs.call_args.kwargs["initial_command"] == "/platform-review"
-    assert cs.call_args.kwargs["name"] == "weekly-platform-review"
+    assert cs.call_args.kwargs["name"].startswith("weekly-platform-review-")
 
 
 def test_publish_blog_draft_builds_deploy_prompt(monkeypatch):
