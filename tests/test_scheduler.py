@@ -186,3 +186,92 @@ def test_start_logs_warning_when_already_running(sched_vault, monkeypatch, caplo
         assert "already running" in caplog.text.lower()
     finally:
         sched_mod._scheduler = original
+
+
+# ── leader election lock ──
+
+def test_acquire_leader_lock_only_one_of_two_concurrent_attempts_succeeds(tmp_path):
+    """Simulates two gunicorn workers racing for the lock file: only the
+    first non-blocking flock attempt should succeed."""
+    from app.services.scheduler import _acquire_leader_lock
+
+    lock_path = tmp_path / "scheduler.lock"
+    worker_a = _acquire_leader_lock(lock_path)
+    worker_b = _acquire_leader_lock(lock_path)
+    try:
+        assert worker_a is not None
+        assert worker_b is None
+    finally:
+        if worker_a is not None:
+            worker_a.close()
+        if worker_b is not None:
+            worker_b.close()
+
+
+def test_acquire_leader_lock_releases_on_close(tmp_path):
+    """Once the leader's fd is closed (process exit/crash), a new worker
+    can win the lock."""
+    from app.services.scheduler import _acquire_leader_lock
+
+    lock_path = tmp_path / "scheduler.lock"
+    worker_a = _acquire_leader_lock(lock_path)
+    assert worker_a is not None
+    worker_a.close()
+
+    worker_b = _acquire_leader_lock(lock_path)
+    try:
+        assert worker_b is not None
+    finally:
+        if worker_b is not None:
+            worker_b.close()
+
+
+# ── next_run consistency across workers ──
+
+def test_next_run_consistent_after_reschedule_regardless_of_worker(sched_vault, monkeypatch):
+    """After update_config() runs on one 'worker' (no live scheduler here,
+    simulating a non-leader), get_config_with_next_run() — as served by any
+    worker's GET handler — must report the same, correct next_run."""
+    monkeypatch.setenv("VAULT_PATH", str(sched_vault))
+    from app.services.scheduler import update_config, get_config_with_next_run
+
+    update_config({"enabled": True, "day_of_week": "mon", "hour": 4, "minute": 30})
+
+    first = get_config_with_next_run()
+    second = get_config_with_next_run()
+    assert first["next_run"] is not None
+    assert first["next_run"] == second["next_run"]
+
+    from datetime import datetime
+    next_run_dt = datetime.fromisoformat(first["next_run"])
+    assert next_run_dt.weekday() == 0  # Monday
+    assert next_run_dt.hour == 4
+    assert next_run_dt.minute == 30
+
+
+def test_next_run_none_when_disabled(sched_vault, monkeypatch):
+    monkeypatch.setenv("VAULT_PATH", str(sched_vault))
+    from app.services.scheduler import update_config, get_config_with_next_run
+
+    update_config({"enabled": False, "day_of_week": "mon", "hour": 4, "minute": 30})
+    assert get_config_with_next_run()["next_run"] is None
+
+
+# ── trigger_now works regardless of leader election ──
+
+def test_trigger_now_works_when_scheduler_is_none(sched_vault, monkeypatch):
+    """Simulates a non-leader worker (no live APScheduler instance) still
+    being able to serve 'Run Now' by calling trigger_now() directly."""
+    monkeypatch.setenv("VAULT_PATH", str(sched_vault))
+    import app.services.scheduler as sched_mod
+
+    original = sched_mod._scheduler
+    sched_mod._scheduler = None
+    try:
+        ok_result = SessionResult(session_id="sess-non-leader")
+        with patch("app.services.scheduler.run_scheduled_housekeeping", return_value=ok_result):
+            from app.services.scheduler import trigger_now
+            result = trigger_now()
+        assert result == "sess-non-leader"
+    finally:
+        sched_mod._scheduler = original

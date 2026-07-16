@@ -1,8 +1,11 @@
+import fcntl
 import json
 import logging
 import os
 from datetime import datetime
 from pathlib import Path
+
+from apscheduler.triggers.cron import CronTrigger
 
 from app.services.driver import run_scheduled_housekeeping
 from app.services.metrics import append_event
@@ -19,7 +22,21 @@ _DEFAULTS: dict[str, bool | str | int | None] = {
     "last_triggered": None,
 }
 
-_scheduler = None  # set by start(); None in tests and before startup
+_scheduler = None  # set by start() — only on the worker that wins leader election
+_lock_fd = None  # open file object backing the leader lock; kept open for process lifetime
+_applied_config = None  # dict of day_of_week/hour/minute/enabled last applied to the live job (leader only)
+
+# Advisory lock used for gunicorn multi-worker leader election so only one
+# worker process owns the live APScheduler instance. Lives in the
+# container's own /tmp (not a mounted volume) — shared by all worker
+# processes of a single container, reset on container restart.
+_LOCK_PATH = Path(os.environ.get("SCHEDULER_LOCK_PATH", "/tmp/ikeos-scheduler.lock"))
+
+# How often the leader re-checks schedule.json against the live cron job.
+# Bridges the gap when a PATCH request lands on a non-leader worker (which
+# has no live scheduler to reschedule directly) — the leader picks up the
+# on-disk change within one sync interval.
+_SYNC_INTERVAL_SECONDS = 60
 
 
 def _schedule_path() -> Path:
@@ -68,7 +85,50 @@ def _validate(fields: dict) -> None:
             raise ValueError("minute must be 0-59")
 
 
-def _reschedule(config: dict) -> None:
+def _acquire_leader_lock(path: Path = None):
+    """Try to acquire a non-blocking exclusive advisory lock at `path`.
+
+    Returns the open file object on success (caller must keep it open for
+    the lock to hold — it releases automatically when the fd is closed or
+    the process exits/crashes), or None if another process already holds
+    it. Pure and stateless — safe to call directly in tests to simulate
+    multiple worker processes racing for leadership.
+    """
+    if path is None:
+        path = _LOCK_PATH
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fh = open(path, "w")
+    try:
+        fcntl.flock(fh.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        fh.close()
+        return None
+    return fh
+
+
+def _compute_next_run(config: dict, now: datetime | None = None) -> str | None:
+    """Analytically compute the next fire time from cron fields alone.
+
+    Deliberately independent of any live APScheduler instance so every
+    worker process — leader or not — computes the identical value from the
+    same on-disk config. This is what makes GET /housekeeping/schedule
+    consistent regardless of which worker answers it.
+    """
+    if not config.get("enabled"):
+        return None
+    trigger = CronTrigger(
+        day_of_week=config["day_of_week"],
+        hour=config["hour"],
+        minute=config["minute"],
+    )
+    next_fire = trigger.get_next_fire_time(None, now or datetime.now())
+    return next_fire.isoformat(timespec="seconds") if next_fire else None
+
+
+def _apply_to_live_scheduler(config: dict) -> None:
+    """Reschedule the live cron job to match `config`. No-op unless this
+    process is the leader (i.e. holds a real `_scheduler`)."""
+    global _applied_config
     if _scheduler is None:
         return
     job = _scheduler.get_job("housekeeping")
@@ -86,6 +146,18 @@ def _reschedule(config: dict) -> None:
         _scheduler.resume_job("housekeeping")
     else:
         _scheduler.pause_job("housekeeping")
+    _applied_config = {k: config[k] for k in ("day_of_week", "hour", "minute", "enabled")}
+
+
+def _sync_schedule() -> None:
+    """Leader-only periodic tick: re-read schedule.json and reapply to the
+    live job if it has changed since we last applied it. Covers the case
+    where PATCH /housekeeping/schedule was handled by a non-leader worker,
+    which can write schedule.json but has no live job to reschedule."""
+    config = get_config()
+    desired = {k: config[k] for k in ("day_of_week", "hour", "minute", "enabled")}
+    if desired != _applied_config:
+        _apply_to_live_scheduler(config)
 
 
 def update_config(fields: dict) -> dict:
@@ -99,21 +171,19 @@ def update_config(fields: dict) -> dict:
         if k in allowed:
             current[k] = v
     _write_config(current)
-    _reschedule(current)
+    _apply_to_live_scheduler(current)
     return current
 
 
 def get_config_with_next_run() -> dict:
     config = get_config()
-    next_run = None
-    if config.get("enabled") and _scheduler is not None:
-        job = _scheduler.get_job("housekeeping")
-        if job and job.next_run_time:
-            next_run = job.next_run_time.isoformat(timespec="seconds")
-    return {**config, "next_run": next_run}
+    return {**config, "next_run": _compute_next_run(config)}
 
 
 def trigger_now() -> str | None:
+    """One-shot immediate run. Deliberately independent of leader election —
+    any worker can serve "Run Now" by invoking the housekeeping run directly
+    in-process; it never needs the live APScheduler instance."""
     result = run_scheduled_housekeeping()
     if not result.ok:
         logger.error("Failed to create housekeeping session: %s", result.error)
@@ -143,15 +213,26 @@ def _job() -> None:
 
 
 def start(app) -> None:
-    global _scheduler
+    global _scheduler, _lock_fd, _applied_config
     if app.config.get("TESTING"):
         return
     if _scheduler is not None and _scheduler.running:
         logger.warning(
-            "APScheduler already running in this process — skipping duplicate start. "
-            "Run gunicorn with --workers 1 to avoid duplicate housekeeping triggers."
+            "APScheduler already running in this process — skipping duplicate start."
         )
         return
+
+    if _lock_fd is None:
+        _lock_fd = _acquire_leader_lock()
+    if _lock_fd is None:
+        logger.info(
+            "Scheduler leader lock (%s) held by another worker process — this "
+            "worker will not run a live scheduler. Schedule reads/writes and "
+            "trigger_now() remain fully functional.",
+            _LOCK_PATH,
+        )
+        return
+
     from apscheduler.schedulers.background import BackgroundScheduler
 
     config = get_config()
@@ -164,16 +245,19 @@ def start(app) -> None:
         hour=config["hour"],
         minute=config["minute"],
     )
-    _scheduler.start()
-    logger.warning(
-        "APScheduler started — this relies on gunicorn --workers 1. "
-        "If workers > 1, the housekeeping job fires multiple times per trigger. "
-        "See DECISIONS.md 2026-06-18 for context."
+    _scheduler.add_job(
+        _sync_schedule,
+        "interval",
+        id="housekeeping-sync",
+        seconds=_SYNC_INTERVAL_SECONDS,
     )
+    _scheduler.start()
     if not config.get("enabled"):
         _scheduler.pause_job("housekeeping")
+    _applied_config = {k: config[k] for k in ("day_of_week", "hour", "minute", "enabled")}
     logger.info(
-        "Housekeeping scheduler started (enabled=%s, schedule=%s %s:%s)",
+        "Housekeeping scheduler started as leader worker (pid=%s, enabled=%s, schedule=%s %s:%s)",
+        os.getpid(),
         config.get("enabled"),
         config["day_of_week"],
         config["hour"],
