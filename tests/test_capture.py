@@ -714,6 +714,28 @@ def test_capture_json_housekeeping_task_missing_project(client):
     assert resp.status_code == 400
 
 
+def test_capture_json_housekeeping_task_persists_depends_on(client, tmp_path, monkeypatch):
+    import app.services.vault as v
+    import app.services.vault_cache as vc
+    import frontmatter as fm
+    monkeypatch.setattr(vc, "VAULT_PATH", tmp_path)
+    v._invalidate_cache()
+    (tmp_path / "projects" / "claude-config").mkdir(parents=True)
+
+    resp = client.post("/capture/json", json={
+        "type": "housekeeping-task",
+        "project": "claude-config",
+        "title": "Platform review narrative",
+        "interval": "weekly",
+        "success_definition": "Done.",
+        "depends_on": "research-cycle",
+    })
+    assert resp.status_code == 200
+    files = list((tmp_path / "projects" / "claude-config" / "housekeeping").glob("*.md"))
+    post = fm.load(files[0])
+    assert post.metadata["depends_on"] == "research-cycle"
+
+
 def test_capture_json_housekeeping_task_defaults_interval_to_weekly(client, tmp_path, monkeypatch):
     import app.services.vault as v
     import app.services.vault_cache as vc

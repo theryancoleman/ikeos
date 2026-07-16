@@ -61,6 +61,8 @@ def write_entry(data: dict) -> str:
             "created": datetime.now().isoformat(timespec="seconds"),
             "tags": ["housekeeping-task", project, "status/enabled"],
         }
+        if data.get("depends_on"):
+            metadata["depends_on"] = data["depends_on"]
         content = f"## Instructions\n{body}\n"
         post = frontmatter.Post(content, **metadata)
         filepath = target_dir / f"{slug}.md"

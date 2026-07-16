@@ -325,3 +325,38 @@ def test_write_entry_normalizes_project_for_housekeeping_heartbeat(tmp_path):
         })
     files = list((tmp_path / "projects" / "claude-config" / "housekeeping").glob("*.md"))
     assert len(files) == 1, "housekeeping-heartbeat should land in lowercase project dir"
+
+
+def test_write_entry_housekeeping_task_includes_depends_on_when_present(tmp_path):
+    (tmp_path / "projects" / "claude-config" / "housekeeping").mkdir(parents=True)
+    with patch.object(_vc, "VAULT_PATH", tmp_path):
+        from app.services.vault_entries import write_entry
+        write_entry({
+            "type": "housekeeping-task",
+            "project": "claude-config",
+            "title": "Dependent task",
+            "body": "instructions",
+            "interval": "weekly",
+            "success_definition": "done",
+            "depends_on": "research-cycle",
+        })
+    files = list((tmp_path / "projects" / "claude-config" / "housekeeping").glob("*.md"))
+    post = fm.load(files[0])
+    assert post.metadata["depends_on"] == "research-cycle"
+
+
+def test_write_entry_housekeeping_task_omits_depends_on_when_absent(tmp_path):
+    (tmp_path / "projects" / "claude-config" / "housekeeping").mkdir(parents=True)
+    with patch.object(_vc, "VAULT_PATH", tmp_path):
+        from app.services.vault_entries import write_entry
+        write_entry({
+            "type": "housekeeping-task",
+            "project": "claude-config",
+            "title": "Independent task",
+            "body": "instructions",
+            "interval": "weekly",
+            "success_definition": "done",
+        })
+    files = list((tmp_path / "projects" / "claude-config" / "housekeeping").glob("*.md"))
+    post = fm.load(files[0])
+    assert "depends_on" not in post.metadata

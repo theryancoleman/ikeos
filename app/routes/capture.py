@@ -244,6 +244,9 @@ def capture_json():
     elif entry_type == "housekeeping-task":
         data["interval"] = req.get("interval", "weekly")
         data["success_definition"] = req.get("success_definition", "")
+        depends_on = req.get("depends_on")
+        if depends_on:
+            data["depends_on"] = depends_on
     elif entry_type == "experiment":
         data["hypothesis"] = req.get("hypothesis", "")
         data["expected_outcome"] = req.get("expected_outcome", "")
