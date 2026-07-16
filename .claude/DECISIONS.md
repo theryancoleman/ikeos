@@ -94,7 +94,11 @@ The session manager persists protected container names to `~/.claude-protected-c
 
 ## 2026-06-18: Housekeeping scheduler uses APScheduler BackgroundScheduler pinned to 1 gunicorn worker
 
-APScheduler's BackgroundScheduler starts a thread per process. With gunicorn's default multi-worker model, each worker would launch its own scheduler instance, causing the cron job to fire N times per trigger window and spawn N simultaneous Claude sessions. Fix: gunicorn pinned to `--workers 1` in Dockerfile CMD. If workers are ever scaled, a process-safe solution (e.g., a dedicated cron service or APScheduler's SQLAlchemyJobStore for leader election) would be required.
+APScheduler's BackgroundScheduler starts a thread per process. With gunicorn's default multi-worker model, each worker would launch its own scheduler instance, causing the cron job to fire N times per trigger window and spawn N simultaneous Claude sessions. Fix: gunicorn pinned to `--workers 1` in Dockerfile CMD. ~~If workers are ever scaled, a process-safe solution (e.g., a dedicated cron service or APScheduler's SQLAlchemyJobStore for leader election) would be required.~~ (violated 2026-07-15 — see below)
+
+## 2026-07-16: Gunicorn workers=2 (commit 73b831d) silently violated the single-worker scheduler assumption
+
+`73b831d` ("bump gunicorn workers to 2 to prevent self-call deadlock") did not account for the 2026-06-18 decision above — `app/services/scheduler.py` still keeps a per-process module-level `BackgroundScheduler`, and `PATCH /housekeeping/schedule` only reschedules the job in whichever worker handled the request. Discovered live 2026-07-16 while changing the housekeeping cron: `next_run` alternated between the new and stale value across consecutive `GET` polls (round-robin hitting different workers), meaning the un-rescheduled worker kept firing on the *old* cron indefinitely — any schedule change is currently unreliable until the container is restarted afterward. Remediated for this session via `docker.exe compose restart ikeos`; the underlying conflict is tracked as a bug (`ikeos/bugs/2026-07-16-housekeeping-scheduler-desyncs-across-gunicorn-wor.md`), not yet fixed. The self-call-deadlock problem `73b831d` solved and the single-worker scheduler assumption are now in direct tension — resolving this needs either a dedicated single-worker process for the scheduler, a process-safe job store (leader election), or reverting to workers=1 with a different deadlock fix.
 
 ## 2026-06-18: Vault files owned by uid 999 — deletion must go through a container
 
