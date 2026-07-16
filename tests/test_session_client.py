@@ -144,9 +144,25 @@ def test_get_session_status_found(monkeypatch):
     mock_resp = MagicMock()
     mock_resp.ok = True
     mock_resp.status_code = 200
-    mock_resp.json.return_value = {"id": "s1", "status": "active"}
+    # GET /sessions on the real session-manager returns a list of session
+    # dicts (see session-manager app.py: get_sessions() -> jsonify(refreshed)
+    # where refreshed is a list), not a single dict.
+    mock_resp.json.return_value = [
+        {"id": "other", "status": "idle"},
+        {"id": "s1", "status": "active"},
+    ]
     with patch("app.services.session_client.requests.get", return_value=mock_resp):
         assert get_session_status("s1") == {"id": "s1", "status": "active"}
+
+
+def test_get_session_status_not_in_list(monkeypatch):
+    monkeypatch.setenv("SESSION_MANAGER_URL", "http://mock-sm")
+    mock_resp = MagicMock()
+    mock_resp.ok = True
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = [{"id": "other", "status": "idle"}]
+    with patch("app.services.session_client.requests.get", return_value=mock_resp):
+        assert get_session_status("s1") is None
 
 
 def test_get_session_status_missing_or_down(monkeypatch):
