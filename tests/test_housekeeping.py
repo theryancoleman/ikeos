@@ -347,7 +347,8 @@ def test_reset_task_not_found_returns_404(client, tmp_path, monkeypatch):
     assert resp.status_code == 404
 
 
-def test_run_task_creates_session(client):
+def test_run_task_creates_session(client, monkeypatch):
+    monkeypatch.setenv("CAPTURE_TOKEN", "tok")
     mock_resp = MagicMock()
     mock_resp.ok = True
     mock_resp.status_code = 200
@@ -355,18 +356,21 @@ def test_run_task_creates_session(client):
 
     with patch("app.services.session_client.requests.post", return_value=mock_resp):
         with patch("app.services.session_client.append_event"):
-            resp = client.post("/housekeeping/tasks/2026-06-17-test-task/run")
+            resp = client.post("/housekeeping/tasks/2026-06-17-test-task/run",
+                               headers={"X-Capture-Token": "tok"})
     assert resp.status_code == 200
     data = resp.get_json()
     assert data["ok"] is True
     assert data["session_id"] == "session-abc123"
 
 
-def test_run_task_session_manager_unreachable(client):
+def test_run_task_session_manager_unreachable(client, monkeypatch):
+    monkeypatch.setenv("CAPTURE_TOKEN", "tok")
     import requests as req_lib
     with patch("app.services.session_client.requests.post",
                side_effect=req_lib.RequestException("timeout")):
-        resp = client.post("/housekeeping/tasks/2026-06-17-test-task/run")
+        resp = client.post("/housekeeping/tasks/2026-06-17-test-task/run",
+                           headers={"X-Capture-Token": "tok"})
     assert resp.status_code == 502
 
 
