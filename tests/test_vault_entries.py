@@ -345,6 +345,38 @@ def test_write_entry_housekeeping_task_includes_depends_on_when_present(tmp_path
     assert post.metadata["depends_on"] == "research-cycle"
 
 
+def test_write_entry_disambiguates_same_day_same_title_notes(tmp_path):
+    """Two entries created same day with the same title must not clobber each other."""
+    (tmp_path / "projects" / "myproj").mkdir(parents=True)
+    with patch.object(_vc, "VAULT_PATH", tmp_path):
+        from app.services.vault_entries import write_entry
+        write_entry({"type": "note", "project": "myproj", "title": "Platform Review", "body": "First"})
+        write_entry({"type": "note", "project": "myproj", "title": "Platform Review", "body": "Second"})
+    files = sorted((tmp_path / "projects" / "myproj" / "notes").glob("*.md"))
+    assert len(files) == 2, "second write must not overwrite the first entry"
+    bodies = {fm.load(f).content.strip() for f in files}
+    assert bodies == {"## Description\nFirst", "## Description\nSecond"}
+
+
+def test_write_entry_disambiguates_same_day_same_title_housekeeping_task(tmp_path):
+    """housekeeping-task writes must also avoid clobbering same-day same-title entries."""
+    (tmp_path / "projects" / "claude-config" / "housekeeping").mkdir(parents=True)
+    with patch.object(_vc, "VAULT_PATH", tmp_path):
+        from app.services.vault_entries import write_entry
+        write_entry({
+            "type": "housekeeping-task", "project": "claude-config",
+            "title": "Platform Review Summary", "body": "First run",
+            "interval": "weekly", "success_definition": "done",
+        })
+        write_entry({
+            "type": "housekeeping-task", "project": "claude-config",
+            "title": "Platform Review Summary", "body": "Second run",
+            "interval": "weekly", "success_definition": "done",
+        })
+    files = sorted((tmp_path / "projects" / "claude-config" / "housekeeping").glob("*.md"))
+    assert len(files) == 2, "second write must not overwrite the first housekeeping-task entry"
+
+
 def test_write_entry_housekeeping_task_omits_depends_on_when_absent(tmp_path):
     (tmp_path / "projects" / "claude-config" / "housekeeping").mkdir(parents=True)
     with patch.object(_vc, "VAULT_PATH", tmp_path):

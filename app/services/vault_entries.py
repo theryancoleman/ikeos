@@ -20,6 +20,20 @@ def _slugify(title: str) -> str:
     return slug[:50]
 
 
+def _unique_slug(target_dir, slug: str) -> str:
+    """Return a slug that doesn't collide with an existing file in target_dir.
+
+    Appends -2, -3, etc. to disambiguate same-day, same-title entries instead
+    of silently overwriting an existing file.
+    """
+    candidate = slug
+    suffix = 2
+    while (target_dir / f"{candidate}.md").exists():
+        candidate = f"{slug}-{suffix}"
+        suffix += 1
+    return candidate
+
+
 def write_entry(data: dict) -> str:
     entry_type = data["type"]
     project = data.get("project", "").lower().strip()
@@ -65,6 +79,7 @@ def write_entry(data: dict) -> str:
             metadata["depends_on"] = data["depends_on"]
         content = f"## Instructions\n{body}\n"
         post = frontmatter.Post(content, **metadata)
+        slug = _unique_slug(target_dir, slug)
         filepath = target_dir / f"{slug}.md"
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(frontmatter.dumps(post))
@@ -148,6 +163,7 @@ def write_entry(data: dict) -> str:
 
     post = frontmatter.Post(content, **metadata)
 
+    slug = _unique_slug(target_dir, slug)
     filepath = target_dir / f"{slug}.md"
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(frontmatter.dumps(post))
