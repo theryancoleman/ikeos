@@ -50,5 +50,41 @@
   <script>
     document.getElementById("entry-body").innerHTML = DOMPurify.sanitize(marked.parse({{ entry.body | tojson }}));
   </script>
+
+  {% if health %}
+  <section class="hk-widget entry-health-panel">
+    <div class="ike-eyebrow" style="margin-bottom: var(--space-3, 0.75rem);">Vault maintenance — {{ project }}</div>
+    <div class="hk-widget-row">
+      <span class="hk-widget-label">Needs triage (status: new)</span>
+      <span class="hk-widget-age">{{ health.untriaged }}</span>
+    </div>
+    <div class="hk-widget-row">
+      <span class="hk-widget-label">Active, never updated</span>
+      <span class="hk-widget-age">{{ health.never_updated }}</span>
+    </div>
+    <div class="hk-widget-row">
+      <span class="hk-widget-label">Deferred 30+ days</span>
+      <span class="hk-widget-age">{{ health.stale_deferred }}</span>
+    </div>
+    <div class="triage-snippet">
+      <code>/triage</code>
+      <button type="button" id="triage-copy-btn" class="triage-copy-btn">Copy</button>
+    </div>
+    <p class="hk-widget-summary">Run from a Claude Code session in this project — the web app can't invoke skills directly.</p>
+  </section>
+  <script>
+    document.getElementById("triage-copy-btn").addEventListener("click", function () {
+      const btn = this;
+      navigator.clipboard.writeText("/triage").then(function () {
+        btn.textContent = "Copied!";
+        btn.classList.add("copied");
+        setTimeout(function () {
+          btn.textContent = "Copy";
+          btn.classList.remove("copied");
+        }, 1500);
+      });
+    });
+  </script>
+  {% endif %}
 </div>
 {% endblock %}

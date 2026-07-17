@@ -61,6 +61,20 @@ def test_entry_view_404_for_missing(client):
     assert response.status_code == 404
 
 
+def test_entry_view_shows_health_panel(client):
+    """Entry detail page renders the vault-maintenance quick-action panel."""
+    response = client.get("/projects/bcr-waivers/2026-05-26-test-note")
+    assert response.status_code == 200
+    assert b"Vault maintenance" in response.data
+    assert b"/triage" in response.data
+
+
+def test_entry_view_health_panel_counts_untriaged(client):
+    """The Test note fixture is status:new, so untriaged count should be at least 1."""
+    response = client.get("/projects/bcr-waivers/2026-05-26-test-note")
+    assert b"Needs triage (status: new)" in response.data
+
+
 def test_post_update_status_redirects(client, vault):
     with patch("app.services.vault_cache.VAULT_PATH", vault):
         slug = write_entry({

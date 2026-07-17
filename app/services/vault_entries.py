@@ -233,6 +233,48 @@ def read_entry(project: str, slug: str) -> dict | None:
     return None
 
 
+_STALE_DEFERRED_DAYS = 30
+
+
+def project_health_signals(project: str, stale_days: int = _STALE_DEFERRED_DAYS) -> dict:
+    """Compute lightweight vault-health counts for a single project.
+
+    Not a full audit — surfaces signals already queryable from cached entry
+    data, for the entry detail page's health-check shortcut:
+      - untriaged: entries still at status "new"
+      - never_updated: active (open/in-progress) entries with no "updated" field
+      - stale_deferred: "deferred" entries untouched for >= stale_days
+    """
+    entries = read_entries(project=project)
+    now = datetime.now()
+
+    untriaged = 0
+    never_updated = 0
+    stale_deferred = 0
+
+    for e in entries:
+        status = e.get("status")
+        if status == "new":
+            untriaged += 1
+        elif status in ("open", "in-progress") and not e.get("updated"):
+            never_updated += 1
+        elif status == "deferred":
+            ref_raw = e.get("updated") or e.get("created", "")
+            try:
+                ref_date = ref_raw if isinstance(ref_raw, datetime) else datetime.fromisoformat(ref_raw)
+                ref_date = ref_date.replace(tzinfo=None) if ref_date.tzinfo else ref_date
+                if (now - ref_date).days >= stale_days:
+                    stale_deferred += 1
+            except (ValueError, TypeError):
+                continue
+
+    return {
+        "untriaged": untriaged,
+        "never_updated": never_updated,
+        "stale_deferred": stale_deferred,
+    }
+
+
 def update_entry_status(project: str, slug: str, new_status: str) -> bool:
     proj_dir = _vc.VAULT_PATH / "projects" / project
     for cfg in _vc.ENTRY_TYPE_CONFIG.values():

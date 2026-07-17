@@ -37,6 +37,7 @@ from app.services.vault_entries import (  # noqa: F401
     read_entry,
     update_entry_status,
     update_entry_status_generic,
+    project_health_signals,
 )
 
 from app.services.vault_graph import (  # noqa: F401

@@ -358,6 +358,73 @@ def test_write_entry_disambiguates_same_day_same_title_notes(tmp_path):
     assert bodies == {"## Description\nFirst", "## Description\nSecond"}
 
 
+def test_project_health_signals_counts_untriaged(tmp_path):
+    notes_dir = tmp_path / "projects" / "myproj" / "notes"
+    notes_dir.mkdir(parents=True)
+    (notes_dir / "2026-01-01-a.md").write_text(
+        "---\ntype: note\ntitle: A\nproject: myproj\n"
+        "status: new\ncreated: 2026-01-01T00:00:00\ntags: []\n---\n## Description\n"
+    )
+    (notes_dir / "2026-01-02-b.md").write_text(
+        "---\ntype: note\ntitle: B\nproject: myproj\n"
+        "status: done\ncreated: 2026-01-02T00:00:00\ntags: []\n---\n## Description\n"
+    )
+    with patch.object(_vc, "VAULT_PATH", tmp_path):
+        from app.services.vault_entries import project_health_signals
+        result = project_health_signals("myproj")
+    assert result["untriaged"] == 1
+
+
+def test_project_health_signals_counts_never_updated(tmp_path):
+    notes_dir = tmp_path / "projects" / "myproj" / "notes"
+    notes_dir.mkdir(parents=True)
+    (notes_dir / "2026-01-01-a.md").write_text(
+        "---\ntype: note\ntitle: A\nproject: myproj\n"
+        "status: open\ncreated: 2026-01-01T00:00:00\ntags: []\n---\n## Description\n"
+    )
+    (notes_dir / "2026-01-02-b.md").write_text(
+        "---\ntype: note\ntitle: B\nproject: myproj\n"
+        "status: in-progress\ncreated: 2026-01-02T00:00:00\n"
+        "updated: 2026-01-03T00:00:00\ntags: []\n---\n## Description\n"
+    )
+    with patch.object(_vc, "VAULT_PATH", tmp_path):
+        from app.services.vault_entries import project_health_signals
+        result = project_health_signals("myproj")
+    assert result["never_updated"] == 1
+
+
+def test_project_health_signals_counts_stale_deferred(tmp_path):
+    notes_dir = tmp_path / "projects" / "myproj" / "notes"
+    notes_dir.mkdir(parents=True)
+    (notes_dir / "2020-01-01-a.md").write_text(
+        "---\ntype: note\ntitle: A\nproject: myproj\n"
+        "status: deferred\ncreated: 2020-01-01T00:00:00\ntags: []\n---\n## Description\n"
+    )
+    with patch.object(_vc, "VAULT_PATH", tmp_path):
+        from app.services.vault_entries import project_health_signals
+        result = project_health_signals("myproj")
+    assert result["stale_deferred"] == 1
+
+
+def test_project_health_signals_scoped_to_project(tmp_path):
+    notes_a = tmp_path / "projects" / "proj-a" / "notes"
+    notes_a.mkdir(parents=True)
+    (notes_a / "2026-01-01-a.md").write_text(
+        "---\ntype: note\ntitle: A\nproject: proj-a\n"
+        "status: new\ncreated: 2026-01-01T00:00:00\ntags: []\n---\n## Description\n"
+    )
+    notes_b = tmp_path / "projects" / "proj-b" / "notes"
+    notes_b.mkdir(parents=True)
+    (notes_b / "2026-01-01-b.md").write_text(
+        "---\ntype: note\ntitle: B\nproject: proj-b\n"
+        "status: new\ncreated: 2026-01-01T00:00:00\ntags: []\n---\n## Description\n"
+    )
+    with patch.object(_vc, "VAULT_PATH", tmp_path):
+        from app.services.vault_entries import project_health_signals
+        result = project_health_signals("proj-a")
+    assert result["untriaged"] == 1
+
+
 def test_write_entry_disambiguates_same_day_same_title_housekeeping_task(tmp_path):
     """housekeeping-task writes must also avoid clobbering same-day same-title entries."""
     (tmp_path / "projects" / "claude-config" / "housekeeping").mkdir(parents=True)
