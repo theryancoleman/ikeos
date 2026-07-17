@@ -216,6 +216,25 @@ Second outcome of the same session. The IkeOS-coupled skills (/housekeeping, /tr
 
 `app/services/reviews.py` was written against a planned-but-never-shipped convention: `WEEKLY_REVIEW_OUTPUT_DIR` glob `*-weekly-review.md`. The claude-config `platform-review-narrative` housekeeping task (shipped 2026-07-16) actually writes git-tracked `docs/platform-reviews/<YYYY-MM-DD>-review.md` files in the claude-config repo. Since ISO dates sort lexicographically, the existing `sorted(..., reverse=True)` logic needed no change beyond the glob string (`*-weekly-review.md` → `*-review.md`). `WEEKLY_REVIEW_OUTPUT_PATH` (host volume source for the read-only `/weekly-reviews` mount) was also never set in this host's `.env` — the mount silently fell back to `docker-compose.yml`'s `/tmp/ikeos-no-weekly-reviews` default, so the widget had nothing to read regardless of the glob bug. Fixed by pointing `WEEKLY_REVIEW_OUTPUT_PATH` at `docs/platform-reviews` (Windows-style path, matching this repo's other volume-mount env vars on this Docker-Desktop-on-Windows host). The `weekly_platform_review` capability description in `app/services/capabilities.py` was left unchanged — it already accurately describes the narrative-review task.
 
+## 2026-07-17: Research Sources page — new blueprint, blacklisted drives status display, no capture-token auth
+
+Added `/research-sources` as its own blueprint (`app/routes/research_sources.py`)
+rather than folding into `housekeeping.py`, which is already large and owns a
+different concern (claude-config housekeeping tasks/heartbeat vs. session-manager's
+research-sources.json). Client functions live in `session_client.py` since that
+file already owns the `SESSION_MANAGER_URL` connection pattern — no new client
+module needed. The source JSON has two overlapping fields: `status` (always
+`"active"`, effectively a no-op placeholder) and `blacklisted` (bool, the real
+block/unblock switch used by the research skill's filtering logic). The UI derives
+Active/Blocked purely from `blacklisted` and never reads `status`, to avoid a
+future maintainer wiring the toggle to the wrong field. Unlike `housekeeping.py`'s
+mutation routes (`toggle_task`, `reset_task`, `delete_task`), the new add/toggle
+routes are **not** gated by `@require_capture_token`: the session-manager's
+`/research-sources` endpoints have no auth of their own (matches every other
+session-manager endpoint per its existing design), and these routes only proxy to
+it — there is no local vault write to protect, unlike the capture-service-backed
+housekeeping mutations.
+
 ## 2026-07-03: adapters/claude-code/ created — skills and session-manager extracted from claude-config
 
 Execution of the 2026-07-02 decision (Skills and session-manager move INTO ikeos). All IkeOS-coupled Claude Code artifacts now live in `adapters/claude-code/`: five parameterized skills (/housekeeping, /triage, /close-session, /schema-check, /promote), the stophook reflection script, and the session-manager service (reference implementation of the SESSION_DRIVER_API). Parameterization contract: IKEOS_URL, CAPTURE_TOKEN, VAULT_PATH, CLAUDE_CONFIG_DIR, BLOG_NOTES_DIR. The single code change in session-manager: INFRASTRUCTURE_MACHINES is now loaded from an env var (JSON array) instead of being hardcoded; CLAUDE_BIN and CLAUDE_PLUGIN_BASE are also env-driven. CAPTURE_TOKEN was rotated before extraction; both repo git histories were swept for the old token (0 matches found). Install docs at adapters/claude-code/README.md.

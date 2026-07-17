@@ -84,6 +84,72 @@ def send_command(session_id: str, command: str, *, escape_first: bool = False) -
     return resp.ok
 
 
+@dataclass(frozen=True)
+class ResearchSourcesResult:
+    sources: list[dict] | None = None
+    error: str | None = None
+
+    @property
+    def ok(self) -> bool:
+        return self.error is None
+
+
+@dataclass(frozen=True)
+class ResearchSourceResult:
+    source: dict | None = None
+    error: str | None = None
+
+    @property
+    def ok(self) -> bool:
+        return self.error is None
+
+
+def list_research_sources() -> ResearchSourcesResult:
+    """GET /research-sources from the session manager."""
+    try:
+        resp = requests.get(f"{session_manager_url()}/research-sources", timeout=5)
+    except requests.RequestException:
+        return ResearchSourcesResult(error="Session manager unreachable")
+    if not resp.ok:
+        return ResearchSourcesResult(error=f"Session manager returned {resp.status_code}")
+    return ResearchSourcesResult(sources=resp.json().get("sources", []))
+
+
+def add_research_source(*, url: str, label: str) -> ResearchSourceResult:
+    """POST /research-sources to the session manager."""
+    try:
+        resp = requests.post(
+            f"{session_manager_url()}/research-sources",
+            json={"url": url, "label": label},
+            timeout=5,
+        )
+    except requests.RequestException:
+        return ResearchSourceResult(error="Session manager unreachable")
+    if resp.status_code == 409:
+        return ResearchSourceResult(error="A source with that URL already exists")
+    if resp.status_code == 400:
+        return ResearchSourceResult(error="url and label are required")
+    if not resp.ok:
+        return ResearchSourceResult(error=f"Session manager returned {resp.status_code}")
+    return ResearchSourceResult(source=resp.json())
+
+
+def toggle_research_source(source_id: str) -> ResearchSourceResult:
+    """PATCH /research-sources/<id> on the session manager — toggles blacklisted."""
+    try:
+        resp = requests.patch(
+            f"{session_manager_url()}/research-sources/{source_id}",
+            timeout=5,
+        )
+    except requests.RequestException:
+        return ResearchSourceResult(error="Session manager unreachable")
+    if resp.status_code == 404:
+        return ResearchSourceResult(error="Source not found")
+    if not resp.ok:
+        return ResearchSourceResult(error=f"Session manager returned {resp.status_code}")
+    return ResearchSourceResult(source=resp.json())
+
+
 def get_session_status(session_id: str) -> dict | None:
     """Session object from the driver, or None if unknown/unreachable.
 

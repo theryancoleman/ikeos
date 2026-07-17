@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}Research Sources{% endblock %}
+
+{% block content %}
+<div class="settings-page">
+
+  <header class="page-header">
+    <span class="ike-eyebrow">Housekeeping</span>
+    <h1>Research Sources</h1>
+    <p class="page-subtitle">Trusted external URLs the weekly research agent consults. ʻIkeOS is the write interface only — <code>claude-config</code>'s <code>research-sources.json</code> is the source of truth.</p>
+  </header>
+
+  {% if error %}
+  <div class="hk-widget">
+    <p class="hk-status hk-status-pending">Can't reach the research-source management service.</p>
+    <p style="font-size:0.85rem; color:var(--color-muted); margin-top:4px;">{{ error }}</p>
+  </div>
+  {% else %}
+
+  <section>
+    <div class="ike-eyebrow">Sources <span class="eyebrow-count">/ {{ sources | length }}</span></div>
+    {% if sources %}
+    <div class="hk-table-wrap">
+      <table class="hk-table rs-table">
+        <thead>
+          <tr>
+            <th class="rs-col-label">Label</th>
+            <th class="rs-col-url">URL</th>
+            <th class="hk-col-status">Status</th>
+            <th class="hk-col-date">Last Fetched</th>
+            <th class="rs-col-count">Entries</th>
+            <th class="hk-col-actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for source in sources %}
+          <tr>
+            <td class="hk-name">{{ source.label }}</td>
+            <td class="rs-url"><a href="{{ source.url }}" target="_blank" rel="noopener">{{ source.url }}</a></td>
+            <td>
+              <span class="hk-pill {% if source.blacklisted %}hk-pill--disabled{% else %}hk-pill--ok{% endif %}">
+                {{ 'Blocked' if source.blacklisted else 'Active' }}
+              </span>
+            </td>
+            <td class="hk-date">{{ source.last_fetched or 'Never' }}</td>
+            <td class="hk-date">{{ source.entries_generated }}</td>
+            <td class="hk-actions">
+              <button class="pill"
+                      onclick="toggleSource({{ source.id | tojson | forceescape }}, this)">
+                {{ 'Unblock' if source.blacklisted else 'Block' }}
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="empty">No research sources defined yet. Add one below.</p>
+    {% endif %}
+  </section>
+
+  <section class="hk-add-section">
+    <div class="ike-eyebrow">Add Source</div>
+    <form class="hk-add-form" id="addSourceForm">
+      <div class="hk-form-row">
+        <label for="rs-url">URL</label>
+        <input type="url" id="rs-url" name="url" required
+               placeholder="https://example.com/blog">
+      </div>
+      <div class="hk-form-row">
+        <label for="rs-label">Label</label>
+        <input type="text" id="rs-label" name="label" required
+               placeholder="e.g. Example Engineering Blog">
+      </div>
+      <div class="hk-form-footer">
+        <button type="submit" class="pill pill-primary-filled">Add Source</button>
+        <span class="hk-form-msg" id="addSourceMsg"></span>
+      </div>
+    </form>
+  </section>
+
+  {% endif %}
+
+</div>
+
+<style>
+.rs-col-label { width: 20%; }
+.rs-col-url   { width: 30%; }
+.rs-col-count { width: 8%; }
+.rs-url a {
+  color: var(--ike-soft-lavender, #B497FF);
+  word-break: break-all;
+}
+</style>
+
+<script>
+async function toggleSource(id, btn) {
+  btn.disabled = true;
+  try {
+    const resp = await fetch(`/research-sources/${encodeURIComponent(id)}/toggle`,
+                             {method: 'POST'});
+    if (resp.ok) {
+      location.reload();
+    } else {
+      btn.disabled = false;
+      const data = await resp.json().catch(() => ({}));
+      alert(data.error || 'Failed to toggle source.');
+    }
+  } catch (e) {
+    btn.disabled = false;
+    alert('Network error — could not toggle source.');
+  }
+}
+
+document.getElementById('addSourceForm')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('addSourceMsg');
+  const form = e.target;
+  const url = form.url.value.trim();
+  const label = form.label.value.trim();
+  msg.textContent = 'Adding…';
+  try {
+    const resp = await fetch('/research-sources', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      body: new URLSearchParams({url, label}),
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (resp.ok) {
+      location.reload();
+    } else {
+      msg.textContent = data.error || 'Failed to add source.';
+    }
+  } catch (e) {
+    msg.textContent = 'Network error.';
+  }
+});
+</script>
+{% endblock %}

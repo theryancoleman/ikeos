@@ -1,4 +1,4 @@
-# Task: Wire up the weekly platform review viewer to the actual output convention
+# Task: Build a research-sources management page
 
 > Replace this file each time you start a new task. Keep it at project root.
 > Commit it with your changes so there's a record of what was intended.
@@ -7,79 +7,85 @@
 
 ## Objective
 
-`app/services/reviews.py`'s `read_latest_review()` / `latest_review_name()` looked for
-`*-weekly-review.md` files under `WEEKLY_REVIEW_OUTPUT_DIR`, but the claude-config
-`platform-review-narrative` housekeeping task (shipped 2026-07-16) actually writes
-`docs/platform-reviews/<YYYY-MM-DD>-review.md` in the claude-config repo. Net effect:
-the housekeeping page's platform-review widget permanently showed "no review found"
-even though reviews were being produced. Fix the glob/path so the viewer finds the
-real output, and confirm the `weekly_platform_review` capability description still
-matches reality.
+`claude-config`'s `library/research-sources.json` lists trusted external URLs the
+weekly research agent consults. IkeOS needs a page to display and manage this list:
+show all sources with status, add a new source, block/unblock a source, show
+last-fetched date and how many vault entries it's generated. IkeOS is the write
+interface only — the claude-config file is the source of truth.
 
 ---
 
 ## Size
 
-S — single-file glob fix plus env/mount path correction; no schema/API/architecture
-change; clear requirements from investigation.
+M — new route module, template, client functions, nav change, and a new test file;
+no schema change but a new user-facing feature surface with real design choices
+(field-naming mismatch, error-state handling).
 
 ---
 
-## Investigation findings
+## API contract (session-manager, port 5010 — already live)
 
-- `capabilities.json` is not a static repo file — it's a per-vault runtime file written
-  by `app/services/capabilities.py`'s `update_capability()` to
-  `<VAULT_PATH>/projects/<project_slug>/housekeeping/capabilities.json`. The
-  `weekly_platform_review` capability's description text (in
-  `DEFAULT_CAPABILITIES`) already accurately describes the new narrative-review task —
-  no change needed there.
-- Actual output location confirmed via `claude-config/docs/superpowers/specs/2026-07-16-platform-review-narrative-design.md`
-  and a real file on disk: `/mnt/c/Server/claude-config/docs/platform-reviews/2026-07-16-review.md`
-  (git-tracked directory, filename `<YYYY-MM-DD>-review.md`).
-- `WEEKLY_REVIEW_OUTPUT_PATH` was never set in this host's `.env` at all — the
-  docker-compose volume mount silently fell back to `/tmp/ikeos-no-weekly-reviews`,
-  so the widget had nothing to read regardless of the glob bug.
-- Existing tests for `reviews.py` live in `tests/test_blog_drafts.py` (not a dedicated
-  `test_reviews.py`) — updated in place rather than creating a new file, to match
-  existing project convention.
+- `GET /research-sources` → `200 {"sources": [{...}]}`. Fields: `url`, `label`,
+  `status` (always `"active"`, not the real block signal), `blacklisted` (bool —
+  **the actual block/unblock switch**), `last_fetched` (nullable), `entries_generated`
+  (int), `added` (ISO date), `id` (base64url of the url, derived not persisted).
+- `POST /research-sources` `{"url", "label"}` → `201` created source. `400` if
+  missing fields, `409` if URL already exists.
+- `PATCH /research-sources/<id>` (no body) → toggles `blacklisted`. `404` if
+  unresolvable.
+- No auth on this service.
 
 ---
 
-## Fix
+## Fix / Implementation
 
-- `app/services/reviews.py`: glob pattern `*-weekly-review.md` → `*-review.md` in both
-  `latest_review_name()` and `read_latest_review()`. Sort logic unchanged (ISO dates
-  sort correctly lexicographically).
-- `.env`: added `WEEKLY_REVIEW_OUTPUT_PATH=C:\Server\claude-config\docs\platform-reviews`
-  (Windows-style path — this repo's volume-mount env vars use Windows paths on this
-  Docker-Desktop-on-Windows host).
-- `.env.example`: updated placeholder path and comment to reflect the real convention,
-  plus a note on the Windows-path requirement for volume-mount vars.
-- `tests/test_blog_drafts.py`: updated `review_dir` fixture-based tests to the new
-  filename convention; added a newest-file-picked test.
-- `.claude/DECISIONS.md`: appended an entry documenting the mismatch and fix.
+- `app/services/session_client.py`: added `list_research_sources()`,
+  `add_research_source(*, url, label)`, `toggle_research_source(source_id)` plus
+  `ResearchSourcesResult` / `ResearchSourceResult` frozen dataclasses, following the
+  existing `SessionResult` / `session_manager_url()` pattern in the same file.
+- `app/routes/research_sources.py` (new blueprint): `GET /research-sources` (page),
+  `POST /research-sources` (add), `POST /research-sources/<id>/toggle` (calls PATCH
+  downstream — mirrors `housekeeping.toggle_task`'s POST-that-PATCHes convention).
+  Registered in `app/__init__.py`.
+- `app/templates/research_sources.html` (new): reuses existing `hk-table`,
+  `hk-pill--ok` / `hk-pill--disabled`, `hk-add-section/form`, `pill` CSS classes —
+  no new shared CSS added, only a small scoped `<style>` block for source-specific
+  column widths (same pattern as `skills.html`). UI shows **Active/Blocked** derived
+  from `blacklisted`, not the no-op `status` field. Unreachable-service state renders
+  a clear message instead of a 500.
+- `app/templates/base.html`: added a "Research Sources" sub-link under a new
+  Housekeeping `nav-item`/`nav-subnav` (matching the existing Tasks pattern).
+- `tests/test_research_sources.py` (new): service-level tests for the three client
+  functions (success/unreachable/error-status) and route-level tests (page render
+  with mocked list, blocked-status rendering, service-unreachable rendering, add-form
+  POST, toggle POST, 400/404/502 paths).
 
 ---
 
 ## Verification contract
 
-1. `docker.exe exec ikeos pytest tests/test_blog_drafts.py -q` — all pass.
+1. `docker.exe exec ikeos pytest tests/test_research_sources.py -q` — all pass.
 2. `docker.exe exec ikeos pytest tests/ -q` — full suite passes, no regressions.
 3. `docker.exe compose up -d --build ikeos` — container rebuilds and reports healthy.
-4. `curl http://localhost:5009/housekeeping/weekly-review` — renders the real
-   `2026-07-16-review.md` content instead of "No review report found yet."
-5. `curl http://localhost:5009/housekeeping` — widget also reflects the found review.
+4. `curl http://localhost:5009/research-sources` — renders real live data from the
+   session-manager (if `SESSION_MANAGER_URL` configured and reachable), or the
+   graceful degradation message otherwise.
 
 ---
 
 ## Agent loop status
 
 - [x] Implementer: changes complete
-- [ ] Reviewer: not required (S-size)
+- [ ] Reviewer: not run in this dispatch — orchestrator invoked implementer directly
+      for a self-contained task and instructed committing on completion; flagged as
+      an open question given M size.
 - [x] Verification: all contract steps passed (see below)
 
 ---
 
 ## Follow-up (outside this task)
 
-None identified.
+- `adapters/claude-code/session-manager/app.py` (this repo's reference copy of the
+  session-manager) does not yet contain the `/research-sources` endpoints that are
+  live on the deployed port-5010 instance — worth syncing back so the reference
+  implementation matches production, but out of scope for this task.

@@ -31,7 +31,12 @@
       <a href="{{ url_for('agents.agents') }}"    class="nav-link {% if request.endpoint == 'agents.agents' %}is-active{% endif %}">Sessions</a>
       <a href="{{ url_for('agents.status_page') }}" class="nav-link {% if request.endpoint == 'agents.status_page' %}is-active{% endif %}">Status</a>
       <a href="{{ url_for('browse.skills') }}"    class="nav-link {% if request.endpoint == 'browse.skills' %}is-active{% endif %}">Skills</a>
-      <a href="{{ url_for('housekeeping.index') }}" class="nav-link {% if request.endpoint == 'housekeeping.index' %}is-active{% endif %}">Housekeeping</a>
+      <div class="nav-item{% if request.endpoint in ('housekeeping.index', 'research_sources.index') %} is-active{% endif %}">
+        <a href="{{ url_for('housekeeping.index') }}" class="nav-link {% if request.endpoint == 'housekeeping.index' %}is-active{% endif %}">Housekeeping</a>
+        <div class="nav-subnav">
+          <a href="{{ url_for('research_sources.index') }}" class="nav-sub-link {% if request.endpoint == 'research_sources.index' %}is-active{% endif %}">Research Sources</a>
+        </div>
+      </div>
       <a href="{{ url_for('publishing.index') }}" class="nav-link {% if request.endpoint == 'publishing.index' %}is-active{% endif %}">Publishing</a>
       <a href="{{ url_for('agents.metrics_view') }}" class="nav-link {% if request.endpoint == 'agents.metrics_view' %}is-active{% endif %}">Metrics</a>
 
