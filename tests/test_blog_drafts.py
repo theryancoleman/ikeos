@@ -88,14 +88,20 @@ def test_latest_review_none_when_empty(review_dir):
 
 
 def test_latest_review_name(review_dir):
-    (review_dir / "2026-07-01-weekly-review.md").write_text("r", encoding="utf-8")
-    assert reviews.latest_review_name() == "2026-07-01-weekly-review.md"
+    (review_dir / "2026-07-01-review.md").write_text("r", encoding="utf-8")
+    assert reviews.latest_review_name() == "2026-07-01-review.md"
+
+
+def test_latest_review_name_picks_newest(review_dir):
+    (review_dir / "2026-06-01-review.md").write_text("old", encoding="utf-8")
+    (review_dir / "2026-07-01-review.md").write_text("new", encoding="utf-8")
+    assert reviews.latest_review_name() == "2026-07-01-review.md"
 
 
 def test_read_latest_review(review_dir):
-    (review_dir / "2026-07-01-weekly-review.md").write_text("content", encoding="utf-8")
+    (review_dir / "2026-07-01-review.md").write_text("content", encoding="utf-8")
     name, content = reviews.read_latest_review()
-    assert name == "2026-07-01-weekly-review.md"
+    assert name == "2026-07-01-review.md"
     assert content == "content"
 
 

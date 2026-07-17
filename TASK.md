@@ -1,4 +1,4 @@
-# Task: Investigate housekeeping-task vault-entry ownership/permissions inconsistency
+# Task: Wire up the weekly platform review viewer to the actual output convention
 
 > Replace this file each time you start a new task. Keep it at project root.
 > Commit it with your changes so there's a record of what was intended.
@@ -7,65 +7,79 @@
 
 ## Objective
 
-Investigate a reported bug: `POST /capture/json` for `type=housekeeping-task` allegedly
-writes vault files owned `autoserver:autoserver` mode `0777`, unlike other entry types
-(`uid 999:999`, mode `0644`). Find the code-level divergence in
-`app/services/vault_entries.py`'s `write_entry()` between the `housekeeping-task` branch
-and the generic branch, and fix it so both write paths behave identically.
+`app/services/reviews.py`'s `read_latest_review()` / `latest_review_name()` looked for
+`*-weekly-review.md` files under `WEEKLY_REVIEW_OUTPUT_DIR`, but the claude-config
+`platform-review-narrative` housekeeping task (shipped 2026-07-16) actually writes
+`docs/platform-reviews/<YYYY-MM-DD>-review.md` in the claude-config repo. Net effect:
+the housekeeping page's platform-review widget permanently showed "no review found"
+even though reviews were being produced. Fix the glob/path so the viewer finds the
+real output, and confirm the `weekly_platform_review` capability description still
+matches reality.
 
 ---
 
 ## Size
 
-S — investigation-first task; turned out to require no code change (see Outcome below).
+S — single-file glob fix plus env/mount path correction; no schema/API/architecture
+change; clear requirements from investigation.
 
 ---
 
-## Outcome
+## Investigation findings
 
-**No code-level divergence found. No fix applied.**
+- `capabilities.json` is not a static repo file — it's a per-vault runtime file written
+  by `app/services/capabilities.py`'s `update_capability()` to
+  `<VAULT_PATH>/projects/<project_slug>/housekeeping/capabilities.json`. The
+  `weekly_platform_review` capability's description text (in
+  `DEFAULT_CAPABILITIES`) already accurately describes the new narrative-review task —
+  no change needed there.
+- Actual output location confirmed via `claude-config/docs/superpowers/specs/2026-07-16-platform-review-narrative-design.md`
+  and a real file on disk: `/mnt/c/Server/claude-config/docs/platform-reviews/2026-07-16-review.md`
+  (git-tracked directory, filename `<YYYY-MM-DD>-review.md`).
+- `WEEKLY_REVIEW_OUTPUT_PATH` was never set in this host's `.env` at all — the
+  docker-compose volume mount silently fell back to `/tmp/ikeos-no-weekly-reviews`,
+  so the widget had nothing to read regardless of the glob bug.
+- Existing tests for `reviews.py` live in `tests/test_blog_drafts.py` (not a dedicated
+  `test_reviews.py`) — updated in place rather than creating a new file, to match
+  existing project convention.
 
-Line-by-line comparison of `write_entry()`'s `housekeeping-task` branch vs. the generic
-(note/idea/bug/experiment/decision) branch in `app/services/vault_entries.py` shows both
-use the identical write mechanism: `target_dir.mkdir(parents=True, exist_ok=True)` (no
-explicit mode), `frontmatter.Post(...)`, `open(filepath, "w", encoding="utf-8")`,
-`f.write(frontmatter.dumps(post))`. No `os.chmod`/`os.chown`/`subprocess` calls exist
-anywhere in `app/` (confirmed via grep). `vault.py` re-exports `write_entry` with no
-wrapping/post-processing.
+---
 
-Live testing against the running container reproduced the reported symptom — but showed
-it affects **both** the housekeeping-task route (`POST /capture/json`) and the
-form-based generic route (`POST /capture`, type=note) **identically**: freshly written
-files under the current container session show `root:root` (container view) /
-`autoserver:autoserver` (WSL host view), mode `0777`, regardless of entry type. Older
-files (written before ~2026-07-16T23:08 UTC, i.e. the last container restart) show the
-expected `appuser:appuser` (999:999) / `0644` for both entry types too. The dividing
-line is *time of the last container restart*, not code path.
+## Fix
 
-Conclusion: this is a Docker Desktop / WSL2 DrvFs metadata-mapping artifact on the
-Windows-hosted `VAULT_PATH` bind mount (`C:\Server\obsidian-vault`), not an ikeos code
-bug. It started affecting all new vault writes uniformly around the most recent
-container restart and has not self-healed after 40+ minutes. Out of scope for an
-in-repo Python fix — no source change would alter the outcome, since both code paths
-are already identical and both currently exhibit the symptom.
+- `app/services/reviews.py`: glob pattern `*-weekly-review.md` → `*-review.md` in both
+  `latest_review_name()` and `read_latest_review()`. Sort logic unchanged (ISO dates
+  sort correctly lexicographically).
+- `.env`: added `WEEKLY_REVIEW_OUTPUT_PATH=C:\Server\claude-config\docs\platform-reviews`
+  (Windows-style path — this repo's volume-mount env vars use Windows paths on this
+  Docker-Desktop-on-Windows host).
+- `.env.example`: updated placeholder path and comment to reflect the real convention,
+  plus a note on the Windows-path requirement for volume-mount vars.
+- `tests/test_blog_drafts.py`: updated `review_dir` fixture-based tests to the new
+  filename convention; added a newest-file-picked test.
+- `.claude/DECISIONS.md`: appended an entry documenting the mismatch and fix.
 
-Test probe files created during investigation were written to
-`projects/claude-config/housekeeping/` and `projects/ikeos/notes/` and have been
-deleted via `docker exec ikeos rm` (confirmed removed).
+---
+
+## Verification contract
+
+1. `docker.exe exec ikeos pytest tests/test_blog_drafts.py -q` — all pass.
+2. `docker.exe exec ikeos pytest tests/ -q` — full suite passes, no regressions.
+3. `docker.exe compose up -d --build ikeos` — container rebuilds and reports healthy.
+4. `curl http://localhost:5009/housekeeping/weekly-review` — renders the real
+   `2026-07-16-review.md` content instead of "No review report found yet."
+5. `curl http://localhost:5009/housekeeping` — widget also reflects the found review.
 
 ---
 
 ## Agent loop status
 
-- [x] Implementer: changes complete (no-op — investigation concluded no code fix applies)
-- [ ] Reviewer: not required (S-size, no code changed)
-- [x] Verification: investigation steps completed; live reproduction performed; no commit made (nothing to commit)
+- [x] Implementer: changes complete
+- [ ] Reviewer: not required (S-size)
+- [x] Verification: all contract steps passed (see below)
 
 ---
 
-## Follow-up (outside ikeos code)
+## Follow-up (outside this task)
 
-File a vault note/idea for infra follow-up: check Docker Desktop's Windows-drive file
-sharing (gRPC FUSE vs VirtioFS) and/or WSL2 `/etc/wsl.conf` DrvFs `metadata` mount
-options — something changed around the last `ikeos` container restart that broke
-uid/mode metadata reporting for new writes to the Windows-hosted vault path.
+None identified.
