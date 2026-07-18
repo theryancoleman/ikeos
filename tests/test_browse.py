@@ -308,3 +308,60 @@ def test_dashboard_shows_no_draft_when_absent(client, tmp_path):
 
     assert resp.status_code == 200
     assert b"No draft" in resp.data
+
+
+def test_weak_signals_page_renders_with_no_config(client):
+    """GET /weak-signals degrades gracefully when CLAUDE_CONFIG_PATH is unset (get_weak_signals -> None)."""
+    with patch("app.routes.browse.get_weak_signals", return_value=None):
+        resp = client.get("/weak-signals")
+
+    assert resp.status_code == 200
+    assert b"Not configured" in resp.data
+
+
+def test_weak_signals_page_renders_with_data(client):
+    """GET /weak-signals renders signal rows, including threshold badges."""
+    mock_signals = [
+        {
+            "category": "rule-gap",
+            "skill_referenced": "housekeeping.md",
+            "pattern": "At-threshold pattern text",
+            "occurrences": 3,
+            "first_seen": "2026-06-01",
+            "last_seen": "2026-07-10",
+            "days_until_prune": 38,
+            "at_threshold": True,
+            "approaching_threshold": False,
+        },
+        {
+            "category": "friction-point",
+            "skill_referenced": None,
+            "pattern": "Approaching pattern text",
+            "occurrences": 2,
+            "first_seen": "2026-06-01",
+            "last_seen": "2026-06-01",
+            "days_until_prune": -2,
+            "at_threshold": False,
+            "approaching_threshold": True,
+        },
+    ]
+
+    with patch("app.routes.browse.get_weak_signals", return_value=mock_signals):
+        resp = client.get("/weak-signals")
+
+    assert resp.status_code == 200
+    body = resp.data.decode()
+    assert "At-threshold pattern text" in body
+    assert "Approaching pattern text" in body
+    assert "At threshold" in body
+    assert "Approaching" in body
+    assert "prune-eligible" in body
+
+
+def test_weak_signals_page_renders_empty_list(client):
+    """GET /weak-signals shows an empty-state message when configured but no signals exist."""
+    with patch("app.routes.browse.get_weak_signals", return_value=[]):
+        resp = client.get("/weak-signals")
+
+    assert resp.status_code == 200
+    assert b"No weak signals recorded yet" in resp.data

@@ -38,7 +38,12 @@
         </div>
       </div>
       <a href="{{ url_for('publishing.index') }}" class="nav-link {% if request.endpoint == 'publishing.index' %}is-active{% endif %}">Publishing</a>
-      <a href="{{ url_for('agents.metrics_view') }}" class="nav-link {% if request.endpoint == 'agents.metrics_view' %}is-active{% endif %}">Metrics</a>
+      <div class="nav-item{% if request.endpoint in ('agents.metrics_view', 'browse.weak_signals') %} is-active{% endif %}">
+        <a href="{{ url_for('agents.metrics_view') }}" class="nav-link {% if request.endpoint == 'agents.metrics_view' %}is-active{% endif %}">Metrics</a>
+        <div class="nav-subnav">
+          <a href="{{ url_for('browse.weak_signals') }}" class="nav-sub-link {% if request.endpoint == 'browse.weak_signals' %}is-active{% endif %}">Weak Signals</a>
+        </div>
+      </div>
 
       <div class="nav-end">
         {% if config_version %}<span class="nav-version">{{ config_version }}</span>{% endif %}

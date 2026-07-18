@@ -9,7 +9,7 @@ from app.services.umbrella import get_components
 from app.services.skills import get_skills_by_category
 from app.services.blog_drafts import latest_draft_name
 from app.services.platform import project_slug
-from app.services.reflection import get_reflection_health
+from app.services.reflection import get_reflection_health, get_weak_signals
 
 bp = Blueprint("browse", __name__)
 
@@ -136,6 +136,12 @@ def update_project_settings(slug):
 def skills():
     categories = get_skills_by_category()
     return render_template("skills.html", categories=categories)
+
+
+@bp.route("/weak-signals")
+def weak_signals():
+    signals = get_weak_signals()
+    return render_template("weak_signals.html", signals=signals)
 
 
 @bp.route("/graph")

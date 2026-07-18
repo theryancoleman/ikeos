@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block title %}Weak Signals{% endblock %}
+
+{% block content %}
+<div class="settings-page">
+
+  <header class="page-header">
+    <span class="ike-eyebrow">Reflection</span>
+    <h1>Weak Signal Log</h1>
+    <p class="page-subtitle">Candidate observations from <code>library/weak-signals.json</code> that haven't yet met the threshold for a vault entry. Read-only &mdash; agents manage this file directly.</p>
+  </header>
+
+  {% if signals is none %}
+  <div class="empty-state">
+    <p>Not configured. Set <code>CLAUDE_CONFIG_PATH</code> in <code>.env</code> to enable the weak-signal log.</p>
+  </div>
+  {% elif not signals %}
+  <div class="empty-state">
+    <p>No weak signals recorded yet.</p>
+  </div>
+  {% else %}
+  <div class="skills-table-wrap">
+    <table class="skills-table">
+      <thead>
+        <tr>
+          <th class="skills-col-cmd">Category / Skill</th>
+          <th class="skills-col-desc">Pattern</th>
+          <th>Occurrences</th>
+          <th>First seen</th>
+          <th>Last seen</th>
+          <th>Auto-prune</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in signals %}
+        <tr>
+          <td class="skills-cmd">
+            <code>{{ s.category }}</code>
+            {% if s.skill_referenced %}<div class="ws-skill">{{ s.skill_referenced }}</div>{% endif %}
+          </td>
+          <td class="skills-desc">{{ s.pattern }}</td>
+          <td>
+            {{ s.occurrences }}
+            {% if s.at_threshold %}
+              <span class="skill-badge skill-badge--new">At threshold</span>
+            {% elif s.approaching_threshold %}
+              <span class="skill-badge skill-badge--updated">Approaching</span>
+            {% endif %}
+          </td>
+          <td>{{ s.first_seen }}</td>
+          <td>{{ s.last_seen }}</td>
+          <td>
+            {% if s.days_until_prune is none %}
+              &mdash;
+            {% elif s.days_until_prune <= 0 %}
+              <span class="ws-prune-due">prune-eligible</span>
+            {% else %}
+              {{ s.days_until_prune }}d
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+</div>
+
+<style>
+.skills-table-wrap {
+  border: 1px solid var(--border-subtle, #1e1e1e);
+  border-radius: var(--radius-md, 8px);
+  overflow: hidden;
+}
+
+.skills-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-body-sm, 0.83rem);
+}
+
+.skills-table thead {
+  background: var(--bg-surface, #0e0e0e);
+  border-bottom: 1px solid var(--border-subtle, #1e1e1e);
+}
+
+.skills-table th {
+  text-align: left;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-tertiary, #8B82A4);
+}
+
+.skills-table td {
+  padding: 0.5rem 0.85rem;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border-subtle, #161616);
+  color: var(--text-secondary, #C8C0DA);
+}
+
+.skills-table tr:last-child td {
+  border-bottom: none;
+}
+
+.skills-table tr:hover td {
+  background: var(--bg-hover, rgba(124,58,237,0.05));
+}
+
+.skills-col-cmd { width: 220px; }
+
+.skills-cmd code {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.82rem;
+  color: var(--ike-soft-lavender, #B497FF);
+  background: var(--bg-inset, #111);
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.skills-desc {
+  color: var(--text-secondary, #C8C0DA);
+  line-height: 1.5;
+}
+
+.skill-badge {
+  display: inline-block;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 3px;
+  vertical-align: middle;
+  margin-left: 6px;
+  line-height: 1.7;
+}
+
+.skill-badge--new {
+  background: rgba(234, 88, 12, 0.15);
+  color: #FB923C;
+  border: 1px solid rgba(234, 88, 12, 0.3);
+}
+
+.skill-badge--updated {
+  background: rgba(96, 165, 250, 0.1);
+  color: #7EC8E3;
+  border: 1px solid rgba(96, 165, 250, 0.2);
+}
+
+.ws-skill {
+  margin-top: 2px;
+  font-size: 0.72rem;
+  color: var(--text-tertiary, #8B82A4);
+}
+
+.ws-prune-due {
+  color: #F87171;
+  font-weight: 600;
+}
+</style>
+{% endblock %}

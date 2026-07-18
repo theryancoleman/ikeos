@@ -51,3 +51,58 @@ def get_reflection_health() -> dict | None:
         "last_snapshot_week": last_week,
         "abrupt_endings": abrupt_count,
     }
+
+
+def get_weak_signals() -> list[dict] | None:
+    """Return enriched weak-signal entries, or None if the library file is unavailable.
+
+    Each entry carries the raw fields (category, skill_referenced, pattern,
+    occurrences, first_seen, last_seen) plus computed fields:
+      - days_until_prune: days remaining in the 45-day auto-prune window
+        (negative once the entry is past the window and eligible for pruning)
+      - at_threshold: occurrences >= promotion threshold (3)
+      - approaching_threshold: occurrences == threshold - 1 (2)
+
+    Sorted by occurrences descending, then by last_seen descending.
+    """
+    if not CLAUDE_CONFIG_DIR:
+        return None
+    lib = Path(CLAUDE_CONFIG_DIR) / "library"
+    signals_path = lib / "weak-signals.json"
+    if not signals_path.exists():
+        return None
+
+    try:
+        sig_data = json.loads(signals_path.read_text(encoding="utf-8"))
+        if not isinstance(sig_data, dict):
+            raise ValueError("unexpected JSON root type")
+    except (OSError, json.JSONDecodeError, ValueError) as exc:
+        logger.warning("Failed to read weak-signals file: %s", exc)
+        return None
+
+    today = datetime.date.today()
+    enriched = []
+    for s in sig_data.get("signals", []):
+        occurrences = s.get("occurrences", 0)
+        last_seen = s.get("last_seen", "")
+        try:
+            days_since = (today - datetime.date.fromisoformat(last_seen)).days
+            days_until_prune = _ACTIVE_DAYS - days_since
+        except ValueError:
+            days_until_prune = None
+
+        enriched.append({
+            "category": s.get("category", ""),
+            "skill_referenced": s.get("skill_referenced"),
+            "pattern": s.get("pattern", ""),
+            "occurrences": occurrences,
+            "first_seen": s.get("first_seen", ""),
+            "last_seen": last_seen,
+            "days_until_prune": days_until_prune,
+            "at_threshold": occurrences >= _PROMOTION_THRESHOLD,
+            "approaching_threshold": occurrences == _PROMOTION_THRESHOLD - 1,
+        })
+
+    enriched.sort(key=lambda s: s["last_seen"], reverse=True)
+    enriched.sort(key=lambda s: s["occurrences"], reverse=True)
+    return enriched
