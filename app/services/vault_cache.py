@@ -4,9 +4,11 @@ from pathlib import Path
 
 VAULT_PATH = Path(os.environ.get("VAULT_PATH", "/vault"))
 
-VALID_STATUSES: frozenset[str] = frozenset({"new", "open", "in-progress", "done", "deferred"})
-DECISION_STATUSES: frozenset[str] = frozenset({"proposed", "accepted", "rejected", "superseded"})
-EXPERIMENT_STATUSES: frozenset[str] = frozenset({"running", "complete", "abandoned"})
+# Tuples (not frozensets) so callers can both validate membership (`in`) and
+# render options in a meaningful workflow order — no separate ordered list needed.
+VALID_STATUSES: tuple[str, ...] = ("new", "open", "in-progress", "done", "deferred")
+DECISION_STATUSES: tuple[str, ...] = ("proposed", "accepted", "rejected", "superseded")
+EXPERIMENT_STATUSES: tuple[str, ...] = ("running", "complete", "abandoned")
 
 ENTRY_TYPE_CONFIG: dict[str, dict] = {
     "note":       {"folder": "notes",       "tag": "documentation", "initial_status": "new",     "valid_statuses": VALID_STATUSES},

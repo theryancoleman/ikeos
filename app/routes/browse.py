@@ -3,7 +3,7 @@ from app.services.vault import (
     get_projects_with_meta, read_entries, read_entry,
     update_entry_status, write_project_meta,
     get_vault_graph, read_housekeeping_heartbeat,
-    project_health_signals,
+    project_health_signals, ENTRY_TYPE_CONFIG, DECISION_STATUSES,
 )
 from app.services.umbrella import get_components
 from app.services.skills import get_skills_by_category
@@ -97,7 +97,14 @@ def entry(name, slug):
     if e is None:
         abort(404)
     health = project_health_signals(name)
-    return render_template("entry.html", entry=e, project=name, health=health)
+    if e.get("type") == "decision":
+        valid_statuses = DECISION_STATUSES
+    else:
+        valid_statuses = ENTRY_TYPE_CONFIG.get(e.get("type"), {}).get("valid_statuses", ())
+    return render_template(
+        "entry.html", entry=e, project=name, health=health,
+        valid_statuses=valid_statuses,
+    )
 
 
 @bp.route("/projects/<name>/<slug>/status", methods=["POST"])

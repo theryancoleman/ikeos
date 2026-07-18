@@ -61,6 +61,21 @@ def test_entry_view_404_for_missing(client):
     assert response.status_code == 404
 
 
+def test_entry_view_status_options_match_experiment_type(client, vault):
+    """Experiment entries must offer running/complete/abandoned, not the generic status set."""
+    with patch("app.services.vault_cache.VAULT_PATH", vault):
+        slug = write_entry({
+            "type": "experiment", "project": "bcr-waivers", "title": "Try something",
+            "body": "",
+        })
+        response = client.get(f"/projects/bcr-waivers/{slug}")
+        assert response.status_code == 200
+        for expected in (b"running", b"complete", b"abandoned"):
+            assert expected in response.data
+        for unexpected in (b'value="new"', b'value="open"', b'value="in-progress"', b'value="done"', b'value="deferred"'):
+            assert unexpected not in response.data
+
+
 def test_entry_view_shows_health_panel(client):
     """Entry detail page renders the vault-maintenance quick-action panel."""
     response = client.get("/projects/bcr-waivers/2026-05-26-test-note")

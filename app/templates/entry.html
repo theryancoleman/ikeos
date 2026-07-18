@@ -10,7 +10,7 @@
           action="{{ url_for('browse.update_status', name=project, slug=entry.slug) }}"
           class="status-form">
       <select name="status" class="status-select" onchange="this.form.submit()">
-        {% for s in ['new', 'open', 'in-progress', 'done', 'deferred'] %}
+        {% for s in valid_statuses %}
           <option value="{{ s }}" {% if entry.status == s %}selected{% endif %}>{{ s }}</option>
         {% endfor %}
       </select>
