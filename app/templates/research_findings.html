@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Research Findings{% endblock %}
+
+{% block content %}
+<div class="settings-page">
+
+  <header class="page-header">
+    <span class="ike-eyebrow"><a href="{{ url_for('housekeeping.index') }}">Housekeeping</a> / Research Findings</span>
+    <h1>Research Findings</h1>
+    <p class="page-subtitle">
+      {% if generated_at %}Generated {{ generated_at }} · {{ summaries | length }} sources
+      {% else %}No research run yet{% endif %}
+    </p>
+  </header>
+
+  <div style="display:flex; gap:10px; align-items:center; margin-bottom:20px;">
+    <a href="{{ url_for('housekeeping.index') }}" class="pill">&larr; Housekeeping</a>
+    <a href="{{ url_for('research_sources.index') }}" class="pill">Manage Sources</a>
+  </div>
+
+  {% if summaries %}
+  <div class="hk-findings-list">
+    {% for s in summaries %}
+    <article class="hk-panel hk-finding-card">
+      <div class="hk-finding-card__head">
+        <a href="{{ s.url }}" target="_blank" rel="noopener" class="hk-finding-card__label">{{ s.label }}</a>
+        {% if s.notable_updates %}
+        <span class="hk-pill hk-pill--due">{{ s.notable_updates | length }} notable</span>
+        {% endif %}
+      </div>
+      {% if s.notable_updates %}
+      <ul class="hk-finding-card__notable">
+        {% for n in s.notable_updates %}<li>{{ n }}</li>{% endfor %}
+      </ul>
+      {% endif %}
+      {% if s.key_points %}
+      <details class="hk-finding-card__details">
+        <summary>All key points ({{ s.key_points | length }})</summary>
+        <ul>{% for k in s.key_points %}<li>{{ k }}</li>{% endfor %}</ul>
+      </details>
+      {% endif %}
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="hk-widget">
+    <p class="empty">No research findings yet.</p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

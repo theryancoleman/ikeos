@@ -14,6 +14,7 @@ from app.services.driver import (
     run_platform_review,
 )
 from app.services.platform import project_slug
+from app.services.research_findings import get_research_findings
 from app.services.reviews import latest_review_name, read_latest_review
 from app.services.scheduler import get_config_with_next_run, trigger_now, update_config
 from app.services.session_client import get_session_status
@@ -305,6 +306,18 @@ def weekly_review_run():
     if not result.ok:
         return jsonify({"error": "Failed to create review session"}), 502
     return jsonify({"ok": True, "session_id": result.session_id}), 200
+
+
+@bp.route("/housekeeping/research-findings")
+def research_findings():
+    findings = get_research_findings()
+    if findings is None:
+        return render_template("research_findings.html", generated_at=None, summaries=[])
+    return render_template(
+        "research_findings.html",
+        generated_at=findings["generated_at"],
+        summaries=findings["summaries"],
+    )
 
 
 @bp.route("/housekeeping/run", methods=["POST"])

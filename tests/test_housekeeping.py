@@ -765,3 +765,24 @@ def test_weekly_review_run_creates_session_when_enabled(client, monkeypatch):
     data = resp.get_json()
     assert data["ok"] is True
     assert data["session_id"] == "review-sess-1"
+
+
+# ── GET /housekeeping/research-findings ──
+
+def test_research_findings_route_renders(client):
+    fake_findings = {
+        "generated_at": "2026-07-16T14:00:00Z",
+        "summaries": [{"url": "https://example.com", "label": "Example", "key_points": [], "notable_updates": ["Something happened"]}],
+    }
+    with patch("app.routes.housekeeping.get_research_findings", return_value=fake_findings):
+        resp = client.get("/housekeeping/research-findings")
+    assert resp.status_code == 200
+    assert b"Example" in resp.data
+    assert b"Something happened" in resp.data
+
+
+def test_research_findings_route_handles_none(client):
+    with patch("app.routes.housekeeping.get_research_findings", return_value=None):
+        resp = client.get("/housekeeping/research-findings")
+    assert resp.status_code == 200
+    assert b"No research findings yet" in resp.data
