@@ -39,8 +39,10 @@ def _age_str(last_run: str | None) -> str:
     if not last_run or last_run == "null":
         return "Never"
     try:
-        dt = datetime.fromisoformat(last_run)
-        days = (datetime.now() - dt.replace(tzinfo=None)).days
+        dt = datetime.fromisoformat(last_run.replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        days = (datetime.now(timezone.utc) - dt).days
         if days == 0:
             return "Today"
         if days == 1:
