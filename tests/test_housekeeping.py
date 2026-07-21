@@ -686,6 +686,49 @@ def test_blog_draft_rewrite_409_sends_command_to_running_session(client, tmp_pat
     assert data["session_id"] == "existing-rw"
 
 
+def test_blog_drafts_list_route_renders(client, monkeypatch, tmp_path):
+    monkeypatch.setenv("AIOS_BLOG_POSTS_DIR", str(tmp_path))
+    (tmp_path / "2026-07-01-weekly-draft.md").write_text("body", encoding="utf-8")
+    resp = client.get("/housekeeping/blog-drafts")
+    assert resp.status_code == 200
+    assert b"2026-07-01-weekly-draft.md" in resp.data
+
+
+def test_blog_draft_delete_requires_token(client, monkeypatch, tmp_path):
+    monkeypatch.setenv("CAPTURE_TOKEN", "tok")
+    monkeypatch.setenv("AIOS_BLOG_POSTS_DIR", str(tmp_path))
+    (tmp_path / "2026-07-01-weekly-draft.md").write_text("body", encoding="utf-8")
+    resp = client.post("/housekeeping/blog-drafts/2026-07-01-weekly-draft.md/delete")
+    assert resp.status_code == 401
+
+
+def test_blog_draft_delete_success(client, monkeypatch, tmp_path):
+    monkeypatch.setenv("CAPTURE_TOKEN", "tok")
+    monkeypatch.setenv("AIOS_BLOG_POSTS_DIR", str(tmp_path))
+    (tmp_path / "2026-07-01-weekly-draft.md").write_text("body", encoding="utf-8")
+    resp = client.post("/housekeeping/blog-drafts/2026-07-01-weekly-draft.md/delete",
+                        headers={"X-Capture-Token": "tok"})
+    assert resp.status_code == 200
+    assert not (tmp_path / "2026-07-01-weekly-draft.md").exists()
+
+
+def test_blog_draft_delete_not_found(client, monkeypatch, tmp_path):
+    monkeypatch.setenv("CAPTURE_TOKEN", "tok")
+    monkeypatch.setenv("AIOS_BLOG_POSTS_DIR", str(tmp_path))
+    resp = client.post("/housekeeping/blog-drafts/nonexistent-weekly-draft.md/delete",
+                        headers={"X-Capture-Token": "tok"})
+    assert resp.status_code == 404
+
+
+def test_blog_draft_editor_with_specific_filename(client, monkeypatch, tmp_path):
+    monkeypatch.setenv("AIOS_BLOG_POSTS_DIR", str(tmp_path))
+    (tmp_path / "2026-06-01-weekly-draft.md").write_text("old content", encoding="utf-8")
+    (tmp_path / "2026-07-01-weekly-draft.md").write_text("new content", encoding="utf-8")
+    resp = client.get("/housekeeping/blog-draft/2026-06-01-weekly-draft.md")
+    assert resp.status_code == 200
+    assert b"old content" in resp.data
+
+
 def test_blog_draft_publish_creates_session(client, tmp_path, monkeypatch):
     monkeypatch.setenv("CAPTURE_TOKEN", "tok")
     monkeypatch.setenv("AIOS_BLOG_POSTS_DIR", str(tmp_path))

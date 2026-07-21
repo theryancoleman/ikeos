@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 from flask import Blueprint, render_template, request, jsonify
 
 from app.routes.auth import require_capture_token
-from app.services.blog_drafts import latest_draft_name, read_draft_bundle, save_draft
+from app.services.blog_drafts import delete_draft, latest_draft_name, list_drafts, read_draft_bundle, save_draft
 from app.services.capabilities import get_capabilities, is_enabled, update_capability
 from app.services.driver import (
     publish_blog_draft,
@@ -229,8 +229,9 @@ def run_task(filename: str):
 
 
 @bp.route("/housekeeping/blog-draft")
-def blog_draft_editor():
-    bundle = read_draft_bundle()
+@bp.route("/housekeeping/blog-draft/<filename>")
+def blog_draft_editor(filename: str | None = None):
+    bundle = read_draft_bundle(filename)
     if not bundle:
         return render_template("housekeeping.html", **_housekeeping_context(), no_draft=True)
     return render_template(
@@ -241,6 +242,19 @@ def blog_draft_editor():
         bluesky_filename=bundle["bluesky_filename"],
         capture_token=CAPTURE_TOKEN,
     )
+
+
+@bp.route("/housekeeping/blog-drafts")
+def blog_drafts_list():
+    return render_template("blog_drafts.html", drafts=list_drafts(), capture_token=CAPTURE_TOKEN)
+
+
+@bp.route("/housekeeping/blog-drafts/<filename>/delete", methods=["POST"])
+@require_capture_token
+def blog_draft_delete(filename: str):
+    if not delete_draft(filename):
+        return jsonify({"error": "Draft not found"}), 404
+    return jsonify({"ok": True}), 200
 
 
 @bp.route("/housekeeping/blog-draft/save", methods=["POST"])
