@@ -53,6 +53,10 @@ def update_housekeeping_fields(
         post = frontmatter.load(filepath)
         for k, v in updates.items():
             post.metadata[k] = v
+        if "enabled" in updates:
+            tags = [t for t in post.metadata.get("tags", []) if t not in ("status/enabled", "status/disabled")]
+            tags.append("status/enabled" if updates["enabled"] == "true" else "status/disabled")
+            post.metadata["tags"] = tags
         with open(temp_filepath, "w", encoding="utf-8") as f:
             f.write(frontmatter.dumps(post))
         temp_filepath.replace(filepath)
