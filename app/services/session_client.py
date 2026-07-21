@@ -167,3 +167,18 @@ def get_session_status(session_id: str) -> dict | None:
         return None
     sessions = resp.json()
     return next((s for s in sessions if s.get("id") == session_id), None)
+
+
+def list_active_session_names(prefix: str) -> list[str]:
+    """Names of currently-active sessions whose name starts with `prefix`."""
+    try:
+        resp = requests.get(f"{session_manager_url()}/sessions", timeout=3)
+    except requests.RequestException:
+        return []
+    if not resp.ok:
+        return []
+    sessions = resp.json()
+    return [
+        s.get("name", "") for s in sessions
+        if s.get("status") == "active" and s.get("name", "").startswith(prefix)
+    ]

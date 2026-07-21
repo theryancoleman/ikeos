@@ -2,7 +2,7 @@ import pytest
 import requests
 from pathlib import Path
 from unittest.mock import patch, MagicMock
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 
 @pytest.fixture
@@ -786,3 +786,72 @@ def test_research_findings_route_handles_none(client):
         resp = client.get("/housekeeping/research-findings")
     assert resp.status_code == 200
     assert b"No research findings yet" in resp.data
+
+
+# ── _run_state ──
+
+from app.routes.housekeeping import _run_state
+
+
+def test_run_state_never_when_nothing_recorded():
+    with patch("app.routes.housekeeping.list_active_session_names", return_value=[]):
+        state, label, headline = _run_state({"last_triggered": None}, {"last_run": None})
+    assert state == "never"
+    assert label == "Never run"
+
+
+def test_run_state_running_when_active_session_exists():
+    with patch("app.routes.housekeeping.list_active_session_names",
+               return_value=["housekeeping-20260721"]):
+        state, label, headline = _run_state(
+            {"last_triggered": "2026-07-21T16:00:00-04:00"},
+            {"last_run": None},
+        )
+    assert state == "running"
+    assert label == "Running"
+
+
+def test_run_state_stalled_when_triggered_but_never_completed():
+    old_trigger = (datetime.now(timezone.utc) - timedelta(hours=2)).isoformat()
+    with patch("app.routes.housekeeping.list_active_session_names", return_value=[]):
+        state, label, headline = _run_state({"last_triggered": old_trigger}, {"last_run": None})
+    assert state == "stalled"
+    assert "never reported completion" in headline
+
+
+def test_run_state_not_stalled_within_grace_window():
+    recent_trigger = (datetime.now(timezone.utc) - timedelta(minutes=5)).isoformat()
+    with patch("app.routes.housekeeping.list_active_session_names", return_value=[]):
+        state, label, headline = _run_state({"last_triggered": recent_trigger}, {"last_run": None})
+    assert state != "stalled"
+
+
+def test_run_state_failed_when_tasks_failed_nonzero():
+    with patch("app.routes.housekeeping.list_active_session_names", return_value=[]):
+        state, label, headline = _run_state(
+            {"last_triggered": "2026-07-16T14:00:00Z"},
+            {"last_run": "2026-07-16T14:17:16Z", "tasks_failed": "2"},
+        )
+    assert state == "failed"
+    assert label == "Attention"
+
+
+def test_run_state_overdue_when_last_run_old():
+    old_run = (datetime.now(timezone.utc) - timedelta(days=15)).isoformat()
+    with patch("app.routes.housekeeping.list_active_session_names", return_value=[]):
+        state, label, headline = _run_state(
+            {"last_triggered": old_run},
+            {"last_run": old_run, "tasks_failed": "0"},
+        )
+    assert state == "overdue"
+
+
+def test_run_state_ok_when_recent_and_no_failures():
+    recent_run = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
+    with patch("app.routes.housekeeping.list_active_session_names", return_value=[]):
+        state, label, headline = _run_state(
+            {"last_triggered": recent_run},
+            {"last_run": recent_run, "tasks_failed": "0"},
+        )
+    assert state == "ok"
+    assert label == "Healthy"

@@ -1,6 +1,6 @@
 import os
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 from flask import Blueprint, render_template, request, jsonify
 
@@ -17,7 +17,7 @@ from app.services.platform import project_slug
 from app.services.research_findings import get_research_findings
 from app.services.reviews import latest_review_name, read_latest_review
 from app.services.scheduler import get_config_with_next_run, trigger_now, update_config
-from app.services.session_client import get_session_status
+from app.services.session_client import get_session_status, list_active_session_names
 from app.services.metrics import read_events_by_type
 from app.services.vault import (
     delete_housekeeping_task,
@@ -63,6 +63,50 @@ def _widget_status(heartbeat: dict) -> str:
     if heartbeat.get("tasks_failed", "0") != "0":
         return "failed"
     return "ok"
+
+
+_STALL_THRESHOLD_MINUTES = 45
+_OVERDUE_DAYS = 9
+
+
+def _parse_dt(value: str | None) -> datetime | None:
+    if not value or value == "null":
+        return None
+    try:
+        dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+    except (ValueError, TypeError):
+        return None
+
+
+def _run_state(schedule: dict, heartbeat: dict) -> tuple[str, str, str]:
+    """Returns (state, label, headline) describing overall housekeeping health."""
+    if list_active_session_names("housekeeping-"):
+        return "running", "Running", "Housekeeping is running now…"
+
+    triggered_dt = _parse_dt(schedule.get("last_triggered"))
+    last_run_dt = _parse_dt(heartbeat.get("last_run"))
+
+    if triggered_dt is None and last_run_dt is None:
+        return "never", "Never run", "Housekeeping has not run yet."
+
+    if triggered_dt is not None and (last_run_dt is None or last_run_dt < triggered_dt):
+        elapsed = datetime.now(timezone.utc) - triggered_dt
+        if elapsed > timedelta(minutes=_STALL_THRESHOLD_MINUTES):
+            return "stalled", "Stalled", (
+                f"Triggered {_age_str(schedule.get('last_triggered'))} but never reported "
+                f"completion — check session logs."
+            )
+
+    if heartbeat.get("tasks_failed", "0") not in ("0", 0):
+        n = heartbeat.get("tasks_failed")
+        return "failed", "Attention", f"{n} task(s) failed on the last run ({_age_str(heartbeat.get('last_run'))})."
+
+    if last_run_dt is not None:
+        if (datetime.now(timezone.utc) - last_run_dt).days > _OVERDUE_DAYS:
+            return "overdue", "Overdue", f"No successful run since {_age_str(heartbeat.get('last_run'))}."
+
+    return "ok", "Healthy", f"Last run completed successfully — {_age_str(heartbeat.get('last_run'))}."
 
 
 @bp.route("/housekeeping")
@@ -246,17 +290,25 @@ def _housekeeping_context() -> dict:
     tasks = read_housekeeping_tasks()
     heartbeat = read_housekeeping_heartbeat(project_slug())
     schedule = get_config_with_next_run()
+    run_state, run_state_label, run_state_headline = _run_state(schedule, heartbeat)
+    findings = get_research_findings()
     return dict(
         tasks=tasks,
         heartbeat=heartbeat,
         hk_age=_age_str(heartbeat.get("last_run")),
         hk_status=_widget_status(heartbeat),
+        run_state=run_state,
+        run_state_label=run_state_label,
+        run_state_headline=run_state_headline,
         schedule=schedule,
         capture_token=CAPTURE_TOKEN,
         blog_draft=latest_draft_name(),
         weekly_review_file=latest_review_name(),
         capabilities=get_capabilities(),
         recent_runs=read_events_by_type("housekeeping.run", limit=10),
+        research_generated_at=findings["generated_at"] if findings else None,
+        research_age_str=_age_str(findings["generated_at"]) if findings else None,
+        research_source_count=len(findings["summaries"]) if findings else 0,
     )
 
 
