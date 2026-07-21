@@ -1,11 +1,11 @@
 import os
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 from flask import Blueprint, render_template, request, jsonify
 
 from app.routes.auth import require_capture_token
-from app.services.blog_drafts import latest_draft_name, read_draft_bundle, save_draft
+from app.services.blog_drafts import delete_draft, latest_draft_name, list_drafts, read_draft_bundle, save_draft
 from app.services.capabilities import get_capabilities, is_enabled, update_capability
 from app.services.driver import (
     publish_blog_draft,
@@ -14,9 +14,10 @@ from app.services.driver import (
     run_platform_review,
 )
 from app.services.platform import project_slug
+from app.services.research_findings import get_research_findings
 from app.services.reviews import latest_review_name, read_latest_review
 from app.services.scheduler import get_config_with_next_run, trigger_now, update_config
-from app.services.session_client import get_session_status
+from app.services.session_client import get_session_status, list_active_session_names
 from app.services.metrics import read_events_by_type
 from app.services.vault import (
     delete_housekeeping_task,
@@ -38,8 +39,10 @@ def _age_str(last_run: str | None) -> str:
     if not last_run or last_run == "null":
         return "Never"
     try:
-        dt = datetime.fromisoformat(last_run)
-        days = (datetime.now() - dt.replace(tzinfo=None)).days
+        dt = datetime.fromisoformat(last_run.replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        days = (datetime.now(timezone.utc) - dt).days
         if days == 0:
             return "Today"
         if days == 1:
@@ -59,9 +62,53 @@ def _widget_status(heartbeat: dict) -> str:
             return "overdue"
     except (ValueError, TypeError):
         return "overdue"
-    if heartbeat.get("tasks_failed", "0") != "0":
+    if heartbeat.get("tasks_failed", "0") not in ("0", 0):
         return "failed"
     return "ok"
+
+
+_STALL_THRESHOLD_MINUTES = 45
+_OVERDUE_DAYS = 9
+
+
+def _parse_dt(value: str | None) -> datetime | None:
+    if not value or value == "null":
+        return None
+    try:
+        dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+    except (ValueError, TypeError):
+        return None
+
+
+def _run_state(schedule: dict, heartbeat: dict) -> tuple[str, str, str]:
+    """Returns (state, label, headline) describing overall housekeeping health."""
+    if list_active_session_names("housekeeping-"):
+        return "running", "Running", "Housekeeping is running now…"
+
+    triggered_dt = _parse_dt(schedule.get("last_triggered"))
+    last_run_dt = _parse_dt(heartbeat.get("last_run"))
+
+    if triggered_dt is None and last_run_dt is None:
+        return "never", "Never run", "Housekeeping has not run yet."
+
+    if triggered_dt is not None and (last_run_dt is None or last_run_dt < triggered_dt):
+        elapsed = datetime.now(timezone.utc) - triggered_dt
+        if elapsed > timedelta(minutes=_STALL_THRESHOLD_MINUTES):
+            return "stalled", "Stalled", (
+                f"Triggered {_age_str(schedule.get('last_triggered'))} but never reported "
+                f"completion — check session logs."
+            )
+
+    if heartbeat.get("tasks_failed", "0") not in ("0", 0):
+        n = heartbeat.get("tasks_failed")
+        return "failed", "Attention", f"{n} task(s) failed on the last run ({_age_str(heartbeat.get('last_run'))})."
+
+    if last_run_dt is not None:
+        if (datetime.now(timezone.utc) - last_run_dt).days > _OVERDUE_DAYS:
+            return "overdue", "Overdue", f"No successful run since {_age_str(heartbeat.get('last_run'))}."
+
+    return "ok", "Healthy", f"Last run completed successfully — {_age_str(heartbeat.get('last_run'))}."
 
 
 @bp.route("/housekeeping")
@@ -184,8 +231,9 @@ def run_task(filename: str):
 
 
 @bp.route("/housekeeping/blog-draft")
-def blog_draft_editor():
-    bundle = read_draft_bundle()
+@bp.route("/housekeeping/blog-draft/<filename>")
+def blog_draft_editor(filename: str | None = None):
+    bundle = read_draft_bundle(filename)
     if not bundle:
         return render_template("housekeeping.html", **_housekeeping_context(), no_draft=True)
     return render_template(
@@ -196,6 +244,19 @@ def blog_draft_editor():
         bluesky_filename=bundle["bluesky_filename"],
         capture_token=CAPTURE_TOKEN,
     )
+
+
+@bp.route("/housekeeping/blog-drafts")
+def blog_drafts_list():
+    return render_template("blog_drafts.html", drafts=list_drafts(), capture_token=CAPTURE_TOKEN)
+
+
+@bp.route("/housekeeping/blog-drafts/<filename>/delete", methods=["POST"])
+@require_capture_token
+def blog_draft_delete(filename: str):
+    if not delete_draft(filename):
+        return jsonify({"error": "Draft not found"}), 404
+    return jsonify({"ok": True}), 200
 
 
 @bp.route("/housekeeping/blog-draft/save", methods=["POST"])
@@ -245,17 +306,25 @@ def _housekeeping_context() -> dict:
     tasks = read_housekeeping_tasks()
     heartbeat = read_housekeeping_heartbeat(project_slug())
     schedule = get_config_with_next_run()
+    run_state, run_state_label, run_state_headline = _run_state(schedule, heartbeat)
+    findings = get_research_findings()
     return dict(
         tasks=tasks,
         heartbeat=heartbeat,
         hk_age=_age_str(heartbeat.get("last_run")),
         hk_status=_widget_status(heartbeat),
+        run_state=run_state,
+        run_state_label=run_state_label,
+        run_state_headline=run_state_headline,
         schedule=schedule,
         capture_token=CAPTURE_TOKEN,
         blog_draft=latest_draft_name(),
         weekly_review_file=latest_review_name(),
         capabilities=get_capabilities(),
         recent_runs=read_events_by_type("housekeeping.run", limit=10),
+        research_generated_at=findings["generated_at"] if findings else None,
+        research_age_str=_age_str(findings["generated_at"]) if findings else None,
+        research_source_count=len(findings["summaries"]) if findings else 0,
     )
 
 
@@ -305,6 +374,18 @@ def weekly_review_run():
     if not result.ok:
         return jsonify({"error": "Failed to create review session"}), 502
     return jsonify({"ok": True, "session_id": result.session_id}), 200
+
+
+@bp.route("/housekeeping/research-findings")
+def research_findings():
+    findings = get_research_findings()
+    if findings is None:
+        return render_template("research_findings.html", generated_at=None, summaries=[])
+    return render_template(
+        "research_findings.html",
+        generated_at=findings["generated_at"],
+        summaries=findings["summaries"],
+    )
 
 
 @bp.route("/housekeeping/run", methods=["POST"])

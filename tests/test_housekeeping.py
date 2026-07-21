@@ -2,7 +2,7 @@ import pytest
 import requests
 from pathlib import Path
 from unittest.mock import patch, MagicMock
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 
 @pytest.fixture
@@ -484,7 +484,7 @@ def test_blog_draft_status_present_when_draft_exists(client, tmp_path, monkeypat
 
 
 def test_blog_draft_status_no_draft(client, tmp_path, monkeypatch):
-    """GET /housekeeping shows 'No draft' when posts dir is empty."""
+    """GET /housekeeping shows 'None yet' on the Blog Draft output card when posts dir is empty."""
     empty_dir = tmp_path / "posts"
     empty_dir.mkdir(parents=True)
 
@@ -492,7 +492,7 @@ def test_blog_draft_status_no_draft(client, tmp_path, monkeypatch):
     resp = client.get("/housekeeping")
 
     assert resp.status_code == 200
-    assert b"No draft" in resp.data
+    assert b"None yet" in resp.data
 
 
 # ── blog-draft auth guard ──
@@ -686,6 +686,49 @@ def test_blog_draft_rewrite_409_sends_command_to_running_session(client, tmp_pat
     assert data["session_id"] == "existing-rw"
 
 
+def test_blog_drafts_list_route_renders(client, monkeypatch, tmp_path):
+    monkeypatch.setenv("AIOS_BLOG_POSTS_DIR", str(tmp_path))
+    (tmp_path / "2026-07-01-weekly-draft.md").write_text("body", encoding="utf-8")
+    resp = client.get("/housekeeping/blog-drafts")
+    assert resp.status_code == 200
+    assert b"2026-07-01-weekly-draft.md" in resp.data
+
+
+def test_blog_draft_delete_requires_token(client, monkeypatch, tmp_path):
+    monkeypatch.setenv("CAPTURE_TOKEN", "tok")
+    monkeypatch.setenv("AIOS_BLOG_POSTS_DIR", str(tmp_path))
+    (tmp_path / "2026-07-01-weekly-draft.md").write_text("body", encoding="utf-8")
+    resp = client.post("/housekeeping/blog-drafts/2026-07-01-weekly-draft.md/delete")
+    assert resp.status_code == 401
+
+
+def test_blog_draft_delete_success(client, monkeypatch, tmp_path):
+    monkeypatch.setenv("CAPTURE_TOKEN", "tok")
+    monkeypatch.setenv("AIOS_BLOG_POSTS_DIR", str(tmp_path))
+    (tmp_path / "2026-07-01-weekly-draft.md").write_text("body", encoding="utf-8")
+    resp = client.post("/housekeeping/blog-drafts/2026-07-01-weekly-draft.md/delete",
+                        headers={"X-Capture-Token": "tok"})
+    assert resp.status_code == 200
+    assert not (tmp_path / "2026-07-01-weekly-draft.md").exists()
+
+
+def test_blog_draft_delete_not_found(client, monkeypatch, tmp_path):
+    monkeypatch.setenv("CAPTURE_TOKEN", "tok")
+    monkeypatch.setenv("AIOS_BLOG_POSTS_DIR", str(tmp_path))
+    resp = client.post("/housekeeping/blog-drafts/nonexistent-weekly-draft.md/delete",
+                        headers={"X-Capture-Token": "tok"})
+    assert resp.status_code == 404
+
+
+def test_blog_draft_editor_with_specific_filename(client, monkeypatch, tmp_path):
+    monkeypatch.setenv("AIOS_BLOG_POSTS_DIR", str(tmp_path))
+    (tmp_path / "2026-06-01-weekly-draft.md").write_text("old content", encoding="utf-8")
+    (tmp_path / "2026-07-01-weekly-draft.md").write_text("new content", encoding="utf-8")
+    resp = client.get("/housekeeping/blog-draft/2026-06-01-weekly-draft.md")
+    assert resp.status_code == 200
+    assert b"old content" in resp.data
+
+
 def test_blog_draft_publish_creates_session(client, tmp_path, monkeypatch):
     monkeypatch.setenv("CAPTURE_TOKEN", "tok")
     monkeypatch.setenv("AIOS_BLOG_POSTS_DIR", str(tmp_path))
@@ -765,3 +808,101 @@ def test_weekly_review_run_creates_session_when_enabled(client, monkeypatch):
     data = resp.get_json()
     assert data["ok"] is True
     assert data["session_id"] == "review-sess-1"
+
+
+# ── GET /housekeeping/research-findings ──
+
+def test_research_findings_route_renders(client):
+    fake_findings = {
+        "generated_at": "2026-07-16T14:00:00Z",
+        "summaries": [{"url": "https://example.com", "label": "Example", "key_points": [], "notable_updates": ["Something happened"]}],
+    }
+    with patch("app.routes.housekeeping.get_research_findings", return_value=fake_findings):
+        resp = client.get("/housekeeping/research-findings")
+    assert resp.status_code == 200
+    assert b"Example" in resp.data
+    assert b"Something happened" in resp.data
+
+
+def test_research_findings_route_handles_none(client):
+    with patch("app.routes.housekeeping.get_research_findings", return_value=None):
+        resp = client.get("/housekeeping/research-findings")
+    assert resp.status_code == 200
+    assert b"No research findings yet" in resp.data
+
+
+# ── _run_state ──
+
+from app.routes.housekeeping import _run_state
+
+
+def test_run_state_never_when_nothing_recorded():
+    with patch("app.routes.housekeeping.list_active_session_names", return_value=[]):
+        state, label, headline = _run_state({"last_triggered": None}, {"last_run": None})
+    assert state == "never"
+    assert label == "Never run"
+
+
+def test_run_state_running_when_active_session_exists():
+    with patch("app.routes.housekeeping.list_active_session_names",
+               return_value=["housekeeping-20260721"]):
+        state, label, headline = _run_state(
+            {"last_triggered": "2026-07-21T16:00:00-04:00"},
+            {"last_run": None},
+        )
+    assert state == "running"
+    assert label == "Running"
+
+
+def test_run_state_stalled_when_triggered_but_never_completed():
+    old_trigger = (datetime.now(timezone.utc) - timedelta(hours=2)).isoformat()
+    with patch("app.routes.housekeeping.list_active_session_names", return_value=[]):
+        state, label, headline = _run_state({"last_triggered": old_trigger}, {"last_run": None})
+    assert state == "stalled"
+    assert "never reported completion" in headline
+
+
+def test_run_state_not_stalled_within_grace_window():
+    recent_trigger = (datetime.now(timezone.utc) - timedelta(minutes=5)).isoformat()
+    with patch("app.routes.housekeeping.list_active_session_names", return_value=[]):
+        state, label, headline = _run_state({"last_triggered": recent_trigger}, {"last_run": None})
+    assert state != "stalled"
+
+
+def test_run_state_failed_when_tasks_failed_nonzero():
+    with patch("app.routes.housekeeping.list_active_session_names", return_value=[]):
+        state, label, headline = _run_state(
+            {"last_triggered": "2026-07-16T14:00:00Z"},
+            {"last_run": "2026-07-16T14:17:16Z", "tasks_failed": "2"},
+        )
+    assert state == "failed"
+    assert label == "Attention"
+
+
+def test_run_state_overdue_when_last_run_old():
+    old_run = (datetime.now(timezone.utc) - timedelta(days=15)).isoformat()
+    with patch("app.routes.housekeeping.list_active_session_names", return_value=[]):
+        state, label, headline = _run_state(
+            {"last_triggered": old_run},
+            {"last_run": old_run, "tasks_failed": "0"},
+        )
+    assert state == "overdue"
+
+
+def test_run_state_ok_when_recent_and_no_failures():
+    recent_run = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
+    with patch("app.routes.housekeeping.list_active_session_names", return_value=[]):
+        state, label, headline = _run_state(
+            {"last_triggered": recent_run},
+            {"last_run": recent_run, "tasks_failed": "0"},
+        )
+    assert state == "ok"
+    assert label == "Healthy"
+
+
+def test_housekeeping_index_includes_run_state_and_outputs_context(client):
+    resp = client.get("/housekeeping")
+    assert resp.status_code == 200
+    assert b"hk-status-bar" in resp.data
+    assert b"This Week" in resp.data
+    assert b"Research Findings" in resp.data

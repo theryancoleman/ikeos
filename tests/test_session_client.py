@@ -175,3 +175,36 @@ def test_get_session_status_missing_or_down(monkeypatch):
     with patch("app.services.session_client.requests.get",
                side_effect=req_lib.RequestException("down")):
         assert get_session_status("s1") is None
+
+
+from app.services.session_client import list_active_session_names
+
+
+def test_list_active_session_names_filters_by_prefix_and_status(monkeypatch):
+    monkeypatch.setenv("SESSION_MANAGER_URL", "http://mock-sm")
+    mock_resp = MagicMock()
+    mock_resp.ok = True
+    mock_resp.json.return_value = [
+        {"name": "housekeeping-20260721", "status": "active"},
+        {"name": "housekeeping-20260714", "status": "idle"},
+        {"name": "blog-publish-abc", "status": "active"},
+    ]
+    with patch("app.services.session_client.requests.get", return_value=mock_resp):
+        names = list_active_session_names("housekeeping-")
+    assert names == ["housekeeping-20260721"]
+
+
+def test_list_active_session_names_empty_when_none_match(monkeypatch):
+    monkeypatch.setenv("SESSION_MANAGER_URL", "http://mock-sm")
+    mock_resp = MagicMock()
+    mock_resp.ok = True
+    mock_resp.json.return_value = [{"name": "blog-publish-abc", "status": "active"}]
+    with patch("app.services.session_client.requests.get", return_value=mock_resp):
+        assert list_active_session_names("housekeeping-") == []
+
+
+def test_list_active_session_names_empty_when_unreachable(monkeypatch):
+    monkeypatch.setenv("SESSION_MANAGER_URL", "http://mock-sm")
+    with patch("app.services.session_client.requests.get",
+               side_effect=req_lib.RequestException("down")):
+        assert list_active_session_names("housekeeping-") == []

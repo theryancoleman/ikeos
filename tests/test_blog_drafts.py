@@ -83,6 +83,55 @@ def test_save_draft_works_without_bluesky_file(posts_dir):
     assert (posts_dir / "2026-07-01-weekly-draft.md").read_text(encoding="utf-8") == "new body"
 
 
+def test_read_draft_bundle_with_specific_filename(posts_dir):
+    (posts_dir / "2026-06-01-weekly-draft.md").write_text("old", encoding="utf-8")
+    (posts_dir / "2026-07-01-weekly-draft.md").write_text("new", encoding="utf-8")
+    bundle = blog_drafts.read_draft_bundle("2026-06-01-weekly-draft.md")
+    assert bundle["filename"] == "2026-06-01-weekly-draft.md"
+    assert bundle["content"] == "old"
+
+
+def test_read_draft_bundle_specific_filename_not_found(posts_dir):
+    (posts_dir / "2026-07-01-weekly-draft.md").write_text("new", encoding="utf-8")
+    assert blog_drafts.read_draft_bundle("nonexistent-weekly-draft.md") is None
+
+
+def test_list_drafts_newest_first_with_latest_flag(posts_dir):
+    (posts_dir / "2026-06-01-weekly-draft.md").write_text("old", encoding="utf-8")
+    (posts_dir / "2026-07-01-weekly-draft.md").write_text("new", encoding="utf-8")
+    drafts = blog_drafts.list_drafts()
+    assert len(drafts) == 2
+    assert drafts[0]["filename"] == "2026-07-01-weekly-draft.md"
+    assert drafts[0]["is_latest"] is True
+    assert drafts[1]["is_latest"] is False
+
+
+def test_list_drafts_empty_when_no_dir(monkeypatch):
+    monkeypatch.delenv("AIOS_BLOG_POSTS_DIR", raising=False)
+    assert blog_drafts.list_drafts() == []
+
+
+def test_delete_draft_removes_file_and_companion(posts_dir):
+    (posts_dir / "2026-06-01-weekly-draft.md").write_text("old", encoding="utf-8")
+    (posts_dir / "2026-06-01-weekly-bluesky.txt").write_text("sky", encoding="utf-8")
+    assert blog_drafts.delete_draft("2026-06-01-weekly-draft.md") is True
+    assert not (posts_dir / "2026-06-01-weekly-draft.md").exists()
+    assert not (posts_dir / "2026-06-01-weekly-bluesky.txt").exists()
+
+
+def test_delete_draft_missing_file_returns_false(posts_dir):
+    assert blog_drafts.delete_draft("nonexistent-weekly-draft.md") is False
+
+
+def test_delete_draft_rejects_path_traversal(posts_dir):
+    assert blog_drafts.delete_draft("../outside-weekly-draft.md") is False
+
+
+def test_delete_draft_rejects_non_draft_filename(posts_dir):
+    (posts_dir / "2026-06-01-weekly.md").write_text("published", encoding="utf-8")
+    assert blog_drafts.delete_draft("2026-06-01-weekly.md") is False
+
+
 def test_latest_review_none_when_empty(review_dir):
     assert reviews.latest_review_name() is None
 

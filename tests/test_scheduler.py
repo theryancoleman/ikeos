@@ -257,6 +257,36 @@ def test_next_run_none_when_disabled(sched_vault, monkeypatch):
     assert get_config_with_next_run()["next_run"] is None
 
 
+def test_compute_next_run_uses_toronto_timezone_not_utc(sched_vault, monkeypatch):
+    """hour=16 must mean 4pm Toronto time, not 4pm UTC — this was the original bug:
+    a schedule meant to fire at 4pm Eastern was actually firing at noon Eastern
+    because CronTrigger ran against the container's UTC clock."""
+    monkeypatch.setenv("VAULT_PATH", str(sched_vault))
+    from app.services.scheduler import update_config, get_config_with_next_run
+    from zoneinfo import ZoneInfo
+    from datetime import datetime
+
+    update_config({"enabled": True, "day_of_week": "fri", "hour": 16, "minute": 0})
+    result = get_config_with_next_run()
+    next_run_dt = datetime.fromisoformat(result["next_run"])
+    assert next_run_dt.hour == 16
+    assert next_run_dt.tzinfo is not None
+    toronto_now = datetime.now(ZoneInfo("America/Toronto"))
+    assert next_run_dt.utcoffset() == toronto_now.utcoffset()
+
+
+def test_trigger_now_last_triggered_is_timezone_aware(sched_vault, monkeypatch):
+    monkeypatch.setenv("VAULT_PATH", str(sched_vault))
+    ok_result = SessionResult(session_id="sess-tz")
+    with patch("app.services.scheduler.run_scheduled_housekeeping", return_value=ok_result):
+        from app.services.scheduler import trigger_now, get_config
+        trigger_now()
+    config = get_config()
+    from datetime import datetime
+    dt = datetime.fromisoformat(config["last_triggered"])
+    assert dt.tzinfo is not None
+
+
 # ── trigger_now works regardless of leader election ──
 
 def test_trigger_now_works_when_scheduler_is_none(sched_vault, monkeypatch):

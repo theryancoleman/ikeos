@@ -7,136 +7,154 @@
   <header class="page-header">
     <span class="ike-eyebrow">System</span>
     <h1>Housekeeping</h1>
-    <p class="page-subtitle">Automated maintenance tasks — reads definitions from the claude-config vault.</p>
+    <p class="page-subtitle">Automated maintenance — reads task definitions from the claude-config vault.</p>
   </header>
 
-  <!-- Capability gate -->
-  <section class="hk-schedule-section">
-    <div class="ike-eyebrow">Capabilities</div>
-    {% for name, cap in capabilities.items() %}
-    <div class="hk-schedule-card" id="cap-card-{{ name }}">
-      <div class="hk-schedule-row" style="justify-content: space-between; align-items: center;">
-        <div>
-          <strong>{{ name | replace('_', ' ') | title }}</strong>
-          <p class="hk-schedule-meta" style="margin: 2px 0 0;">{{ cap.description }}</p>
-        </div>
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <span class="pill {% if cap.enabled %}pill--housekeeping{% else %}pill--muted{% endif %}"
-                id="cap-status-{{ name }}">
-            {{ 'ENABLED' if cap.enabled else 'DISABLED' }}
-          </span>
-          <button class="pill pill-primary"
-                  onclick="toggleCapability({{ name | tojson | forceescape }}, {{ (not cap.enabled) | tojson | forceescape }})"
-                  id="cap-btn-{{ name }}">
-            {{ 'Disable' if cap.enabled else 'Enable' }}
-          </button>
-        </div>
-      </div>
-      {% if cap.enabled and cap.enabled_at %}
-      <div class="hk-schedule-meta">
-        <span class="hk-schedule-label">Enabled:</span>
-        {{ cap.enabled_at | replace('T', ' ') | replace('+00:00', '') }}{% if cap.enabled_by %} by {{ cap.enabled_by }}{% endif %}
-      </div>
-      {% endif %}
-      <div class="hk-form-msg" id="cap-msg-{{ name }}"></div>
-    </div>
-    {% endfor %}
-  </section>
-
-  <section class="hk-schedule-section">
-    <div class="ike-eyebrow">Schedule</div>
-    <div class="hk-schedule-card">
-      <div class="hk-schedule-row">
-        <label class="hk-schedule-toggle-label">
-          <input type="checkbox" id="sched-enabled"
-                 {% if schedule.enabled %}checked{% endif %}>
-          Enable weekly run
-        </label>
-      </div>
-      <div class="hk-schedule-row hk-schedule-time-row" id="sched-time-row">
-        <label for="sched-day">Day</label>
-        <select id="sched-day">
-          {% for d, label in [('mon','Monday'),('tue','Tuesday'),('wed','Wednesday'),
-                               ('thu','Thursday'),('fri','Friday'),('sat','Saturday'),
-                               ('sun','Sunday')] %}
-          <option value="{{ d }}" {% if schedule.day_of_week == d %}selected{% endif %}>{{ label }}</option>
-          {% endfor %}
-        </select>
-        <label for="sched-hour">Time</label>
-        <input type="number" id="sched-hour" min="0" max="23"
-               value="{{ schedule.hour }}" class="hk-time-input">
-        <span class="hk-time-sep">:</span>
-        <input type="number" id="sched-minute" min="0" max="59"
-               value="{{ schedule.minute }}" class="hk-time-input">
-      </div>
-      <div class="hk-schedule-meta">
-        <span class="hk-schedule-label">Next run:</span>
-        <span id="sched-next">
-          {%- if schedule.next_run -%}
-            {{ schedule.next_run }}
-          {%- elif schedule.enabled -%}
-            Calculating…
-          {%- else -%}
-            Disabled
-          {%- endif -%}
+  <!-- ── Run status bar — the one thing this page must answer at a glance ── -->
+  <section class="hk-status-bar" id="hk-status-bar" data-state="{{ run_state }}">
+    <span class="hk-status-bar__badge hk-status-bar__badge--{{ run_state }}" id="hk-status-badge">
+      {{ run_state_label }}
+    </span>
+    <div class="hk-status-bar__detail">
+      <div class="hk-status-bar__headline" id="hk-status-headline">{{ run_state_headline }}</div>
+      <div class="hk-status-bar__meta">
+        Next run: <span id="sched-next">
+          {%- if schedule.next_run -%}{{ schedule.next_run }}
+          {%- elif schedule.enabled -%}Calculating…
+          {%- else -%}Disabled{%- endif -%}
         </span>
+        &nbsp;·&nbsp;
+        Last triggered: <span id="sched-last">{{ schedule.last_triggered or 'Never' }}</span>
       </div>
-      <div class="hk-schedule-meta">
-        <span class="hk-schedule-label">Last triggered:</span>
-        <span id="sched-last">{{ schedule.last_triggered or 'Never' }}</span>
-      </div>
-      <div class="hk-schedule-footer">
-        <button class="pill pill-primary" id="sched-save"
-                onclick="saveSchedule()" style="display:none">Save</button>
-        <button class="pill pill-primary" id="hk-run-now-btn"
-                onclick="runHousekeeping(this)">Run Now</button>
-        <span class="hk-form-msg" id="sched-msg"></span>
-        <span id="hk-run-now-msg" style="font-size:0.85rem; color:var(--color-muted); margin-left:8px;"></span>
-      </div>
+    </div>
+    <div class="hk-status-bar__actions">
+      <button class="pill pill-primary" id="hk-run-now-btn" onclick="runHousekeeping(this)">Run Now</button>
+      <span class="hk-form-msg" id="hk-run-now-msg"></span>
     </div>
   </section>
 
-  <!-- Blog draft status -->
-  <div class="hk-widget">
-    <span class="ike-eyebrow">Weekly Blog Draft</span>
-    {% if blog_draft %}
-      <p class="hk-status hk-status-ok">
-        <a href="{{ url_for('housekeeping.blog_draft_editor') }}" class="hk-draft-link">
-          {{ blog_draft }}
-        </a>
-        — ready for review
-      </p>
-    {% else %}
-      <p class="hk-status hk-status-pending">No draft yet this week</p>
-    {% endif %}
-  </div>
+  <!-- ── This week's outputs ── -->
+  <section class="hk-outputs-section">
+    <div class="ike-eyebrow">This Week's Outputs</div>
+    <div class="hk-outputs-grid">
 
-  <!-- Weekly Platform Review status -->
-  <div class="hk-widget">
-    <span class="ike-eyebrow">Weekly Platform Review</span>
-    {% if weekly_review_file %}
-      <p class="hk-status hk-status-ok">
-        <a href="{{ url_for('housekeeping.weekly_review') }}" class="hk-draft-link">
-          {{ weekly_review_file }}
-        </a>
-        — ready for review
-      </p>
-    {% else %}
-      <p class="hk-status hk-status-pending">No review yet this week</p>
-    {% endif %}
-    {% if capabilities.weekly_platform_review.enabled %}
-    <button class="pill pill-primary" style="margin-top:6px;"
-            id="hk-run-review-btn" onclick="runWeeklyReview(this)">
-      Run Review
-    </button>
-    <span id="hk-run-review-msg" style="font-size:0.85rem; color:var(--color-muted); margin-left:8px;"></span>
-    {% else %}
-    <p style="font-size:0.85rem; color:var(--color-muted); margin-top:4px;">
-      Enable the <strong>Weekly Platform Review</strong> capability above to run.
-    </p>
-    {% endif %}
-  </div>
+      <div class="hk-output-card">
+        <div class="hk-output-card__title">
+          <span class="hk-output-card__name">Blog Draft</span>
+          <span class="hk-pill {{ 'hk-pill--ok' if blog_draft else 'hk-pill--uninitialized' }}">
+            {{ 'Ready' if blog_draft else 'None yet' }}
+          </span>
+        </div>
+        <p class="hk-output-card__body">
+          {% if blog_draft %}{{ blog_draft }}{% else %}Generated weekly by the housekeeping run.{% endif %}
+        </p>
+        <div class="hk-output-card__footer">
+          <a class="hk-output-card__link" href="{{ url_for('housekeeping.blog_draft_editor') }}">
+            {{ 'Review draft →' if blog_draft else 'View editor →' }}
+          </a>
+          <a class="hk-output-card__link" href="{{ url_for('housekeeping.blog_drafts_list') }}">All drafts</a>
+        </div>
+      </div>
 
+      <div class="hk-output-card">
+        <div class="hk-output-card__title">
+          <span class="hk-output-card__name">Platform Review</span>
+          <span class="hk-pill {{ 'hk-pill--ok' if weekly_review_file else 'hk-pill--uninitialized' }}">
+            {{ 'Ready' if weekly_review_file else 'None yet' }}
+          </span>
+        </div>
+        <p class="hk-output-card__body">
+          {% if weekly_review_file %}{{ weekly_review_file }}
+          {% else %}Strategic ecosystem review — enable the capability below to run.{% endif %}
+        </p>
+        <div class="hk-output-card__footer">
+          <a class="hk-output-card__link" href="{{ url_for('housekeeping.weekly_review') }}">
+            {{ 'Read review →' if weekly_review_file else 'View page →' }}
+          </a>
+        </div>
+      </div>
+
+      <div class="hk-output-card">
+        <div class="hk-output-card__title">
+          <span class="hk-output-card__name">Research Findings</span>
+          <span class="hk-pill {{ 'hk-pill--ok' if research_generated_at else 'hk-pill--uninitialized' }}">
+            {{ research_age_str if research_generated_at else 'None yet' }}
+          </span>
+        </div>
+        <p class="hk-output-card__body">
+          {% if research_generated_at %}{{ research_source_count }} sources scanned
+          {% else %}Weekly external research digest.{% endif %}
+        </p>
+        <div class="hk-output-card__footer">
+          <a class="hk-output-card__link" href="{{ url_for('housekeeping.research_findings') }}">
+            {{ 'View findings →' if research_generated_at else 'View page →' }}
+          </a>
+          <a class="hk-output-card__link" href="{{ url_for('research_sources.index') }}">Sources</a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── Configuration: schedule + capabilities, side by side on wide screens ── -->
+  <section class="hk-config-section">
+    <div class="ike-eyebrow">Configuration</div>
+    <div class="hk-config-grid">
+
+      <div class="hk-schedule-card">
+        <div class="hk-schedule-row">
+          <label class="hk-schedule-toggle-label">
+            <input type="checkbox" id="sched-enabled" {% if schedule.enabled %}checked{% endif %}>
+            Enable weekly run
+          </label>
+        </div>
+        <div class="hk-schedule-row hk-schedule-time-row" id="sched-time-row">
+          <label for="sched-day">Day</label>
+          <select id="sched-day">
+            {% for d, label in [('mon','Monday'),('tue','Tuesday'),('wed','Wednesday'),
+                                 ('thu','Thursday'),('fri','Friday'),('sat','Saturday'),
+                                 ('sun','Sunday')] %}
+            <option value="{{ d }}" {% if schedule.day_of_week == d %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          <label for="sched-hour">Time</label>
+          <input type="number" id="sched-hour" min="0" max="23" value="{{ schedule.hour }}" class="hk-time-input">
+          <span class="hk-time-sep">:</span>
+          <input type="number" id="sched-minute" min="0" max="59" value="{{ schedule.minute }}" class="hk-time-input">
+        </div>
+        <div class="hk-schedule-footer">
+          <button class="pill pill-primary" id="sched-save" onclick="saveSchedule()" style="display:none">Save</button>
+          <span class="hk-form-msg" id="sched-msg"></span>
+        </div>
+      </div>
+
+      <div class="hk-schedule-card hk-capabilities-card">
+        {% for name, cap in capabilities.items() %}
+        <div class="hk-schedule-row" style="justify-content: space-between; align-items: center;" id="cap-card-{{ name }}">
+          <div>
+            <strong>{{ name | replace('_', ' ') | title }}</strong>
+            <p class="hk-schedule-meta" style="margin: 2px 0 0;">{{ cap.description }}</p>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span class="hk-pill {% if cap.enabled %}hk-pill--ok{% else %}hk-pill--disabled{% endif %}"
+                  id="cap-status-{{ name }}">
+              {{ 'ENABLED' if cap.enabled else 'DISABLED' }}
+            </span>
+            <button class="pill"
+                    onclick="toggleCapability({{ name | tojson | forceescape }}, {{ (not cap.enabled) | tojson | forceescape }})"
+                    id="cap-btn-{{ name }}">
+              {{ 'Disable' if cap.enabled else 'Enable' }}
+            </button>
+          </div>
+        </div>
+        <div class="hk-form-msg" id="cap-msg-{{ name }}"></div>
+        {% endfor %}
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── Tasks ── -->
   <section>
     <div class="ike-eyebrow">Tasks <span class="eyebrow-count">/ {{ tasks | length }}</span></div>
     {% if tasks %}
@@ -161,17 +179,13 @@
             <td class="hk-date">{{ task.last_run if task.last_run and task.last_run != 'null' else '—' }}</td>
             <td class="hk-date">{{ task.next_run or '—' }}</td>
             <td class="hk-actions">
-              <button class="pill"
-                      onclick="toggleTask({{ task.filename | tojson | forceescape }}, this)"
+              <button class="pill" onclick="toggleTask({{ task.filename | tojson | forceescape }}, this)"
                       data-enabled="{{ task.enabled | string | lower }}">
                 {{ 'Disable' if (task.enabled | string | lower) == 'true' else 'Enable' }}
               </button>
-              <button class="pill"
-                      onclick="resetTask({{ task.filename | tojson | forceescape }}, this)">Reset</button>
-              <button class="pill pill-primary-filled"
-                      onclick="runTask({{ task.filename | tojson | forceescape }}, this)">Run</button>
-              <button class="pill pill-danger"
-                      onclick="deleteTask({{ task.filename | tojson | forceescape }}, this)">Delete</button>
+              <button class="pill" onclick="resetTask({{ task.filename | tojson | forceescape }}, this)">Reset</button>
+              <button class="pill pill-primary-filled" onclick="runTask({{ task.filename | tojson | forceescape }}, this)">Run</button>
+              <button class="pill pill-danger" onclick="deleteTask({{ task.filename | tojson | forceescape }}, this)">Delete</button>
             </td>
           </tr>
           {% endfor %}
@@ -181,49 +195,43 @@
     {% else %}
     <p class="empty">No tasks defined yet. Add one below.</p>
     {% endif %}
+
+    <details class="hk-add-details">
+      <summary class="hk-add-summary">+ Add task</summary>
+      <form class="hk-add-form" id="addTaskForm">
+        <div class="hk-form-row">
+          <label for="hk-title">Title</label>
+          <input type="text" id="hk-title" name="title" required placeholder="e.g. Prune stale vault entries">
+        </div>
+        <div class="hk-form-row">
+          <label for="hk-interval">Interval</label>
+          <select id="hk-interval" name="interval">
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+            <option value="quarterly">Quarterly</option>
+            <option value="annually">Annually</option>
+          </select>
+        </div>
+        <div class="hk-form-row">
+          <label for="hk-success">Success Definition</label>
+          <textarea id="hk-success" name="success_definition" required rows="3"
+                    placeholder="Describe what success looks like — passed to the judge subagent."></textarea>
+        </div>
+        <div class="hk-form-footer">
+          <button type="submit" class="pill pill-primary-filled">Add Task</button>
+          <span class="hk-form-msg" id="addTaskMsg"></span>
+        </div>
+      </form>
+    </details>
   </section>
 
-  <section class="hk-add-section">
-    <div class="ike-eyebrow">Add Task</div>
-    <form class="hk-add-form" id="addTaskForm">
-      <div class="hk-form-row">
-        <label for="hk-title">Title</label>
-        <input type="text" id="hk-title" name="title" required
-               placeholder="e.g. Prune stale vault entries">
-      </div>
-      <div class="hk-form-row">
-        <label for="hk-interval">Interval</label>
-        <select id="hk-interval" name="interval">
-          <option value="weekly">Weekly</option>
-          <option value="monthly">Monthly</option>
-          <option value="quarterly">Quarterly</option>
-          <option value="annually">Annually</option>
-        </select>
-      </div>
-      <div class="hk-form-row">
-        <label for="hk-success">Success Definition</label>
-        <textarea id="hk-success" name="success_definition" required rows="3"
-                  placeholder="Describe what success looks like — passed to the judge subagent."></textarea>
-      </div>
-      <div class="hk-form-footer">
-        <button type="submit" class="pill pill-primary-filled">Add Task</button>
-        <span class="hk-form-msg" id="addTaskMsg"></span>
-      </div>
-    </form>
-  </section>
-
+  <!-- ── Recent runs ── -->
   {% if recent_runs %}
-  <section class="card" style="margin-top:1.5rem">
-    <h2>Recent Runs</h2>
-    <table>
+  <section class="hk-panel hk-recent-runs">
+    <div class="ike-eyebrow">Recent Runs</div>
+    <table class="hk-table" style="margin-top: var(--space-4);">
       <thead>
-        <tr>
-          <th>Time</th>
-          <th>Trigger</th>
-          <th>Run</th>
-          <th>Failed</th>
-          <th>Skipped</th>
-        </tr>
+        <tr><th>Time</th><th>Trigger</th><th>Run</th><th>Failed</th><th>Skipped</th></tr>
       </thead>
       <tbody>
         {% for run in recent_runs %}
@@ -239,10 +247,10 @@
         <tr>
           <td colspan="5" style="padding:0 0.5rem 0.5rem 1.5rem; border-top:0">
             <details{% if (run.tasks_failed | default(0) | int) > 0 %} open{% endif %}>
-              <summary style="cursor:pointer; color:var(--muted); font-size:0.85rem">
+              <summary style="cursor:pointer; color:var(--text-tertiary); font-size:0.85rem">
                 task detail ({{ results | length }})
               </summary>
-              <ul style="margin:0.4rem 0 0 1rem; padding:0; list-style:none; font-size:0.85rem; font-family:monospace">
+              <ul style="margin:0.4rem 0 0 1rem; padding:0; list-style:none; font-size:0.85rem; font-family:var(--font-mono)">
                 {% for t in results %}
                 <li class="{{ 'error' if t.outcome == 'failed' else '' }}" style="padding:0.1rem 0">
                   {% if t.outcome == 'ok' %}✓{% elif t.outcome == 'failed' %}✗{% else %}—{% endif %}
@@ -263,178 +271,48 @@
 </div>
 
 <script>
+const _captureToken = {{ capture_token | tojson }};
+
+// ── Task actions ──
 async function toggleTask(filename, btn) {
   btn.disabled = true;
   try {
-    const resp = await fetch(`/housekeeping/tasks/${encodeURIComponent(filename)}/toggle`,
-                             {method: 'POST'});
-    if (resp.ok) {
-      location.reload();
-    } else {
-      btn.disabled = false;
-      alert('Failed to toggle task.');
-    }
-  } catch (e) {
-    btn.disabled = false;
-    alert('Network error — could not toggle task.');
-  }
+    const resp = await fetch(`/housekeeping/tasks/${encodeURIComponent(filename)}/toggle`, {method: 'POST'});
+    if (resp.ok) { location.reload(); } else { btn.disabled = false; alert('Failed to toggle task.'); }
+  } catch (e) { btn.disabled = false; alert('Network error — could not toggle task.'); }
 }
-
 async function resetTask(filename, btn) {
   btn.disabled = true;
   try {
-    const resp = await fetch(`/housekeeping/tasks/${encodeURIComponent(filename)}/reset`,
-                             {method: 'POST'});
-    if (resp.ok) {
-      location.reload();
-    } else {
-      btn.disabled = false;
-      alert('Failed to reset timer.');
-    }
-  } catch (e) {
-    btn.disabled = false;
-    alert('Network error — could not reset task.');
-  }
+    const resp = await fetch(`/housekeeping/tasks/${encodeURIComponent(filename)}/reset`, {method: 'POST'});
+    if (resp.ok) { location.reload(); } else { btn.disabled = false; alert('Failed to reset timer.'); }
+  } catch (e) { btn.disabled = false; alert('Network error — could not reset task.'); }
 }
-
 async function runTask(filename, btn) {
-  btn.disabled = true;
-  btn.textContent = '…';
+  btn.disabled = true; btn.textContent = '…';
   try {
-    const resp = await fetch(`/housekeeping/tasks/${encodeURIComponent(filename)}/run`,
-                             {method: 'POST'});
+    const resp = await fetch(`/housekeeping/tasks/${encodeURIComponent(filename)}/run`, {method: 'POST'});
     if (resp.ok) {
-      const data = await resp.json();
       btn.textContent = 'Launched ↗';
       btn.onclick = () => window.location.href = '/agents';
       btn.disabled = false;
-    } else {
-      btn.textContent = 'Run';
-      btn.disabled = false;
-      alert('Failed to launch session.');
-    }
-  } catch (e) {
-    btn.textContent = 'Run';
-    btn.disabled = false;
-    alert('Network error — could not launch session.');
-  }
+    } else { btn.textContent = 'Run'; btn.disabled = false; alert('Failed to launch session.'); }
+  } catch (e) { btn.textContent = 'Run'; btn.disabled = false; alert('Network error — could not launch session.'); }
 }
-
-let _hkPollTimer = null;
-
-async function runHousekeeping(btn) {
-  const msg = document.getElementById('hk-run-now-msg');
-  if (_hkPollTimer) { clearTimeout(_hkPollTimer); _hkPollTimer = null; }
-  btn.disabled = true;
-  btn.textContent = 'Starting…';
-  if (msg) msg.textContent = '';
-  try {
-    const resp = await fetch('/housekeeping/run', {
-      method: 'POST',
-      headers: {'X-Capture-Token': _captureToken},
-    });
-    const data = await resp.json();
-    if (!resp.ok) {
-      btn.textContent = 'Run Now';
-      btn.disabled = false;
-      if (msg) msg.textContent = data.error || 'Error starting housekeeping.';
-    } else {
-      btn.textContent = 'Running…';
-      if (msg) msg.textContent = 'Session launched — checking status…';
-      _pollHousekeepingStatus(data.session_id, btn, msg);
-    }
-  } catch (e) {
-    btn.textContent = 'Run Now';
-    btn.disabled = false;
-    if (msg) msg.textContent = 'Network error.';
-  }
-}
-
-function _pollHousekeepingStatus(sessionId, btn, msg) {
-  _hkPollTimer = setTimeout(async () => {
-    try {
-      const resp = await fetch(`/housekeeping/run-status?session_id=${sessionId}`);
-      const data = await resp.json();
-      if (data.active) {
-        const act = data.activity || 'working';
-        if (msg) msg.textContent = `Running (${act})`;
-        _pollHousekeepingStatus(sessionId, btn, msg);
-      } else {
-        btn.textContent = 'Run Now';
-        btn.disabled = false;
-        if (data.last_run) {
-          const failed = parseInt(data.tasks_failed) || 0;
-          const run = parseInt(data.tasks_run) || 0;
-          const outcome = failed > 0 ? `${failed} failed` : 'all passed';
-          if (msg) msg.textContent = `Done — ${run} tasks, ${outcome} · last run ${data.last_run.replace('T', ' ').replace('Z', '')} UTC`;
-        } else {
-          if (msg) msg.textContent = 'Session ended — no heartbeat written (check logs)';
-        }
-      }
-    } catch (e) {
-      btn.textContent = 'Run Now';
-      btn.disabled = false;
-      if (msg) msg.textContent = 'Could not poll status.';
-    }
-  }, 15000);
-}
-
-async function runWeeklyReview(btn) {
-  const msgId = btn.id === 'hk-run-review-btn' ? 'hk-run-review-msg' : 'run-review-msg';
-  const msg = document.getElementById(msgId);
-  btn.disabled = true;
-  btn.textContent = 'Starting…';
-  if (msg) msg.textContent = '';
-  try {
-    const resp = await fetch('/housekeeping/weekly-review/run', {
-      method: 'POST',
-      headers: {'X-Capture-Token': _captureToken},
-    });
-    const data = await resp.json();
-    if (!resp.ok) {
-      btn.textContent = 'Run Review';
-      btn.disabled = false;
-      if (msg) msg.textContent = data.error || 'Error starting review.';
-    } else if (data.already_running) {
-      btn.textContent = 'Already running';
-      if (msg) msg.textContent = `Session: ${data.session_id}`;
-    } else {
-      btn.textContent = 'Running…';
-      if (msg) msg.textContent = `Session started: ${data.session_id}`;
-    }
-  } catch (e) {
-    btn.textContent = 'Run Review';
-    btn.disabled = false;
-    if (msg) msg.textContent = 'Network error.';
-  }
-}
-
 async function deleteTask(filename, btn) {
   if (!confirm(`Delete "${filename}"? This cannot be undone.`)) return;
   btn.disabled = true;
   try {
     const resp = await fetch(`/housekeeping/tasks/${encodeURIComponent(filename)}/delete`,
                              {method: 'POST', headers: {'X-Capture-Token': _captureToken}});
-    if (resp.ok) {
-      location.reload();
-    } else {
-      btn.disabled = false;
-      alert('Failed to delete task.');
-    }
-  } catch (e) {
-    btn.disabled = false;
-    alert('Network error — could not delete task.');
-  }
+    if (resp.ok) { location.reload(); } else { btn.disabled = false; alert('Failed to delete task.'); }
+  } catch (e) { btn.disabled = false; alert('Network error — could not delete task.'); }
 }
-
 document.getElementById('addTaskForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   const msg = document.getElementById('addTaskMsg');
   msg.textContent = '';
-  const resp = await fetch('/housekeeping/tasks', {
-    method: 'POST',
-    body: new FormData(e.target),
-  });
+  const resp = await fetch('/housekeeping/tasks', {method: 'POST', body: new FormData(e.target)});
   if (resp.ok) {
     msg.textContent = 'Task added.';
     e.target.reset();
@@ -446,36 +324,30 @@ document.getElementById('addTaskForm').addEventListener('submit', async function
 });
 
 // ── Schedule control ──
-const _captureToken = {{ capture_token | tojson }};
 const _schedState = {
   enabled: {{ schedule.enabled | tojson }},
   day_of_week: {{ schedule.day_of_week | tojson }},
   hour: {{ schedule.hour | int }},
   minute: {{ schedule.minute | int }},
 };
-
 function _schedChanged() {
   return document.getElementById('sched-enabled').checked !== _schedState.enabled ||
          document.getElementById('sched-day').value !== _schedState.day_of_week ||
          parseInt(document.getElementById('sched-hour').value) !== _schedState.hour ||
          parseInt(document.getElementById('sched-minute').value) !== _schedState.minute;
 }
-
 function _updateSaveBtn() {
   document.getElementById('sched-save').style.display = _schedChanged() ? '' : 'none';
 }
-
 ['sched-enabled', 'sched-day', 'sched-hour', 'sched-minute'].forEach(function(id) {
   const el = document.getElementById(id);
   el.addEventListener('change', _updateSaveBtn);
   el.addEventListener('input', _updateSaveBtn);
 });
-
 async function saveSchedule() {
   const btn = document.getElementById('sched-save');
   const msg = document.getElementById('sched-msg');
-  btn.disabled = true;
-  msg.textContent = '';
+  btn.disabled = true; msg.textContent = '';
   const payload = {
     enabled: document.getElementById('sched-enabled').checked,
     day_of_week: document.getElementById('sched-day').value,
@@ -485,20 +357,14 @@ async function saveSchedule() {
   try {
     const resp = await fetch('/housekeeping/schedule', {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Capture-Token': _captureToken,
-      },
+      headers: {'Content-Type': 'application/json', 'X-Capture-Token': _captureToken},
       body: JSON.stringify(payload),
     });
     if (resp.ok) {
       const data = await resp.json();
-      _schedState.enabled = data.enabled;
-      _schedState.day_of_week = data.day_of_week;
-      _schedState.hour = data.hour;
-      _schedState.minute = data.minute;
-      document.getElementById('sched-next').textContent =
-        data.next_run || (data.enabled ? 'Calculating…' : 'Disabled');
+      _schedState.enabled = data.enabled; _schedState.day_of_week = data.day_of_week;
+      _schedState.hour = data.hour; _schedState.minute = data.minute;
+      document.getElementById('sched-next').textContent = data.next_run || (data.enabled ? 'Calculating…' : 'Disabled');
       document.getElementById('sched-last').textContent = data.last_triggered || 'Never';
       btn.style.display = 'none';
       msg.textContent = 'Saved.';
@@ -507,9 +373,7 @@ async function saveSchedule() {
       const err = await resp.json().catch(function() { return {}; });
       msg.textContent = err.error || 'Failed to save.';
     }
-  } catch (e) {
-    msg.textContent = 'Network error — could not save schedule.';
-  }
+  } catch (e) { msg.textContent = 'Network error — could not save schedule.'; }
   btn.disabled = false;
 }
 
@@ -517,34 +381,92 @@ async function toggleCapability(name, enable) {
   const btn = document.getElementById('cap-btn-' + name);
   const statusEl = document.getElementById('cap-status-' + name);
   const msgEl = document.getElementById('cap-msg-' + name);
-  btn.disabled = true;
-  msgEl.textContent = '';
+  btn.disabled = true; msgEl.textContent = '';
   try {
     const resp = await fetch('/housekeeping/capabilities/' + name, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Capture-Token': _captureToken,
-      },
+      headers: {'Content-Type': 'application/json', 'X-Capture-Token': _captureToken},
       body: JSON.stringify({ enabled: enable }),
     });
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({}));
-      msgEl.textContent = err.error || 'Failed';
-      btn.disabled = false;
-      return;
+      msgEl.textContent = err.error || 'Failed'; btn.disabled = false; return;
     }
     const data = await resp.json();
     const enabled = data.capability.enabled;
     statusEl.textContent = enabled ? 'ENABLED' : 'DISABLED';
-    statusEl.className = 'pill ' + (enabled ? 'pill--housekeeping' : 'pill--muted');
+    statusEl.className = 'hk-pill ' + (enabled ? 'hk-pill--ok' : 'hk-pill--disabled');
     btn.textContent = enabled ? 'Disable' : 'Enable';
     btn.onclick = () => toggleCapability(name, !enabled);
     btn.disabled = false;
+  } catch (e) { msgEl.textContent = 'Request failed'; btn.disabled = false; }
+}
+
+// ── Run status bar ──
+const _STATE_TEXT = {
+  running: 'Running', ok: 'Healthy', failed: 'Attention',
+  stalled: 'Stalled', overdue: 'Overdue', never: 'Never run',
+};
+function _setStatusBadge(state, headline) {
+  const badge = document.getElementById('hk-status-badge');
+  const bar = document.getElementById('hk-status-bar');
+  bar.dataset.state = state;
+  badge.className = 'hk-status-bar__badge hk-status-bar__badge--' + state;
+  badge.textContent = _STATE_TEXT[state] || state;
+  if (headline) document.getElementById('hk-status-headline').textContent = headline;
+}
+
+let _hkPollTimer = null;
+async function runHousekeeping(btn) {
+  const msg = document.getElementById('hk-run-now-msg');
+  if (_hkPollTimer) { clearTimeout(_hkPollTimer); _hkPollTimer = null; }
+  btn.disabled = true; btn.textContent = 'Starting…';
+  if (msg) msg.textContent = '';
+  try {
+    const resp = await fetch('/housekeeping/run', {method: 'POST', headers: {'X-Capture-Token': _captureToken}});
+    const data = await resp.json();
+    if (!resp.ok) {
+      btn.textContent = 'Run Now'; btn.disabled = false;
+      if (msg) msg.textContent = data.error || 'Error starting housekeeping.';
+    } else {
+      btn.textContent = 'Running…';
+      _setStatusBadge('running', 'Housekeeping is running now…');
+      _pollHousekeepingStatus(data.session_id, btn, msg);
+    }
   } catch (e) {
-    msgEl.textContent = 'Request failed';
-    btn.disabled = false;
+    btn.textContent = 'Run Now'; btn.disabled = false;
+    if (msg) msg.textContent = 'Network error.';
   }
+}
+function _pollHousekeepingStatus(sessionId, btn, msg) {
+  _hkPollTimer = setTimeout(async () => {
+    try {
+      const resp = await fetch(`/housekeeping/run-status?session_id=${sessionId}`);
+      const data = await resp.json();
+      if (data.active) {
+        const act = data.activity || 'working';
+        _setStatusBadge('running', `Housekeeping is running now (${act})…`);
+        if (msg) msg.textContent = `Running (${act})`;
+        _pollHousekeepingStatus(sessionId, btn, msg);
+      } else {
+        btn.textContent = 'Run Now'; btn.disabled = false;
+        if (data.last_run) {
+          const failed = parseInt(data.tasks_failed) || 0;
+          const run = parseInt(data.tasks_run) || 0;
+          const state = failed > 0 ? 'failed' : 'ok';
+          const outcome = failed > 0 ? `${failed} task(s) failed` : `${run} tasks, all passed`;
+          _setStatusBadge(state, `Last run completed — ${outcome}.`);
+          if (msg) msg.textContent = `Done — ${outcome} · last run ${data.last_run.replace('T', ' ').replace('Z', '')} UTC`;
+        } else {
+          _setStatusBadge('stalled', 'Session ended — no heartbeat written. Check session logs.');
+          if (msg) msg.textContent = 'Session ended — no heartbeat written (check logs)';
+        }
+      }
+    } catch (e) {
+      btn.textContent = 'Run Now'; btn.disabled = false;
+      if (msg) msg.textContent = 'Could not poll status.';
+    }
+  }, 15000);
 }
 </script>
 {% endblock %}

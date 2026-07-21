@@ -4,6 +4,7 @@ import logging
 import os
 from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from apscheduler.triggers.cron import CronTrigger
 
@@ -12,6 +13,8 @@ from app.services.metrics import append_event
 from app.services.platform import project_slug
 
 logger = logging.getLogger(__name__)
+
+_TZ = ZoneInfo("America/Toronto")
 
 _VALID_DAYS = {"mon", "tue", "wed", "thu", "fri", "sat", "sun"}
 _DEFAULTS: dict[str, bool | str | int | None] = {
@@ -120,8 +123,9 @@ def _compute_next_run(config: dict, now: datetime | None = None) -> str | None:
         day_of_week=config["day_of_week"],
         hour=config["hour"],
         minute=config["minute"],
+        timezone=_TZ,
     )
-    next_fire = trigger.get_next_fire_time(None, now or datetime.now())
+    next_fire = trigger.get_next_fire_time(None, now or datetime.now(_TZ))
     return next_fire.isoformat(timespec="seconds") if next_fire else None
 
 
@@ -141,6 +145,7 @@ def _apply_to_live_scheduler(config: dict) -> None:
         day_of_week=config["day_of_week"],
         hour=config["hour"],
         minute=config["minute"],
+        timezone=_TZ,
     )
     if config.get("enabled"):
         _scheduler.resume_job("housekeeping")
@@ -190,7 +195,7 @@ def trigger_now() -> str | None:
         return None
     session_id = result.session_id
     config = get_config()
-    config["last_triggered"] = datetime.now().isoformat(timespec="seconds")
+    config["last_triggered"] = datetime.now(_TZ).isoformat(timespec="seconds")
     try:
         _write_config(config)
     except OSError:
@@ -244,6 +249,7 @@ def start(app) -> None:
         day_of_week=config["day_of_week"],
         hour=config["hour"],
         minute=config["minute"],
+        timezone=_TZ,
     )
     _scheduler.add_job(
         _sync_schedule,

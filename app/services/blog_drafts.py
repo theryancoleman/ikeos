@@ -25,9 +25,24 @@ def latest_draft_name() -> str | None:
     return draft.name if draft else None
 
 
-def read_draft_bundle() -> dict | None:
-    """Return dict with filename, content, bluesky_text, bluesky_filename; or None if no draft."""
-    draft, bluesky = latest_draft_paths()
+def draft_paths(filename: str) -> tuple[Path | None, Path | None]:
+    """Return (draft_path, bluesky_path) for a specific draft filename."""
+    posts = _posts_dir()
+    if not posts or not posts.exists():
+        return None, None
+    if "/" in filename or "\\" in filename or ".." in filename:
+        return None, None
+    draft = posts / filename
+    if not draft.exists() or not draft.name.endswith("-weekly-draft.md"):
+        return None, None
+    bluesky = draft.with_name(draft.stem.replace("-weekly-draft", "-weekly-bluesky") + ".txt")
+    return draft, bluesky if bluesky.exists() else None
+
+
+def read_draft_bundle(filename: str | None = None) -> dict | None:
+    """Return dict with filename, content, bluesky_text, bluesky_filename for the given
+    draft filename, or the latest draft if filename is omitted; None if not found."""
+    draft, bluesky = draft_paths(filename) if filename else latest_draft_paths()
     if not draft:
         return None
     return {
@@ -50,3 +65,34 @@ def save_draft(content: str, bluesky_text: str) -> str:
     if bluesky:
         bluesky.write_text(bluesky_text, encoding="utf-8")
     return draft.name
+
+
+def list_drafts() -> list[dict]:
+    """All weekly drafts, newest first, each flagged with whether it's the current latest."""
+    posts = _posts_dir()
+    if not posts or not posts.exists():
+        return []
+    drafts = sorted(posts.glob("*-weekly-draft.md"), reverse=True)
+    return [
+        {"filename": draft.name, "generated_at": draft.name[:10], "is_latest": i == 0}
+        for i, draft in enumerate(drafts)
+    ]
+
+
+def delete_draft(filename: str) -> bool:
+    """Delete a draft (and its companion bluesky file, if present). Returns True if deleted."""
+    posts = _posts_dir()
+    if not posts or not posts.exists():
+        return False
+    if "/" in filename or "\\" in filename or ".." in filename:
+        return False
+    if not filename.endswith("-weekly-draft.md"):
+        return False
+    draft = posts / filename
+    if not draft.exists():
+        return False
+    draft.unlink()
+    bluesky = draft.with_name(draft.stem.replace("-weekly-draft", "-weekly-bluesky") + ".txt")
+    if bluesky.exists():
+        bluesky.unlink()
+    return True
