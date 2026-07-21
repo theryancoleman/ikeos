@@ -77,6 +77,11 @@ Key variables:
 - `CAPTURE_TOKEN` — shared token protecting mutation endpoints (`POST /capture`, `PATCH /entries`)
 - `SESSION_MANAGER_URL` — URL of the Claude Code session manager service
 - `HOUSEKEEPING_PROJECT_DIR` — host path to the project directory housekeeping runs against
+- `CLAUDE_CONFIG_PATH` — host path to the claude-config root; mounts `claude-config/library:ro` and powers the reflection-health dashboard widget and the weak-signal log viewer
+- `PLATFORM_PROJECT_SLUG` — project slug used for housekeeping/capabilities/schedule paths in the vault (default: `claude-config`)
+- `AIOS_BLOG_POSTS_PATH` / `AIOS_BLOG_PROJECT_DIR` — host paths to the aios-blog `content/posts` dir and project root, for blog draft editing/publishing
+- `WEEKLY_REVIEW_OUTPUT_PATH` — host path where the platform-review-narrative housekeeping task writes review Markdown files
+- `BLUESKY_HANDLE` — Bluesky handle for the Publishing tab social panel
 
 ---
 
