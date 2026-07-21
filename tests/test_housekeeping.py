@@ -484,7 +484,7 @@ def test_blog_draft_status_present_when_draft_exists(client, tmp_path, monkeypat
 
 
 def test_blog_draft_status_no_draft(client, tmp_path, monkeypatch):
-    """GET /housekeeping shows 'No draft' when posts dir is empty."""
+    """GET /housekeeping shows 'None yet' on the Blog Draft output card when posts dir is empty."""
     empty_dir = tmp_path / "posts"
     empty_dir.mkdir(parents=True)
 
@@ -492,7 +492,7 @@ def test_blog_draft_status_no_draft(client, tmp_path, monkeypatch):
     resp = client.get("/housekeeping")
 
     assert resp.status_code == 200
-    assert b"No draft" in resp.data
+    assert b"None yet" in resp.data
 
 
 # ── blog-draft auth guard ──
@@ -898,3 +898,11 @@ def test_run_state_ok_when_recent_and_no_failures():
         )
     assert state == "ok"
     assert label == "Healthy"
+
+
+def test_housekeeping_index_includes_run_state_and_outputs_context(client):
+    resp = client.get("/housekeeping")
+    assert resp.status_code == 200
+    assert b"hk-status-bar" in resp.data
+    assert b"This Week" in resp.data
+    assert b"Research Findings" in resp.data
