@@ -60,7 +60,7 @@ def _widget_status(heartbeat: dict) -> str:
             return "overdue"
     except (ValueError, TypeError):
         return "overdue"
-    if heartbeat.get("tasks_failed", "0") != "0":
+    if heartbeat.get("tasks_failed", "0") not in ("0", 0):
         return "failed"
     return "ok"
 
