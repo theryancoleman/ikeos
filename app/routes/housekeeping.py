@@ -13,6 +13,7 @@ from app.services.driver import (
     run_housekeeping_task,
     run_platform_review,
 )
+from app.services.eval_results import read_last_run
 from app.services.platform import project_slug
 from app.services.research_findings import get_research_findings
 from app.services.reviews import latest_review_name, read_latest_review
@@ -308,6 +309,7 @@ def _housekeeping_context() -> dict:
     schedule = get_config_with_next_run()
     run_state, run_state_label, run_state_headline = _run_state(schedule, heartbeat)
     findings = get_research_findings()
+    last_eval_run = read_last_run()
     return dict(
         tasks=tasks,
         heartbeat=heartbeat,
@@ -320,6 +322,7 @@ def _housekeeping_context() -> dict:
         capture_token=CAPTURE_TOKEN,
         blog_draft=latest_draft_name(),
         weekly_review_file=latest_review_name(),
+        eval_last_run_timestamp=last_eval_run["timestamp"] if last_eval_run else None,
         capabilities=get_capabilities(),
         recent_runs=read_events_by_type("housekeeping.run", limit=10),
         research_generated_at=findings["generated_at"] if findings else None,

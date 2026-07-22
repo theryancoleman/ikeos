@@ -77,12 +77,18 @@
       <div class="hk-output-card">
         <div class="hk-output-card__title">
           <span class="hk-output-card__name">Eval Suite</span>
+          <span class="hk-pill {{ 'hk-pill--ok' if eval_last_run_timestamp else 'hk-pill--uninitialized' }}">
+            {{ 'Ready' if eval_last_run_timestamp else 'None yet' }}
+          </span>
         </div>
         <p class="hk-output-card__body">
-          On-demand claude-config eval suite — enable the capability below to run.
+          {% if eval_last_run_timestamp %}Last run: {{ eval_last_run_timestamp }}
+          {% else %}On-demand claude-config eval suite — enable the capability below to run.{% endif %}
         </p>
         <div class="hk-output-card__footer">
-          <a class="hk-output-card__link" href="{{ url_for('evals.index') }}">View page →</a>
+          <a class="hk-output-card__link" href="{{ url_for('evals.index') }}">
+            {{ 'View results →' if eval_last_run_timestamp else 'View page →' }}
+          </a>
         </div>
       </div>
 

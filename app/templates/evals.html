@@ -27,23 +27,23 @@
   {% if last_run %}
   <section>
     <div class="ike-eyebrow">Last run: {{ last_run.timestamp }}</div>
-    <div class="hk-schedule-card" style="overflow-x:auto;">
-      <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+    <div class="hk-table-wrap">
+      <table class="hk-table">
         <thead>
           <tr>
-            <th style="text-align:left; padding:6px;">Case</th>
-            <th style="text-align:right; padding:6px;">Score</th>
-            <th style="text-align:right; padding:6px;">Baseline</th>
-            <th style="text-align:right; padding:6px;">Delta</th>
+            <th>Case</th>
+            <th style="text-align:right;">Score</th>
+            <th style="text-align:right;">Baseline</th>
+            <th style="text-align:right;">Delta</th>
           </tr>
         </thead>
         <tbody>
           {% for r in last_run.results %}
           <tr>
-            <td style="padding:6px;">{{ r.name }}</td>
-            <td style="text-align:right; padding:6px;">{{ r.score }}</td>
-            <td style="text-align:right; padding:6px;">{{ r.baseline_score if r.baseline_score is not none else '—' }}</td>
-            <td style="text-align:right; padding:6px;
+            <td>{{ r.name }}</td>
+            <td style="text-align:right;">{{ r.score }}</td>
+            <td style="text-align:right;">{{ r.baseline_score if r.baseline_score is not none else '—' }}</td>
+            <td style="text-align:right;
                        color: {{ 'var(--color-danger, #c0392b)' if r.delta is not none and r.delta < 0 else 'inherit' }};">
               {{ '%+.1f'|format(r.delta) if r.delta is not none else '—' }}
             </td>
