@@ -49,9 +49,12 @@ def list_sources() -> list[dict]:
     return [_with_id(s) for s in data.get("sources", [])]
 
 
-def add_source(url: str, label: str) -> dict:
+def add_source(url: str, label: str) -> dict | None:
+    """Add a new source. Returns the created source dict, or None if a source with this URL already exists."""
     with _lock:
         data = _load()
+        if any(s["url"] == url for s in data.get("sources", [])):
+            return None
         source = {
             "url": url,
             "label": label,

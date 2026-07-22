@@ -515,6 +515,12 @@ def _reconcile_sessions() -> None:
     live = list_session_names()
     for session in list_sessions():
         if session["tmux_session"] not in live:
+            _post_metric("agent.session_end", {
+                "session_id": session["id"],
+                "project": session.get("project", ""),
+                "name": session.get("name", ""),
+                "reason": "session_disappeared",
+            })
             remove_session(session["id"])
 
 
@@ -530,9 +536,9 @@ def create_research_source():
     label = (data.get("label") or "").strip()
     if not url or not label:
         return jsonify({"error": "url and label are required"}), 400
-    if any(s["url"] == url for s in list_sources()):
-        return jsonify({"error": "source already exists"}), 409
     source = add_source(url, label)
+    if source is None:
+        return jsonify({"error": "source already exists"}), 409
     return jsonify(source), 201
 
 

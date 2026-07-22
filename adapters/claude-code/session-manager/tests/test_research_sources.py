@@ -21,6 +21,14 @@ def test_add_source_persists(tmp_path, monkeypatch):
     assert len(on_disk["sources"]) == 1
 
 
+def test_add_source_duplicate_returns_none(tmp_path, monkeypatch):
+    fake_file = tmp_path / "sources.json"
+    monkeypatch.setattr(research_sources, "RESEARCH_SOURCES_FILE", fake_file)
+    research_sources.add_source("https://example.com/feed", "Example Feed")
+    result = research_sources.add_source("https://example.com/feed", "Duplicate Attempt")
+    assert result is None
+
+
 def test_find_source_by_id(tmp_path, monkeypatch):
     fake_file = tmp_path / "sources.json"
     monkeypatch.setattr(research_sources, "RESEARCH_SOURCES_FILE", fake_file)
