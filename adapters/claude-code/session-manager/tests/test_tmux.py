@@ -101,3 +101,25 @@ def test_send_prompt_sends_escape_then_command_when_idle(mocker):
 def test_send_prompt_returns_false_on_timeout(mocker):
     mocker.patch("tmux.wait_until_idle", return_value=False)
     assert tmux.send_prompt("s", "/triage") is False
+
+
+def test_list_session_names_returns_set(mocker):
+    mock_run = mocker.patch("tmux.subprocess.run")
+    mock_run.return_value = mocker.Mock(returncode=0, stdout="alpha\nbeta\n")
+    assert tmux.list_session_names() == {"alpha", "beta"}
+
+
+def test_list_session_names_returns_empty_set_when_no_server(mocker):
+    mock_run = mocker.patch("tmux.subprocess.run")
+    mock_run.return_value = mocker.Mock(returncode=1, stdout="")
+    assert tmux.list_session_names() == set()
+
+
+def test_wait_until_idle_requires_consecutive_idle_readings(mocker):
+    mocker.patch("tmux.has_session", return_value=True)
+    mocker.patch("tmux.capture_pane", return_value="pane text")
+    parse_mock = mocker.patch("tmux.parse_activity", side_effect=["idle", "working", "idle", "idle"])
+    mocker.patch("tmux.time.sleep")
+    result = tmux.wait_until_idle("s", timeout=60, poll_interval=0, required_consecutive=2)
+    assert result is True
+    assert parse_mock.call_count == 4

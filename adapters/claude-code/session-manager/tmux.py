@@ -27,6 +27,22 @@ def has_session(name: str) -> bool:
     return result.returncode == 0
 
 
+def list_session_names() -> set[str]:
+    """Return the set of currently live tmux session names.
+
+    tmux exits non-zero with "no server running" when there are zero
+    sessions — treat that as an empty set rather than an error.
+    """
+    result = subprocess.run(
+        ["tmux", "list-sessions", "-F", "#{session_name}"],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        return set()
+    return {line.strip() for line in result.stdout.splitlines() if line.strip()}
+
+
 def launch_session(name: str, project_dir: str, *, skip_permissions: bool = False) -> None:
     # Launch through a login shell so ~/.profile → ~/.bashrc →
     # ~/.claude/secrets.env runs and Claude inherits credentials that
@@ -82,14 +98,25 @@ def wait_until_idle(
     *,
     timeout: float = 60.0,
     poll_interval: float = 3.0,
+    required_consecutive: int = 1,
 ) -> bool:
-    """Poll the pane until Claude Code is at an idle prompt. Returns True if idle before timeout."""
+    """Poll the pane until Claude Code is at an idle prompt. Returns True if idle before timeout.
+
+    required_consecutive: number of consecutive idle readings needed before returning True.
+    Use >1 to avoid false positives during the brief gap between generation starting and
+    the token counter appearing (parse_activity blind spot for plain text output).
+    """
     deadline = time.monotonic() + timeout
+    consecutive = 0
     while True:
         if not has_session(name):
             return False
         if parse_activity(capture_pane(name)) == "idle":
-            return True
+            consecutive += 1
+            if consecutive >= required_consecutive:
+                return True
+        else:
+            consecutive = 0
         if time.monotonic() >= deadline:
             return False
         time.sleep(poll_interval)
@@ -101,6 +128,7 @@ def send_prompt(
     *,
     min_delay: float = 5.0,
     timeout: float = 60.0,
+    required_consecutive: int = 1,
     escape_first: bool = True,
 ) -> bool:
     """Send a command to a Claude Code session when the pane is at an idle prompt.
@@ -114,7 +142,7 @@ def send_prompt(
     and causes the two commands' text to merge in Claude Code's input buffer.
     """
     time.sleep(min_delay)
-    if not wait_until_idle(name, timeout=timeout):
+    if not wait_until_idle(name, timeout=timeout, required_consecutive=required_consecutive):
         return False
     if escape_first:
         send_key(name, "Escape")
