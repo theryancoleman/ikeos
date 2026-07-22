@@ -76,6 +76,18 @@
 
       <div class="hk-output-card">
         <div class="hk-output-card__title">
+          <span class="hk-output-card__name">Eval Suite</span>
+        </div>
+        <p class="hk-output-card__body">
+          On-demand claude-config eval suite — enable the capability below to run.
+        </p>
+        <div class="hk-output-card__footer">
+          <a class="hk-output-card__link" href="{{ url_for('evals.index') }}">View page →</a>
+        </div>
+      </div>
+
+      <div class="hk-output-card">
+        <div class="hk-output-card__title">
           <span class="hk-output-card__name">Research Findings</span>
           <span class="hk-pill {{ 'hk-pill--ok' if research_generated_at else 'hk-pill--uninitialized' }}">
             {{ research_age_str if research_generated_at else 'None yet' }}

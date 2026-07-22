@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Eval Suite{% endblock %}
+
+{% block content %}
+<div class="settings-page">
+
+  <header class="page-header">
+    <span class="ike-eyebrow">Housekeeping</span>
+    <h1>Eval Suite</h1>
+    <p class="page-subtitle">
+      claude-config's agent/command eval suite &mdash; pass/fail/regression results from the last run.
+    </p>
+  </header>
+
+  <div style="display:flex; gap:10px; align-items:center; margin-bottom:20px;">
+    <a href="{{ url_for('housekeeping.index') }}" class="pill">&larr; Housekeeping</a>
+    {% if capabilities.eval_suite_trigger.enabled %}
+    <button class="pill pill-primary" id="run-evals-btn" onclick="runEvals(this)">
+      Run Eval Suite
+    </button>
+    <span id="run-evals-msg" style="font-size:0.85rem; color:var(--color-muted);"></span>
+    {% else %}
+    <span class="pill pill--muted">Enable capability to run</span>
+    {% endif %}
+  </div>
+
+  {% if last_run %}
+  <section>
+    <div class="ike-eyebrow">Last run: {{ last_run.timestamp }}</div>
+    <div class="hk-schedule-card" style="overflow-x:auto;">
+      <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+        <thead>
+          <tr>
+            <th style="text-align:left; padding:6px;">Case</th>
+            <th style="text-align:right; padding:6px;">Score</th>
+            <th style="text-align:right; padding:6px;">Baseline</th>
+            <th style="text-align:right; padding:6px;">Delta</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in last_run.results %}
+          <tr>
+            <td style="padding:6px;">{{ r.name }}</td>
+            <td style="text-align:right; padding:6px;">{{ r.score }}</td>
+            <td style="text-align:right; padding:6px;">{{ r.baseline_score if r.baseline_score is not none else '—' }}</td>
+            <td style="text-align:right; padding:6px;
+                       color: {{ 'var(--color-danger, #c0392b)' if r.delta is not none and r.delta < 0 else 'inherit' }};">
+              {{ '%+.1f'|format(r.delta) if r.delta is not none else '—' }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% else %}
+  <div class="hk-widget">
+    <p class="hk-status hk-status-pending">No eval run found yet.</p>
+    {% if not capabilities.eval_suite_trigger.enabled %}
+    <p style="font-size:0.9rem; color:var(--color-muted);">
+      Enable the <strong>Eval Suite Trigger</strong> capability on the
+      <a href="{{ url_for('housekeeping.index') }}">Housekeeping page</a> to run the first eval.
+    </p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+const _captureToken = {{ capture_token | tojson }};
+
+async function runEvals(btn) {
+  const msg = document.getElementById('run-evals-msg');
+  btn.disabled = true;
+  btn.textContent = 'Starting…';
+  msg.textContent = '';
+  try {
+    const resp = await fetch('/evals/run', {
+      method: 'POST',
+      headers: {'X-Capture-Token': _captureToken},
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      btn.textContent = 'Run Eval Suite';
+      btn.disabled = false;
+      msg.textContent = data.error || 'Error starting eval run.';
+    } else if (data.already_running) {
+      btn.textContent = 'Already running';
+      msg.textContent = `Session: ${data.session_id}`;
+    } else {
+      btn.textContent = 'Running…';
+      msg.textContent = `Session started: ${data.session_id}. Each case takes 10-30s via the claude CLI — reload this page in a few minutes for results.`;
+    }
+  } catch (e) {
+    btn.textContent = 'Run Eval Suite';
+    btn.disabled = false;
+    msg.textContent = 'Network error.';
+  }
+}
+</script>
+{% endblock %}
