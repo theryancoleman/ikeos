@@ -13,7 +13,13 @@ from sessions import (
     list_sessions, get_session, create_session,
     update_session, remove_session, _save,
 )
-from tmux import has_session, launch_session, kill_session, send_command, send_key, send_enter, capture_pane, send_prompt
+from tmux import (
+    has_session, launch_session, kill_session, send_command, send_key,
+    send_enter, capture_pane, send_prompt, list_session_names,
+)
+from research_sources import (
+    list_sources, add_source, find_source, set_blacklisted,
+)
 from pane_parser import (
     parse_remote_control_state, parse_rc_dialog_open, parse_message_count,
     parse_compaction_detected, parse_activity, compute_health, parse_token_usage,
@@ -264,8 +270,9 @@ def create():
         return jsonify({"error": "session already running"}), 409
 
     is_ephemeral = bool(data.get("initial_command"))
+    model = data.get("model")
     try:
-        launch_session(name, data["project_dir"], skip_permissions=is_ephemeral)
+        launch_session(name, data["project_dir"], skip_permissions=is_ephemeral, model=model)
     except Exception as e:
         app.logger.error("Failed to launch tmux session %s: %s", name, e)
         return jsonify({"error": "Failed to launch session"}), 500
@@ -274,6 +281,7 @@ def create():
         name, data["project"],
         data["project_dir"], data.get("remote_control", False),
         ephemeral=is_ephemeral,
+        model=model,
     )
     _post_metric("agent.session_start", {
         "session_id": session["id"],
@@ -498,5 +506,45 @@ def start_container(name):
     return jsonify({"ok": result.returncode == 0, "output": result.stderr})
 
 
+def _reconcile_sessions() -> None:
+    """Drop session records whose tmux session no longer exists.
+
+    Runs once at startup so a server restart doesn't leave stale session
+    records around from tmux sessions that died while the server was down.
+    """
+    live = list_session_names()
+    for session in list_sessions():
+        if session["tmux_session"] not in live:
+            remove_session(session["id"])
+
+
+@app.route("/research-sources", methods=["GET"])
+def get_research_sources():
+    return jsonify({"sources": list_sources()})
+
+
+@app.route("/research-sources", methods=["POST"])
+def create_research_source():
+    data = request.get_json(silent=True) or {}
+    url = (data.get("url") or "").strip()
+    label = (data.get("label") or "").strip()
+    if not url or not label:
+        return jsonify({"error": "url and label are required"}), 400
+    if any(s["url"] == url for s in list_sources()):
+        return jsonify({"error": "source already exists"}), 409
+    source = add_source(url, label)
+    return jsonify(source), 201
+
+
+@app.route("/research-sources/<source_id>", methods=["PATCH"])
+def toggle_research_source(source_id):
+    source = find_source(source_id)
+    if not source:
+        abort(404)
+    updated = set_blacklisted(source_id, not source["blacklisted"])
+    return jsonify(updated)
+
+
 if __name__ == "__main__":
+    _reconcile_sessions()
     app.run(host="0.0.0.0", port=5010)
