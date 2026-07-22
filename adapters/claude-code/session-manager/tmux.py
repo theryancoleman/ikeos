@@ -43,11 +43,17 @@ def list_session_names() -> set[str]:
     return {line.strip() for line in result.stdout.splitlines() if line.strip()}
 
 
-def launch_session(name: str, project_dir: str, *, skip_permissions: bool = False) -> None:
+def launch_session(
+    name: str, project_dir: str, *,
+    skip_permissions: bool = False, model: str | None = None,
+) -> None:
     # Launch through a login shell so ~/.profile → ~/.bashrc →
     # ~/.claude/secrets.env runs and Claude inherits credentials that
     # WSL2 does not get from the Windows environment.
-    cmd = CLAUDE_CMD + (["--dangerously-skip-permissions"] if skip_permissions else [])
+    cmd = list(CLAUDE_CMD)
+    if model:
+        cmd[cmd.index("--model") + 1] = model
+    cmd = cmd + (["--dangerously-skip-permissions"] if skip_permissions else [])
     subprocess.run(
         ["tmux", "new-session", "-d", "-s", name, "-c", project_dir,
          "bash", "-lc", shlex.join(cmd)],

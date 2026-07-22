@@ -85,6 +85,16 @@ def test_create_session_ephemeral_true():
     assert s["ephemeral"] is True
 
 
+def test_create_session_stores_model():
+    s = create_session("test", "proj", "/dir", model="claude-opus-4-8")
+    assert s["model"] == "claude-opus-4-8"
+
+
+def test_create_session_model_defaults_none():
+    s = create_session("test", "proj", "/dir")
+    assert s["model"] is None
+
+
 def test_concurrent_create_sessions_both_persist():
     """Both sessions must be saved when created concurrently."""
     results = []

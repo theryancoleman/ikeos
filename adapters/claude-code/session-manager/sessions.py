@@ -30,7 +30,8 @@ def get_session(session_id: str) -> dict | None:
 
 
 def create_session(name: str, project: str, project_dir: str,
-                   remote_control: bool = False, ephemeral: bool = False) -> dict:
+                   remote_control: bool = False, ephemeral: bool = False,
+                   model: str | None = None) -> dict:
     session = {
         "id": str(uuid.uuid4()),
         "name": name,
@@ -40,6 +41,7 @@ def create_session(name: str, project: str, project_dir: str,
         "remote_control_confirmed": False,
         "autonomous_mode": False,
         "ephemeral": ephemeral,
+        "model": model,
         "status": "active",
         "tmux_session": name,
         "started_at": datetime.now(timezone.utc).isoformat(),

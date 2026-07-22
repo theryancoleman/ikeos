@@ -115,6 +115,14 @@ def test_list_session_names_returns_empty_set_when_no_server(mocker):
     assert tmux.list_session_names() == set()
 
 
+def test_launch_session_overrides_model_when_given(mocker):
+    mock_run = mocker.patch("tmux.subprocess.run")
+    tmux.launch_session("my-session", "/home/user/projects/foo", model="claude-opus-4-8")
+    args = mock_run.call_args[0][0]
+    cmd_str = args[-1]
+    assert "--model claude-opus-4-8" in cmd_str
+
+
 def test_wait_until_idle_requires_consecutive_idle_readings(mocker):
     mocker.patch("tmux.has_session", return_value=True)
     mocker.patch("tmux.capture_pane", return_value="pane text")
