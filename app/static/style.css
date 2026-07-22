@@ -242,6 +242,7 @@ a:hover { color: var(--brand-primary); text-decoration: underline; }
 .type-idea     { color: var(--ike-soft-lavender); background: rgba(180, 151, 255, 0.08); }
 .type-bug      { color: var(--sem-insight);       background: rgba(255, 120, 73, 0.08); }
 .type-decision { color: var(--sem-discovery);     background: rgba(45, 212, 191, 0.08); }
+.type-experiment { color: var(--sem-understanding); background: rgba(250, 204, 21, 0.08); }
 
 /* Status badges */
 .status-new        { color: var(--sem-insight);       background: rgba(255, 120, 73, 0.10); }
@@ -473,6 +474,7 @@ button[type="submit"] { margin-top: var(--space-3); }
 .chip-idea  { color: var(--ike-soft-lavender); background: rgba(180,151,255,0.08); }
 .chip-note    { color: var(--sem-knowledge);     background: rgba(59,130,246,0.08); }
 .chip-grillme { color: #f59e0b;                 background: rgba(245,158,11,0.08); }
+.chip-experiment { color: var(--sem-understanding); background: rgba(250,204,21,0.08); }
 .chip-empty { background: transparent; color: var(--text-muted); font-weight: 400; }
 .chip-empty::before { display: none; }
 

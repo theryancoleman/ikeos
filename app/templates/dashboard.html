@@ -50,7 +50,23 @@
     </section>
     {% endif %}
 
-    {% if not in_flight and not needs_triage %}
+    {% if running_experiments %}
+    <section>
+      <div class="ike-eyebrow">Running experiments <span class="eyebrow-count">/ {{ running_experiments | length }}</span></div>
+      <ul class="entry-group">
+        {% for e in running_experiments %}
+        <li class="entry-row">
+          <span class="badge type-{{ e.type }}">{{ e.type }}</span>
+          <a href="{{ url_for('browse.entry', name=e.project, slug=e.slug) }}">{{ e.title }}</a>
+          <span class="entry-project">{{ e.project }}</span>
+          <span class="entry-date">{{ e.created[:10] if e.created else '' }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+
+    {% if not in_flight and not needs_triage and not running_experiments %}
       <p class="empty" style="margin-top:2rem">All clear. The map is quiet — <a href="{{ url_for('capture.capture_form') }}">capture something when you're ready.</a></p>
     {% endif %}
   </div>
@@ -82,7 +98,10 @@
                 {% if project_stats[p.slug].grill_me > 0 %}
                   <span class="count-chip chip-grillme">{{ project_stats[p.slug].grill_me }} grill-me</span>
                 {% endif %}
-                {% if project_stats[p.slug].bugs == 0 and project_stats[p.slug].ideas == 0 and project_stats[p.slug].notes == 0 and project_stats[p.slug].grill_me == 0 %}
+                {% if project_stats[p.slug].experiments > 0 %}
+                  <span class="count-chip chip-experiment">{{ project_stats[p.slug].experiments }} experiment{{ 's' if project_stats[p.slug].experiments != 1 }}</span>
+                {% endif %}
+                {% if project_stats[p.slug].bugs == 0 and project_stats[p.slug].ideas == 0 and project_stats[p.slug].notes == 0 and project_stats[p.slug].grill_me == 0 and project_stats[p.slug].experiments == 0 %}
                   <span class="count-chip chip-empty">no open items</span>
                 {% endif %}
               </div>

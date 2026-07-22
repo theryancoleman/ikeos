@@ -31,11 +31,13 @@ def tasks():
             "ideas": len([e for e in active if e.get("type") == "idea"]),
             "notes": len([e for e in active if e.get("type") == "note"]),
             "grill_me": len([e for e in active if e.get("type") == "grill-me"]),
+            "experiments": len([e for e in p_entries if e.get("type") == "experiment" and e.get("status") == "running"]),
             "new": len([e for e in p_entries if e.get("status") == "new"]),
         }
 
     in_flight = [e for e in all_entries if e.get("status") == "in-progress"]
     needs_triage = [e for e in all_entries if e.get("status") == "new"]
+    running_experiments = [e for e in all_entries if e.get("type") == "experiment" and e.get("status") == "running"]
 
     from app.routes.housekeeping import _age_str, _widget_status
     heartbeat = read_housekeeping_heartbeat(project_slug())
@@ -50,6 +52,7 @@ def tasks():
         project_stats=project_stats,
         in_flight=in_flight,
         needs_triage=needs_triage,
+        running_experiments=running_experiments,
         housekeeping_heartbeat=heartbeat,
         hk_age=hk_age,
         hk_status=hk_status,
