@@ -54,6 +54,19 @@ def run_platform_review(model: str | None = None) -> SessionResult:
     )
 
 
+def run_eval_suite(model: str | None = None) -> SessionResult:
+    return create_session(
+        name="eval-suite-run",
+        project=project_slug(),
+        project_dir=_housekeeping_project_dir(),
+        initial_command=(
+            "Run `python3 evals/runner.py --notify` and report the pass/fail/regression "
+            "summary when it finishes."
+        ),
+        model=model,
+    )
+
+
 def publish_blog_draft(draft_name: str, bluesky_name: str, model: str | None = None) -> SessionResult:
     project_dir = _blog_project_dir()
     command = (

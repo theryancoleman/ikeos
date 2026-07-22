@@ -3,6 +3,7 @@ from unittest.mock import patch
 from app.services.driver import (
     publish_blog_draft,
     rewrite_blog_draft,
+    run_eval_suite,
     run_housekeeping_task,
     run_platform_review,
     run_scheduled_housekeeping,
@@ -37,6 +38,16 @@ def test_platform_review_command():
         run_platform_review()
     assert cs.call_args.kwargs["initial_command"] == "/platform-review"
     assert cs.call_args.kwargs["name"].startswith("weekly-platform-review-")
+
+
+def test_run_eval_suite_spawns_session():
+    with patch("app.services.driver.create_session", return_value=OK) as cs:
+        result = run_eval_suite()
+    assert result.session_id == "s1"
+    kw = cs.call_args.kwargs
+    assert kw["project_dir"] == "/mnt/c/Server/claude-config"
+    assert "evals/runner.py" in kw["initial_command"]
+    assert kw["name"] == "eval-suite-run"
 
 
 def test_publish_blog_draft_builds_deploy_prompt(monkeypatch):
