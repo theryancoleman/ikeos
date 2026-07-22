@@ -18,5 +18,6 @@ services:
       - ${METRICS_PATH_HOST:-/tmp/ikeos-metrics}:/metrics:rw
       - ${CLAUDE_VERSION_PATH}:/claude-config/VERSION:ro
       - ${CLAUDE_CONFIG_PATH:-/tmp/ikeos-no-claude-config}/library:/claude-config/library:ro
+      - ${CLAUDE_CONFIG_PATH:-/tmp/ikeos-no-claude-config}/evals:/claude-config/evals:ro
       - ${AIOS_BLOG_POSTS_PATH}:/blog-posts:rw
       - ${WEEKLY_REVIEW_OUTPUT_PATH:-/tmp/ikeos-no-weekly-reviews}:/weekly-reviews:ro
