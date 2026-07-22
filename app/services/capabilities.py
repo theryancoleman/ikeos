@@ -21,6 +21,12 @@ DEFAULT_CAPABILITIES: dict = {
         "enabled_at": None,
         "description": "Weekly AI engineering platform review — researches ecosystem developments and scores platform health",
     },
+    "eval_suite_trigger": {
+        "enabled": False,
+        "enabled_by": None,
+        "enabled_at": None,
+        "description": "On-demand claude-config eval suite runs from the dashboard",
+    },
 }
 
 
