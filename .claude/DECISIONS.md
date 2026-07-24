@@ -28,6 +28,18 @@ Replaced `agents.html` with `workspace.html` rendered by both `/` (three_col=Tru
 
 Selected session ID persisted in `?session=<id>` so a page refresh returns to the same panel. `history.replaceState` on open/close; parsed via `URLSearchParams` on load.
 
+## 2026-07-22: Eval suite runs via a spawned Claude Code session, not an in-container CLI
+
+The `ikeos` Docker image has no Node/claude CLI installed (plain `python:3.11-slim`). `run_eval_suite()` in `driver.py` spawns a session through the existing session-manager (same pattern as housekeeping/platform-review) rather than installing a CLI stack in the app image — avoids new runtime dependencies for a feature that already has an equivalent dispatch mechanism.
+
+## 2026-07-22: Recurring eval-suite scheduling deferred, on-demand trigger shipped alone
+
+Building a second cron job means either duplicating `scheduler.py`'s leader-election/APScheduler machinery or generalizing it to support multiple named jobs — a real design decision, not a mechanical add, and disproportionate to an explicitly "not urgent" idea whose ad hoc `sync.sh` trigger already works. Revisit as its own plan once there's a concrete cadence in mind.
+
+## 2026-07-22: adapters/claude-code/session-manager/ kept env-var-based config when syncing new features from the deployed service
+
+When porting `model` parameter support and `/research-sources` endpoints from the real deployed session-manager into this repo's public reference-implementation copy, the deployed service's hardcoded absolute host paths (`CLAUDE_BIN`, `PLUGIN_BASE`) were deliberately NOT copied — the adapter's `os.environ.get(...)`-based config and `Path.home()`-relative dotfile storage are correct for third-party distribution and were preserved.
+
 ## 2026-06-11: POST /capture/json for inline AJAX capture
 
 Added a JSON endpoint so the capture column in the workspace can submit without a page redirect. Internally calls the same `write_entry()` used by the form POST. No auth required (same policy as the form).
