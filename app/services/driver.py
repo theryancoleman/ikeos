@@ -56,10 +56,12 @@ def run_platform_review(model: str | None = None) -> SessionResult:
 
 def publish_blog_draft(draft_name: str, bluesky_name: str, model: str | None = None) -> SessionResult:
     project_dir = _blog_project_dir()
+    bluesky_arg = f" content/posts/{bluesky_name}" if bluesky_name else ""
     command = (
-        f"Run `bash deploy.sh content/posts/{draft_name}` in {project_dir}. "
-        f"The Bluesky companion text is in content/posts/{bluesky_name}. "
-        "Build the Hugo site, deploy via rsync, and post to Bluesky."
+        f"Run `bash publish.sh content/posts/{draft_name}{bluesky_arg}` in {project_dir}. "
+        "This promotes the draft to a published post, builds and deploys the site, "
+        "commits and pushes the change, and posts to Bluesky if a companion text file "
+        "was given."
     )
     stem = draft_name.rsplit(".", 1)[0]
     return create_session(

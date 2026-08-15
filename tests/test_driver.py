@@ -39,14 +39,27 @@ def test_platform_review_command():
     assert cs.call_args.kwargs["name"].startswith("weekly-platform-review-")
 
 
-def test_publish_blog_draft_builds_deploy_prompt(monkeypatch):
+def test_publish_blog_draft_builds_publish_prompt(monkeypatch):
     monkeypatch.setenv("AIOS_BLOG_PROJECT_DIR", "/mnt/c/Server/projects/aios-blog")
     with patch("app.services.driver.create_session", return_value=OK) as cs:
         publish_blog_draft("2026-07-01-weekly-draft.md", "2026-07-01-weekly-bluesky.txt")
     kw = cs.call_args.kwargs
-    assert "bash deploy.sh content/posts/2026-07-01-weekly-draft.md" in kw["initial_command"]
+    assert (
+        "bash publish.sh content/posts/2026-07-01-weekly-draft.md "
+        "content/posts/2026-07-01-weekly-bluesky.txt" in kw["initial_command"]
+    )
     assert kw["project"] == "aios-blog"
     assert kw["name"] == "blog-publish-2026-07-01-weekly-draft"
+
+
+def test_publish_blog_draft_omits_bluesky_arg_when_absent(monkeypatch):
+    monkeypatch.setenv("AIOS_BLOG_PROJECT_DIR", "/mnt/c/Server/projects/aios-blog")
+    with patch("app.services.driver.create_session", return_value=OK) as cs:
+        publish_blog_draft("2026-07-01-weekly-draft.md", "")
+    kw = cs.call_args.kwargs
+    assert kw["initial_command"].startswith(
+        "Run `bash publish.sh content/posts/2026-07-01-weekly-draft.md`"
+    )
 
 
 def test_rewrite_resends_command_when_already_running(monkeypatch):
