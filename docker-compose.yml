@@ -1,7 +1,6 @@
 services:
   ikeos:
     build: .
-    container_name: ikeos
     restart: unless-stopped
     env_file: .env
     environment:
