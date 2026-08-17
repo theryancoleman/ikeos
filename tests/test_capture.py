@@ -492,6 +492,53 @@ def test_patch_entries_decision_valid_statuses(client, tmp_path):
     assert response.status_code == 400  # Invalid status for decision lifecycle
 
 
+def test_patch_entries_relocates_project(client, tmp_path):
+    src_dir = tmp_path / "projects" / "bcr-waivers" / "bugs"
+    src_dir.mkdir(parents=True)
+    entry = src_dir / "2026-01-01-test-bug.md"
+    entry.write_text(
+        "---\nproject: bcr-waivers\nstatus: open\ntags:\n- bug\n- bcr-waivers\ntitle: Test bug\ntype: bug\n---\n\nBody.\n",
+        encoding="utf-8",
+    )
+
+    resp = client.patch(
+        "/entries",
+        data={
+            "project": "bcr-waivers",
+            "type": "bug",
+            "filename": "2026-01-01-test-bug",
+            "new_project": "bottle-drive",
+        },
+        headers={"X-Capture-Token": "test-token-secret"},
+    )
+    assert resp.status_code == 200
+    assert not entry.exists()
+
+    moved = tmp_path / "projects" / "bottle-drive" / "bugs" / "2026-01-01-test-bug.md"
+    assert moved.exists()
+    content = moved.read_text(encoding="utf-8")
+    assert "project: bottle-drive" in content
+    assert "bcr-waivers" not in content
+
+
+def test_patch_entries_relocate_requires_token(client, tmp_path):
+    resp = client.patch("/entries", data={
+        "project": "bcr-waivers", "type": "bug",
+        "filename": "whatever", "new_project": "bottle-drive",
+    })
+    assert resp.status_code == 401
+
+
+def test_patch_entries_relocate_404_when_source_missing(client, tmp_path):
+    (tmp_path / "projects" / "bcr-waivers" / "bugs").mkdir(parents=True)
+    resp = client.patch(
+        "/entries",
+        data={"project": "bcr-waivers", "type": "bug", "filename": "nonexistent", "new_project": "bottle-drive"},
+        headers={"X-Capture-Token": "test-token-secret"},
+    )
+    assert resp.status_code == 404
+
+
 def test_capture_json_note(client, mocker):
     mock_write = mocker.patch("app.routes.capture.write_entry")
     resp = client.post(

@@ -124,6 +124,7 @@ def patch_entries():
     entry_type = req_data.get("type", "").strip()
     filename = req_data.get("filename", "").strip()
     status = req_data.get("status", "").strip()
+    new_project = req_data.get("new_project", "").strip().lower()
 
     # Validate path traversal
     if not _reject_path_traversal(filename):
@@ -132,6 +133,17 @@ def patch_entries():
     # Validate entry_type
     if entry_type not in PATCH_VALID_TYPES:
         return jsonify({"error": "Invalid entry type"}), 400
+
+    # Relocation requests move an entry to a different project and don't
+    # carry a status to validate — branch before the status-lifecycle checks.
+    if new_project:
+        if not _reject_path_traversal(new_project):
+            return jsonify({"error": "Invalid project"}), 400
+        from app.services.vault import relocate_entry_project
+        success = relocate_entry_project(entry_type, project, filename, new_project)
+        if not success:
+            return jsonify({"error": "Entry not found or invalid project"}), 404
+        return jsonify({"message": "Project updated"}), 200
 
     # Validate status against the lifecycle for this entry type
     if entry_type == "decision":

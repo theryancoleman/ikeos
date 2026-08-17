@@ -342,5 +342,51 @@ def update_entry_status_generic(entry_type: str, project: str | None, filename: 
         return False
 
 
+def relocate_entry_project(entry_type: str, project: str, filename: str, new_project: str) -> bool:
+    """Move an entry to a different project's folder and correct its project
+    frontmatter/tag to match. Used to fix vault-schema violations (e.g. a
+    mis-cased or wrong `project:` field) that the capture API's PATCH endpoint
+    otherwise can't touch — direct vault file writes are permission-denied to
+    agents, so this is the sole sanctioned path for this class of correction.
+    """
+    new_project = (new_project or "").strip()
+    if not new_project or entry_type not in _vc.ENTRY_TYPE_CONFIG:
+        return False
+
+    cfg = _vc.ENTRY_TYPE_CONFIG[entry_type]
+    if not project:
+        return False
+
+    src_path = _vc.VAULT_PATH / "projects" / project / cfg["folder"]
+    filepath = src_path / (filename if filename.endswith(".md") else f"{filename}.md")
+    if not filepath.exists():
+        return False
+
+    try:
+        post = frontmatter.load(filepath)
+        post.metadata["project"] = new_project
+        post.metadata["updated"] = datetime.now().isoformat(timespec="seconds")
+        tags = [t for t in post.metadata.get("tags", []) if t != project]
+        if new_project not in tags:
+            tags.append(new_project)
+        post.metadata["tags"] = tags
+
+        dest_dir = _vc.VAULT_PATH / "projects" / new_project / cfg["folder"]
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        dest_path = dest_dir / filepath.name
+
+        with open(dest_path, "w", encoding="utf-8") as f:
+            f.write(frontmatter.dumps(post))
+        filepath.unlink()
+
+        _vc._invalidate_cache()
+        return True
+    except Exception:
+        logger.exception(
+            "Failed to relocate %s/%s/%s to project %s", entry_type, project, filename, new_project
+        )
+        return False
+
+
 # Alias for test compatibility
 _invalidate_cache = _vc._invalidate_cache
