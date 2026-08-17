@@ -413,23 +413,23 @@
 (function () {
   const DURATION = 6500;
   const CAPTIONS = [
-    ‘Tracing connections…’,
-    ‘Re-reading what you’ve captured…’,
-    ‘Threading memory through time…’,
-    ‘Surfacing the patterns you’d forgotten…’,
-    ‘Drawing the constellation…’,
+    'Tracing connections…',
+    "Re-reading what you've captured…",
+    'Threading memory through time…',
+    "Surfacing the patterns you'd forgotten…",
+    'Drawing the constellation…',
   ];
   const CAPTION_INTERVAL = DURATION / CAPTIONS.length; // 1300ms each
 
-  const captionEl = document.getElementById(‘ls-caption’);
-  const welcomeEl = document.getElementById(‘ls-welcome’);
-  const screenEl  = document.getElementById(‘ls-screen’);
+  const captionEl = document.getElementById('ls-caption');
+  const welcomeEl = document.getElementById('ls-welcome');
+  const screenEl  = document.getElementById('ls-screen');
 
   function setCaption(idx) {
     captionEl.textContent = CAPTIONS[idx];
-    captionEl.style.animation = ‘none’;
+    captionEl.style.animation = 'none';
     void captionEl.offsetWidth;
-    captionEl.style.animation = ‘’;
+    captionEl.style.animation = '';
   }
 
   // Advance captions via setTimeout — reliable on iOS even when backgrounded
@@ -441,12 +441,12 @@
   // Complete: show welcome overlay, then fade out and redirect
   setTimeout(function () {
     setTimeout(function () {
-      welcomeEl.classList.add(‘is-visible’);
+      welcomeEl.classList.add('is-visible');
       setTimeout(function () {
-        screenEl.classList.add(‘is-exiting’);
-        sessionStorage.setItem(‘ike_splash_seen’, ‘1’);
+        screenEl.classList.add('is-exiting');
+        sessionStorage.setItem('ike_splash_seen', '1');
         setTimeout(function () {
-          window.location.href = ‘/dashboard’;
+          window.location.href = '/dashboard';
         }, 520);
       }, 1200);
     }, 280);
