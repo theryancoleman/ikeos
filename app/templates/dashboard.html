@@ -130,6 +130,8 @@
           <span class="hk-widget-label">Blog draft:</span>
           {% if blog_draft %}
             <span class="hk-widget-status hk-widget-status--ok">{{ blog_draft }}</span>
+          {% elif blog_draft_published %}
+            <span class="hk-widget-status hk-widget-status--ok">Published</span>
           {% else %}
             <span class="hk-widget-status hk-widget-status--pending">No draft this week</span>
           {% endif %}

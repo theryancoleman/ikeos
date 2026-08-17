@@ -7,7 +7,7 @@ from app.services.vault import (
 )
 from app.services.umbrella import get_components
 from app.services.skills import get_skills_by_category
-from app.services.blog_drafts import latest_draft_name
+from app.services.blog_drafts import draft_paths, is_published, latest_draft_name
 from app.services.platform import project_slug
 from app.services.reflection import get_reflection_health, get_weak_signals
 
@@ -43,7 +43,18 @@ def tasks():
     heartbeat = read_housekeeping_heartbeat(project_slug())
     hk_age = _age_str(heartbeat.get("last_run"))
     hk_status = _widget_status(heartbeat)
-    blog_draft = latest_draft_name()
+    # Mirrors housekeeping._housekeeping_context()'s pill logic: both values
+    # must describe the SAME (truly-latest) draft, not be computed
+    # independently, or a published draft can render as if still pending.
+    latest_name = latest_draft_name()
+    blog_draft = None
+    blog_draft_published = False
+    if latest_name:
+        latest_path, _ = draft_paths(latest_name)
+        if latest_path and is_published(latest_path):
+            blog_draft_published = True
+        else:
+            blog_draft = latest_name
     reflection_health = get_reflection_health()
 
     return render_template(
@@ -57,6 +68,7 @@ def tasks():
         hk_age=hk_age,
         hk_status=hk_status,
         blog_draft=blog_draft,
+        blog_draft_published=blog_draft_published,
         reflection_health=reflection_health,
     )
 

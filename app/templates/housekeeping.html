@@ -49,7 +49,7 @@
           {% if blog_draft %}{{ blog_draft }}{% else %}Generated weekly by the housekeeping run.{% endif %}
         </p>
         <div class="hk-output-card__footer">
-          <a class="hk-output-card__link" href="{{ url_for('housekeeping.blog_draft_editor') }}">
+          <a class="hk-output-card__link" href="{{ url_for('housekeeping.blog_draft_editor', filename=blog_draft) if blog_draft else url_for('housekeeping.blog_draft_editor') }}">
             {{ 'Review draft →' if blog_draft else 'View editor →' }}
           </a>
           <a class="hk-output-card__link" href="{{ url_for('housekeeping.blog_drafts_list') }}">All drafts</a>

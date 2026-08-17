@@ -325,6 +325,25 @@ def test_dashboard_shows_no_draft_when_absent(client, tmp_path):
     assert b"No draft" in resp.data
 
 
+def test_dashboard_shows_published_when_latest_draft_is_published(client, tmp_path):
+    """GET /tasks shows 'Published' (not the stale filename) when the latest draft's
+    canonical post already exists -- regression test for the dashboard widget using
+    plain latest_draft_name() instead of the published-aware pill logic."""
+    from unittest.mock import patch
+
+    draft_dir = tmp_path / "posts"
+    draft_dir.mkdir(parents=True)
+    (draft_dir / "2026-06-22-weekly-draft.md").write_text("# Draft")
+    (draft_dir / "2026-06-22-weekly.md").write_text("# Published")
+
+    with patch.dict("os.environ", {"AIOS_BLOG_POSTS_DIR": str(draft_dir)}):
+        resp = client.get("/tasks")
+
+    assert resp.status_code == 200
+    assert b"Published" in resp.data
+    assert b"2026-06-22-weekly-draft.md" not in resp.data
+
+
 def test_weak_signals_page_renders_with_no_config(client):
     """GET /weak-signals degrades gracefully when CLAUDE_CONFIG_PATH is unset (get_weak_signals -> None)."""
     with patch("app.routes.browse.get_weak_signals", return_value=None):

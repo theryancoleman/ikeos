@@ -512,6 +512,20 @@ def test_housekeeping_pill_shows_published_for_latest_even_with_older_unpublishe
     assert b"2026-06-01-weekly-draft.md" not in resp.data
 
 
+def test_housekeeping_review_draft_link_targets_the_pill_draft(client, tmp_path, monkeypatch):
+    """Regression: 'Review draft ->' must link to the specific draft the pill
+    names, not always the latest draft on disk (which may differ, e.g. when
+    the truly-latest draft is published and an older one is still 'Ready')."""
+    monkeypatch.setenv("AIOS_BLOG_POSTS_DIR", str(tmp_path))
+    (tmp_path / "2026-06-01-weekly-draft.md").write_text("older content")
+    (tmp_path / "2026-07-01-weekly-draft.md").write_text("newer content")
+
+    resp = client.get("/housekeeping")
+
+    assert resp.status_code == 200
+    assert b"/housekeeping/blog-draft/2026-07-01-weekly-draft.md" in resp.data
+
+
 def test_blog_draft_status_no_draft(client, tmp_path, monkeypatch):
     """GET /housekeeping shows 'None yet' on the Blog Draft output card when posts dir is empty."""
     empty_dir = tmp_path / "posts"
