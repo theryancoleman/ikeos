@@ -65,6 +65,7 @@
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
   const _captureToken = {{ capture_token | tojson }};
+  const _draftFilename = {{ filename | tojson }};
 
   // Preview rendering
   const editor = document.getElementById('draft-editor');
@@ -97,6 +98,7 @@
     const body = new FormData();
     body.append('content', editor.value);
     body.append('bluesky_text', bskyEditor.value);
+    body.append('filename', _draftFilename);
     try {
       const resp = await fetch('/housekeeping/blog-draft/save', { method: 'POST', body, headers: { 'X-Capture-Token': _captureToken } });
       const data = await resp.json();
@@ -114,7 +116,7 @@
     btn.disabled = true;
     btn.textContent = 'Launching…';
     try {
-      const resp = await fetch('/housekeeping/blog-draft/publish', { method: 'POST', headers: { 'X-Capture-Token': _captureToken } });
+      const resp = await fetch('/housekeeping/blog-draft/publish', { method: 'POST', body: (() => { const b = new FormData(); b.append('filename', _draftFilename); return b; })(), headers: { 'X-Capture-Token': _captureToken } });
       const data = await resp.json();
       if (data.ok) {
         startSessionPoll(data.session_id, 'Publish');
@@ -167,7 +169,7 @@
     const btn = document.getElementById('btn-reload-draft');
     btn.textContent = 'Loading…';
     try {
-      const resp = await fetch('/housekeeping/blog-draft/content');
+      const resp = await fetch(`/housekeeping/blog-draft/content?filename=${encodeURIComponent(_draftFilename)}`);
       const data = await resp.json();
       if (data.content !== undefined) {
         editor.value = data.content;
@@ -202,6 +204,7 @@
     btn.textContent = 'Launching…';
     const body = new FormData();
     body.append('feedback', feedback);
+    body.append('filename', _draftFilename);
     try {
       const resp = await fetch('/housekeeping/blog-draft/rewrite', { method: 'POST', body, headers: { 'X-Capture-Token': _captureToken } });
       const data = await resp.json();

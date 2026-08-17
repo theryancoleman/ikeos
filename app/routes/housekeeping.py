@@ -264,8 +264,9 @@ def blog_draft_delete(filename: str):
 def blog_draft_save():
     content = request.form.get("content", "")
     bluesky_text = request.form.get("bluesky_text", "")
+    filename = request.form.get("filename") or None
     try:
-        filename = save_draft(content, bluesky_text)
+        filename = save_draft(content, bluesky_text, filename)
     except FileNotFoundError:
         return jsonify({"error": "No draft found"}), 404
     except OSError as e:
@@ -276,7 +277,8 @@ def blog_draft_save():
 @bp.route("/housekeeping/blog-draft/publish", methods=["POST"])
 @require_capture_token
 def blog_draft_publish():
-    bundle = read_draft_bundle()
+    filename = request.form.get("filename") or None
+    bundle = read_draft_bundle(filename)
     if not bundle:
         return jsonify({"error": "No draft found"}), 404
     result = publish_blog_draft(bundle["filename"], bundle["bluesky_filename"] or "")
@@ -288,7 +290,8 @@ def blog_draft_publish():
 @bp.route("/housekeeping/blog-draft/rewrite", methods=["POST"])
 @require_capture_token
 def blog_draft_rewrite():
-    bundle = read_draft_bundle()
+    filename = request.form.get("filename") or None
+    bundle = read_draft_bundle(filename)
     if not bundle:
         return jsonify({"error": "No draft found"}), 404
     feedback = request.form.get("feedback", "").strip()
@@ -331,7 +334,8 @@ def _housekeeping_context() -> dict:
 @bp.route("/housekeeping/blog-draft/content")
 def blog_draft_content():
     """Return current draft file content as JSON — used by JS to reload after rewrite."""
-    bundle = read_draft_bundle()
+    filename = request.args.get("filename") or None
+    bundle = read_draft_bundle(filename)
     if not bundle:
         return jsonify({"error": "No draft found"}), 404
     return jsonify({

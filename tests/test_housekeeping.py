@@ -752,6 +752,57 @@ def test_blog_draft_publish_creates_session(client, tmp_path, monkeypatch):
     assert data["session_id"] == "pub-sess-1"
 
 
+def test_blog_draft_rewrite_targets_specific_open_draft(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("CAPTURE_TOKEN", "tok")
+    monkeypatch.setenv("AIOS_BLOG_POSTS_DIR", str(tmp_path))
+    monkeypatch.setenv("AIOS_BLOG_PROJECT_DIR", "/srv/blog")
+    (tmp_path / "2026-06-01-weekly-draft.md").write_text("# Old draft")
+    (tmp_path / "2026-07-01-weekly-draft.md").write_text("# New draft")
+
+    mock_resp = MagicMock()
+    mock_resp.ok = True
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {"id": "rw-sess-old"}
+
+    with patch("app.services.session_client.requests.post", return_value=mock_resp) as post:
+        with patch("app.services.session_client.append_event"):
+            resp = client.post(
+                "/housekeeping/blog-draft/rewrite",
+                data={"feedback": "make it shorter", "filename": "2026-06-01-weekly-draft.md"},
+                headers={"X-Capture-Token": "tok"},
+            )
+    assert resp.status_code == 200
+    # The session command must reference the OLD draft, not the newest one.
+    sent_command = post.call_args.kwargs["json"]["initial_command"] if "json" in post.call_args.kwargs else None
+    assert sent_command is None or "2026-06-01-weekly-draft.md" in sent_command
+
+
+def test_blog_draft_save_targets_specific_open_draft(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("CAPTURE_TOKEN", "tok")
+    monkeypatch.setenv("AIOS_BLOG_POSTS_DIR", str(tmp_path))
+    (tmp_path / "2026-06-01-weekly-draft.md").write_text("old content")
+    (tmp_path / "2026-07-01-weekly-draft.md").write_text("new content")
+
+    resp = client.post(
+        "/housekeeping/blog-draft/save",
+        data={"content": "edited old content", "bluesky_text": "", "filename": "2026-06-01-weekly-draft.md"},
+        headers={"X-Capture-Token": "tok"},
+    )
+    assert resp.status_code == 200
+    assert (tmp_path / "2026-06-01-weekly-draft.md").read_text() == "edited old content"
+    assert (tmp_path / "2026-07-01-weekly-draft.md").read_text() == "new content"
+
+
+def test_blog_draft_content_reload_targets_specific_draft(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("AIOS_BLOG_POSTS_DIR", str(tmp_path))
+    (tmp_path / "2026-06-01-weekly-draft.md").write_text("old content")
+    (tmp_path / "2026-07-01-weekly-draft.md").write_text("new content")
+
+    resp = client.get("/housekeeping/blog-draft/content?filename=2026-06-01-weekly-draft.md")
+    assert resp.status_code == 200
+    assert resp.get_json()["content"] == "old content"
+
+
 # ── GET /housekeeping/weekly-review ──
 
 def test_weekly_review_returns_200_with_no_review_dir(client, monkeypatch):

@@ -53,12 +53,13 @@ def read_draft_bundle(filename: str | None = None) -> dict | None:
     }
 
 
-def save_draft(content: str, bluesky_text: str) -> str:
-    """Write content and bluesky_text to the latest draft files. Returns filename.
+def save_draft(content: str, bluesky_text: str, filename: str | None = None) -> str:
+    """Write content and bluesky_text to the given draft (or the latest draft
+    if filename is omitted). Returns filename.
 
-    Raises FileNotFoundError if no draft exists.
+    Raises FileNotFoundError if the target draft doesn't exist.
     """
-    draft, bluesky = latest_draft_paths()
+    draft, bluesky = draft_paths(filename) if filename else latest_draft_paths()
     if not draft:
         raise FileNotFoundError("No draft file found")
     draft.write_text(content, encoding="utf-8")
