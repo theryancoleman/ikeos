@@ -41,8 +41,8 @@
       <div class="hk-output-card">
         <div class="hk-output-card__title">
           <span class="hk-output-card__name">Blog Draft</span>
-          <span class="hk-pill {{ 'hk-pill--ok' if blog_draft else 'hk-pill--uninitialized' }}">
-            {{ 'Ready' if blog_draft else 'None yet' }}
+          <span class="hk-pill {{ 'hk-pill--ok' if blog_draft else ('hk-pill--ok' if blog_draft_published else 'hk-pill--uninitialized') }}">
+            {% if blog_draft %}Ready{% elif blog_draft_published %}Published{% else %}None yet{% endif %}
           </span>
         </div>
         <p class="hk-output-card__body">

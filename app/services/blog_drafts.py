@@ -25,6 +25,27 @@ def latest_draft_name() -> str | None:
     return draft.name if draft else None
 
 
+def is_published(draft: Path) -> bool:
+    """True if the draft's canonical (non "-draft") published file already exists.
+
+    publish.sh intentionally leaves the -draft.md file in place after promoting
+    it, so file presence alone can't distinguish a live post from a pending one.
+    """
+    canonical_name = draft.name.replace("-weekly-draft.md", "-weekly.md")
+    return draft.with_name(canonical_name).exists()
+
+
+def latest_unpublished_draft_name() -> str | None:
+    """Like latest_draft_name(), but skips drafts that have already been published."""
+    posts = _posts_dir()
+    if not posts or not posts.exists():
+        return None
+    for draft in sorted(posts.glob("*-weekly-draft.md"), reverse=True):
+        if not is_published(draft):
+            return draft.name
+    return None
+
+
 def draft_paths(filename: str) -> tuple[Path | None, Path | None]:
     """Return (draft_path, bluesky_path) for a specific draft filename."""
     posts = _posts_dir()

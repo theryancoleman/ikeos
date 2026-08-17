@@ -5,7 +5,10 @@ from datetime import datetime, timedelta, timezone
 from flask import Blueprint, render_template, request, jsonify
 
 from app.routes.auth import require_capture_token
-from app.services.blog_drafts import delete_draft, latest_draft_name, list_drafts, read_draft_bundle, save_draft
+from app.services.blog_drafts import (
+    delete_draft, draft_paths, is_published, latest_draft_name,
+    latest_unpublished_draft_name, list_drafts, read_draft_bundle, save_draft,
+)
 from app.services.capabilities import get_capabilities, is_enabled, update_capability
 from app.services.driver import (
     publish_blog_draft,
@@ -311,6 +314,11 @@ def _housekeeping_context() -> dict:
     schedule = get_config_with_next_run()
     run_state, run_state_label, run_state_headline = _run_state(schedule, heartbeat)
     findings = get_research_findings()
+    latest_name = latest_draft_name()
+    latest_published = False
+    if latest_name:
+        latest_path, _ = draft_paths(latest_name)
+        latest_published = is_published(latest_path) if latest_path else False
     return dict(
         tasks=tasks,
         heartbeat=heartbeat,
@@ -321,7 +329,8 @@ def _housekeeping_context() -> dict:
         run_state_headline=run_state_headline,
         schedule=schedule,
         capture_token=CAPTURE_TOKEN,
-        blog_draft=latest_draft_name(),
+        blog_draft=latest_unpublished_draft_name(),
+        blog_draft_published=latest_published,
         weekly_review_file=latest_review_name(),
         capabilities=get_capabilities(),
         recent_runs=read_events_by_type("housekeeping.run", limit=10),

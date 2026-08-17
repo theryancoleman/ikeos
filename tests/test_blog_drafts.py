@@ -132,6 +132,32 @@ def test_delete_draft_rejects_non_draft_filename(posts_dir):
     assert blog_drafts.delete_draft("2026-06-01-weekly.md") is False
 
 
+def test_is_published_false_when_no_canonical_file(posts_dir):
+    draft = posts_dir / "2026-07-01-weekly-draft.md"
+    draft.write_text("draft content", encoding="utf-8")
+    assert blog_drafts.is_published(draft) is False
+
+
+def test_is_published_true_when_canonical_file_exists(posts_dir):
+    draft = posts_dir / "2026-07-01-weekly-draft.md"
+    draft.write_text("draft content", encoding="utf-8")
+    (posts_dir / "2026-07-01-weekly.md").write_text("published content", encoding="utf-8")
+    assert blog_drafts.is_published(draft) is True
+
+
+def test_latest_unpublished_draft_name_skips_published_draft(posts_dir):
+    (posts_dir / "2026-06-01-weekly-draft.md").write_text("old")
+    (posts_dir / "2026-06-01-weekly.md").write_text("old published")
+    (posts_dir / "2026-07-01-weekly-draft.md").write_text("new, not yet published")
+    assert blog_drafts.latest_unpublished_draft_name() == "2026-07-01-weekly-draft.md"
+
+
+def test_latest_unpublished_draft_name_none_when_latest_is_published(posts_dir):
+    (posts_dir / "2026-07-01-weekly-draft.md").write_text("published already")
+    (posts_dir / "2026-07-01-weekly.md").write_text("published")
+    assert blog_drafts.latest_unpublished_draft_name() is None
+
+
 def test_latest_review_none_when_empty(review_dir):
     assert reviews.latest_review_name() is None
 

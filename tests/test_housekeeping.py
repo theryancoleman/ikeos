@@ -483,6 +483,15 @@ def test_blog_draft_status_present_when_draft_exists(client, tmp_path, monkeypat
     assert b"2026-06-22-weekly-draft.md" in resp.data
 
 
+def test_housekeeping_index_shows_published_pill_for_published_draft(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("AIOS_BLOG_POSTS_DIR", str(tmp_path))
+    (tmp_path / "2026-07-01-weekly-draft.md").write_text("content")
+    (tmp_path / "2026-07-01-weekly.md").write_text("published content")
+    resp = client.get("/housekeeping")
+    assert resp.status_code == 200
+    assert b"Published" in resp.data
+
+
 def test_blog_draft_status_no_draft(client, tmp_path, monkeypatch):
     """GET /housekeeping shows 'None yet' on the Blog Draft output card when posts dir is empty."""
     empty_dir = tmp_path / "posts"
