@@ -124,7 +124,7 @@ def patch_entries():
     entry_type = req_data.get("type", "").strip()
     filename = req_data.get("filename", "").strip()
     status = req_data.get("status", "").strip()
-    new_project = req_data.get("new_project", "").strip().lower()
+    new_project = req_data.get("new_project", "").strip()
 
     # Validate path traversal
     if not _reject_path_traversal(filename):

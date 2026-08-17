@@ -521,6 +521,38 @@ def test_patch_entries_relocates_project(client, tmp_path):
     assert "bcr-waivers" not in content
 
 
+def test_patch_entries_relocate_preserves_new_project_case(client, tmp_path):
+    """PATCH /entries new_project must not be lowercased — this is a write target
+    used to correct mis-cased project fields (e.g. visualizer -> Visualizer),
+    not a lookup key."""
+    src_dir = tmp_path / "projects" / "bcr-waivers" / "bugs"
+    src_dir.mkdir(parents=True)
+    entry = src_dir / "2026-01-01-test-bug.md"
+    entry.write_text(
+        "---\nproject: bcr-waivers\nstatus: open\ntags:\n- bug\n- bcr-waivers\ntitle: Test bug\ntype: bug\n---\n\nBody.\n",
+        encoding="utf-8",
+    )
+
+    resp = client.patch(
+        "/entries",
+        data={
+            "project": "bcr-waivers",
+            "type": "bug",
+            "filename": "2026-01-01-test-bug",
+            "new_project": "Visualizer",
+        },
+        headers={"X-Capture-Token": "test-token-secret"},
+    )
+    assert resp.status_code == 200
+    assert not entry.exists()
+
+    moved = tmp_path / "projects" / "Visualizer" / "bugs" / "2026-01-01-test-bug.md"
+    assert moved.exists()
+    content = moved.read_text(encoding="utf-8")
+    assert "project: Visualizer" in content
+    assert "project: visualizer" not in content
+
+
 def test_patch_entries_relocate_requires_token(client, tmp_path):
     resp = client.patch("/entries", data={
         "project": "bcr-waivers", "type": "bug",
