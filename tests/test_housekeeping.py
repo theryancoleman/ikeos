@@ -492,6 +492,26 @@ def test_housekeeping_index_shows_published_pill_for_published_draft(client, tmp
     assert b"Published" in resp.data
 
 
+def test_housekeeping_pill_shows_published_for_latest_even_with_older_unpublished_draft(client, tmp_path, monkeypatch):
+    """Regression: the pill must describe the truly-latest draft, not go
+    hunting for an older unpublished one. An abandoned older draft that's
+    still unpublished must not cause the pill to show 'Ready' naming it
+    while the real latest draft is already published."""
+    monkeypatch.setenv("AIOS_BLOG_POSTS_DIR", str(tmp_path))
+    # Older draft, never published — abandoned.
+    (tmp_path / "2026-06-01-weekly-draft.md").write_text("older content")
+    # Newer draft, already published.
+    (tmp_path / "2026-07-01-weekly-draft.md").write_text("newer content")
+    (tmp_path / "2026-07-01-weekly.md").write_text("published content")
+
+    resp = client.get("/housekeeping")
+
+    assert resp.status_code == 200
+    assert b"Published" in resp.data
+    assert b"Ready" not in resp.data
+    assert b"2026-06-01-weekly-draft.md" not in resp.data
+
+
 def test_blog_draft_status_no_draft(client, tmp_path, monkeypatch):
     """GET /housekeeping shows 'None yet' on the Blog Draft output card when posts dir is empty."""
     empty_dir = tmp_path / "posts"

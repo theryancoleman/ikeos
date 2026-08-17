@@ -493,6 +493,7 @@ def test_patch_entries_decision_valid_statuses(client, tmp_path):
 
 
 def test_patch_entries_relocates_project(client, tmp_path):
+    (tmp_path / "projects" / "bottle-drive").mkdir(parents=True)
     src_dir = tmp_path / "projects" / "bcr-waivers" / "bugs"
     src_dir.mkdir(parents=True)
     entry = src_dir / "2026-01-01-test-bug.md"
@@ -525,6 +526,7 @@ def test_patch_entries_relocate_preserves_new_project_case(client, tmp_path):
     """PATCH /entries new_project must not be lowercased — this is a write target
     used to correct mis-cased project fields (e.g. visualizer -> Visualizer),
     not a lookup key."""
+    (tmp_path / "projects" / "Visualizer").mkdir(parents=True)
     src_dir = tmp_path / "projects" / "bcr-waivers" / "bugs"
     src_dir.mkdir(parents=True)
     entry = src_dir / "2026-01-01-test-bug.md"
@@ -563,12 +565,124 @@ def test_patch_entries_relocate_requires_token(client, tmp_path):
 
 def test_patch_entries_relocate_404_when_source_missing(client, tmp_path):
     (tmp_path / "projects" / "bcr-waivers" / "bugs").mkdir(parents=True)
+    (tmp_path / "projects" / "bottle-drive").mkdir(parents=True)
     resp = client.patch(
         "/entries",
         data={"project": "bcr-waivers", "type": "bug", "filename": "nonexistent", "new_project": "bottle-drive"},
         headers={"X-Capture-Token": "test-token-secret"},
     )
     assert resp.status_code == 404
+
+
+def test_relocate_entry_project_same_project_is_in_place_correction_not_delete(client, tmp_path):
+    """relocate_entry_project(project, filename, new_project) where new_project
+    is identical to project (the same-file case, e.g. a case-only correction
+    on a case-insensitive filesystem collapses to this) must rewrite the
+    entry in place rather than write-then-unlink, which would destroy it."""
+    from app.services.vault_entries import relocate_entry_project
+
+    src_dir = tmp_path / "projects" / "bcr-waivers" / "bugs"
+    src_dir.mkdir(parents=True)
+    entry = src_dir / "2026-01-01-test-bug.md"
+    entry.write_text(
+        "---\nproject: bcr-waivers\nstatus: open\ntags:\n- bug\n- bcr-waivers\ntitle: Test bug\ntype: bug\n---\n\nBody.\n",
+        encoding="utf-8",
+    )
+
+    result = relocate_entry_project("bug", "bcr-waivers", "2026-01-01-test-bug", "bcr-waivers")
+
+    assert result is True
+    assert entry.exists()
+    content = entry.read_text(encoding="utf-8")
+    assert "project: bcr-waivers" in content
+    assert "Body." in content
+    # Exactly one file — no phantom temp/duplicate left behind.
+    assert list(src_dir.glob("*.md")) == [entry]
+
+
+def test_relocate_entry_project_refuses_destination_collision(client, tmp_path):
+    """If an entry already exists at the destination path under a different,
+    unrelated project, relocate_entry_project must refuse the move rather
+    than silently overwrite the pre-existing destination entry."""
+    from app.services.vault_entries import relocate_entry_project
+
+    src_dir = tmp_path / "projects" / "bcr-waivers" / "bugs"
+    src_dir.mkdir(parents=True)
+    entry = src_dir / "2026-01-01-test-bug.md"
+    entry.write_text(
+        "---\nproject: bcr-waivers\nstatus: open\ntags:\n- bug\n- bcr-waivers\ntitle: Source\ntype: bug\n---\n\nSource body.\n",
+        encoding="utf-8",
+    )
+
+    dest_dir = tmp_path / "projects" / "bottle-drive" / "bugs"
+    dest_dir.mkdir(parents=True)
+    dest_entry = dest_dir / "2026-01-01-test-bug.md"
+    dest_entry.write_text(
+        "---\nproject: bottle-drive\nstatus: open\ntags:\n- bug\n- bottle-drive\ntitle: Pre-existing\ntype: bug\n---\n\nPre-existing body.\n",
+        encoding="utf-8",
+    )
+
+    result = relocate_entry_project("bug", "bcr-waivers", "2026-01-01-test-bug", "bottle-drive")
+
+    assert result is False
+    # Source untouched.
+    assert entry.exists()
+    assert "Source body." in entry.read_text(encoding="utf-8")
+    # Pre-existing destination untouched.
+    assert dest_entry.exists()
+    assert "Pre-existing body." in dest_entry.read_text(encoding="utf-8")
+
+
+def test_patch_entries_relocate_rejects_unknown_new_project(client, tmp_path):
+    """new_project='.' (or any name not matching a real project directory)
+    must be rejected with 400 rather than creating a phantom project folder."""
+    src_dir = tmp_path / "projects" / "bcr-waivers" / "bugs"
+    src_dir.mkdir(parents=True)
+    entry = src_dir / "2026-01-01-test-bug.md"
+    entry.write_text(
+        "---\nproject: bcr-waivers\nstatus: open\ntags:\n- bug\n- bcr-waivers\ntitle: Test bug\ntype: bug\n---\n\nBody.\n",
+        encoding="utf-8",
+    )
+
+    resp = client.patch(
+        "/entries",
+        data={
+            "project": "bcr-waivers",
+            "type": "bug",
+            "filename": "2026-01-01-test-bug",
+            "new_project": ".",
+        },
+        headers={"X-Capture-Token": "test-token-secret"},
+    )
+    assert resp.status_code == 400
+    # Source untouched, no phantom "projects/bugs" (or similar) directory created.
+    assert entry.exists()
+    assert not (tmp_path / "projects" / "bugs").exists()
+
+
+def test_patch_entries_relocate_accepts_known_real_project(client, tmp_path):
+    (tmp_path / "projects" / "bottle-drive").mkdir(parents=True)
+    src_dir = tmp_path / "projects" / "bcr-waivers" / "bugs"
+    src_dir.mkdir(parents=True)
+    entry = src_dir / "2026-01-01-test-bug.md"
+    entry.write_text(
+        "---\nproject: bcr-waivers\nstatus: open\ntags:\n- bug\n- bcr-waivers\ntitle: Test bug\ntype: bug\n---\n\nBody.\n",
+        encoding="utf-8",
+    )
+
+    resp = client.patch(
+        "/entries",
+        data={
+            "project": "bcr-waivers",
+            "type": "bug",
+            "filename": "2026-01-01-test-bug",
+            "new_project": "bottle-drive",
+        },
+        headers={"X-Capture-Token": "test-token-secret"},
+    )
+    assert resp.status_code == 200
+    assert not entry.exists()
+    assert (tmp_path / "projects" / "bottle-drive" / "bugs" / "2026-01-01-test-bug.md").exists()
 
 
 def test_capture_json_note(client, mocker):

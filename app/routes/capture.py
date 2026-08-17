@@ -139,7 +139,16 @@ def patch_entries():
     if new_project:
         if not _reject_path_traversal(new_project):
             return jsonify({"error": "Invalid project"}), 400
-        from app.services.vault import relocate_entry_project
+        from app.services.vault import get_projects, relocate_entry_project
+        known_projects = get_projects()
+        matches = [p for p in known_projects if p.lower() == new_project.lower()]
+        if not matches:
+            return jsonify({"error": "new_project is not a known project"}), 400
+        # Use the canonical on-disk casing (get_projects() reads directory
+        # names as-is) rather than the caller-supplied case, so a case-only
+        # correction (e.g. new_project="visualizer" for the "Visualizer"
+        # folder) resolves to the real, correctly-cased directory.
+        new_project = matches[0]
         success = relocate_entry_project(entry_type, project, filename, new_project)
         if not success:
             return jsonify({"error": "Entry not found or invalid project"}), 404

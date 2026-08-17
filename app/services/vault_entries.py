@@ -375,9 +375,31 @@ def relocate_entry_project(entry_type: str, project: str, filename: str, new_pro
         dest_dir.mkdir(parents=True, exist_ok=True)
         dest_path = dest_dir / filepath.name
 
-        with open(dest_path, "w", encoding="utf-8") as f:
+        same_file = dest_path.exists() and dest_path.samefile(filepath)
+        if dest_path.exists() and not same_file:
+            # Genuine collision with an unrelated, pre-existing entry at the
+            # destination — refuse rather than silently overwrite it.
+            logger.warning(
+                "Refusing to relocate %s/%s/%s: destination %s already exists",
+                entry_type, project, filename, dest_path,
+            )
+            return False
+
+        # Write via a temp file in the same directory, then atomically rename
+        # (or replace) into place — mirrors update_entry_status_generic's
+        # pattern and avoids leaving a half-written file if interrupted.
+        temp_path = dest_path.with_suffix(dest_path.suffix + ".tmp")
+        with open(temp_path, "w", encoding="utf-8") as f:
             f.write(frontmatter.dumps(post))
-        filepath.unlink()
+        temp_path.replace(dest_path)
+
+        if not same_file:
+            # Genuinely different files (a real move) — remove the source.
+            # When same_file is True (e.g. a case-only correction on a
+            # case-insensitive filesystem, or new_project == project), the
+            # temp-then-replace above already rewrote the single physical
+            # file in place, so there's nothing left to unlink.
+            filepath.unlink()
 
         _vc._invalidate_cache()
         return True
