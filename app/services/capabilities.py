@@ -21,6 +21,12 @@ DEFAULT_CAPABILITIES: dict = {
         "enabled_at": None,
         "description": "Weekly AI engineering platform review — researches ecosystem developments and scores platform health",
     },
+    "council_pipeline": {
+        "enabled": False,
+        "enabled_by": None,
+        "enabled_at": None,
+        "description": "Council discuss/approve pipeline for weekly review recommendations",
+    },
 }
 
 
