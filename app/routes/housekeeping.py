@@ -24,6 +24,7 @@ from app.services.session_client import get_session_status, list_active_session_
 from app.services.metrics import read_events_by_type
 from app.services.vault import (
     delete_housekeeping_task,
+    read_entries,
     read_housekeeping_heartbeat,
     read_housekeeping_tasks,
 )
@@ -327,6 +328,11 @@ def _housekeeping_context() -> dict:
             blog_draft_published = True
         else:
             blog_draft = latest_name
+    council_items = read_entries(
+        project=project_slug(),
+        entry_type="council-item",
+        status_filter=["pending-review", "in-discussion"],
+    )
     return dict(
         tasks=tasks,
         heartbeat=heartbeat,
@@ -345,6 +351,8 @@ def _housekeeping_context() -> dict:
         research_generated_at=findings["generated_at"] if findings else None,
         research_age_str=_age_str(findings["generated_at"]) if findings else None,
         research_source_count=len(findings["summaries"]) if findings else 0,
+        council_items=council_items,
+        council_pending_count=len(council_items),
     )
 
 

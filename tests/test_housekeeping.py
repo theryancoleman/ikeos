@@ -1000,3 +1000,56 @@ def test_housekeeping_index_includes_run_state_and_outputs_context(client):
     assert b"hk-status-bar" in resp.data
     assert b"This Week" in resp.data
     assert b"Research Findings" in resp.data
+
+
+def test_housekeeping_context_includes_council_pending(tmp_path, monkeypatch):
+    """_housekeeping_context() includes pending-review council items."""
+    from app import create_app
+    from app.routes.housekeeping import _housekeeping_context
+    import app.services.vault_cache as vc
+
+    monkeypatch.setattr(vc, "VAULT_PATH", tmp_path)
+    council_dir = tmp_path / "projects" / "claude-config" / "council"
+    council_dir.mkdir(parents=True)
+    (council_dir / "2026-08-18-recover-weak-signals.md").write_text(
+        "---\ntype: council-item\ntitle: Recover weak-signals entries\nproject: claude-config\n"
+        "status: pending-review\ncreated: 2026-08-18T00:00:00\ntags: []\n"
+        "match_slug: recover-weak-signals\nsource: narrative-review\nsource_review: ''\n"
+        "weeks_open: '2'\ndiscussion_session_id: ''\ndecision_ref: ''\n---\n## Description\nBody\n"
+    )
+
+    app = create_app({"TESTING": True})
+    with app.app_context():
+        ctx = _housekeeping_context()
+
+    assert "council_items" in ctx
+    assert "council_pending_count" in ctx
+    assert ctx["council_pending_count"] == 1
+    assert len(ctx["council_items"]) == 1
+    assert ctx["council_items"][0]["title"] == "Recover weak-signals entries"
+
+
+def test_housekeeping_context_excludes_actioned_council(tmp_path, monkeypatch):
+    """_housekeeping_context() excludes actioned council items from the pending list."""
+    from app import create_app
+    from app.routes.housekeeping import _housekeeping_context
+    import app.services.vault_cache as vc
+
+    monkeypatch.setattr(vc, "VAULT_PATH", tmp_path)
+    council_dir = tmp_path / "projects" / "claude-config" / "council"
+    council_dir.mkdir(parents=True)
+    (council_dir / "2026-08-18-done-item.md").write_text(
+        "---\ntype: council-item\ntitle: Already actioned item\nproject: claude-config\n"
+        "status: actioned\ncreated: 2026-08-18T00:00:00\ntags: []\n"
+        "match_slug: done-item\nsource: narrative-review\nsource_review: ''\n"
+        "weeks_open: '1'\ndiscussion_session_id: ''\ndecision_ref: ''\n---\n## Description\nBody\n"
+    )
+
+    app = create_app({"TESTING": True})
+    with app.app_context():
+        ctx = _housekeeping_context()
+
+    assert "council_items" in ctx
+    assert "council_pending_count" in ctx
+    assert ctx["council_pending_count"] == 0
+    assert len(ctx["council_items"]) == 0
