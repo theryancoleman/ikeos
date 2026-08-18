@@ -171,5 +171,6 @@ def test_council_pipeline_capability_can_be_enabled(tmp_path):
     from unittest.mock import patch as _patch
     with _patch("app.services.capabilities._capabilities_path", return_value=tmp_path / "capabilities.json"):
         from app.services.capabilities import update_capability, is_enabled
-        update_capability("council_pipeline", True, actor="ryan")
+        with _patch("app.services.capabilities.append_event"):
+            update_capability("council_pipeline", True, actor="ryan")
         assert is_enabled("council_pipeline") is True

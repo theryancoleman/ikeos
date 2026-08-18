@@ -287,6 +287,10 @@ def capture_json():
         data["measurement"] = req.get("measurement", "")
         data["success_criteria"] = req.get("success_criteria", "")
         data["timebox"] = req.get("timebox", "")
+    elif entry_type == "council-item":
+        data["match_slug"] = req.get("match_slug", "")
+        data["source"] = req.get("source", "")
+        data["source_review"] = req.get("source_review", "")
 
     write_entry(data)
     return jsonify({"ok": True}), 200

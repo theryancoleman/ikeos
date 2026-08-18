@@ -8,7 +8,9 @@ import app.services.vault_cache as _vc
 
 logger = logging.getLogger(__name__)
 
-_COUNCIL_ALLOWED_FIELDS: set[str] = {"match_slug", "weeks_open", "discussion_session_id", "decision_ref"}
+_COUNCIL_ALLOWED_FIELDS: set[str] = {
+    "match_slug", "weeks_open", "discussion_session_id", "decision_ref", "source", "source_review",
+}
 
 
 def update_council_fields(project: str, filename: str, fields: dict) -> bool:

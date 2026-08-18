@@ -14,7 +14,9 @@ bp = Blueprint("council", __name__)
 def discuss(slug):
     if not is_enabled("council_pipeline"):
         return jsonify({"error": "council_pipeline capability is disabled"}), 403
-    update_entry_status_generic("council-item", project_slug(), slug, "in-discussion")
+    success = update_entry_status_generic("council-item", project_slug(), slug, "in-discussion")
+    if not success:
+        return jsonify({"error": "Entry not found"}), 404
     result = driver.run_council_discuss(slug)
     if not result.ok:
         return jsonify({"error": result.error or "Failed to create discuss session"}), 502
@@ -26,7 +28,9 @@ def discuss(slug):
 def approve(slug):
     if not is_enabled("council_pipeline"):
         return jsonify({"error": "council_pipeline capability is disabled"}), 403
-    update_entry_status_generic("council-item", project_slug(), slug, "approved")
+    success = update_entry_status_generic("council-item", project_slug(), slug, "approved")
+    if not success:
+        return jsonify({"error": "Entry not found"}), 404
     result = driver.run_council_action(slug)
     if not result.ok:
         return jsonify({"error": result.error or "Failed to create action session"}), 502

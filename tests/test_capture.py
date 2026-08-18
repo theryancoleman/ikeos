@@ -736,6 +736,30 @@ def test_capture_json_housekeeping_task_persists_depends_on(client, tmp_path, mo
     assert post.metadata["depends_on"] == "research-cycle"
 
 
+def test_capture_json_council_item_persists_provenance_fields(client, tmp_path, monkeypatch):
+    import app.services.vault as v
+    import app.services.vault_cache as vc
+    monkeypatch.setattr(vc, "VAULT_PATH", tmp_path)
+    v._invalidate_cache()
+    (tmp_path / "projects" / "claude-config").mkdir(parents=True)
+
+    resp = client.post("/capture/json", json={
+        "type": "council-item",
+        "project": "claude-config",
+        "title": "Recover weak signals",
+        "match_slug": "recover-weak-signals",
+        "source": "narrative-review",
+        "source_review": "2026-08-11-review",
+    })
+    assert resp.status_code == 200
+    files = list((tmp_path / "projects" / "claude-config" / "council").glob("*.md"))
+    import frontmatter as fm
+    post = fm.load(files[0])
+    assert post.metadata["match_slug"] == "recover-weak-signals"
+    assert post.metadata["source"] == "narrative-review"
+    assert post.metadata["source_review"] == "2026-08-11-review"
+
+
 def test_capture_json_housekeeping_task_defaults_interval_to_weekly(client, tmp_path, monkeypatch):
     import app.services.vault as v
     import app.services.vault_cache as vc

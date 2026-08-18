@@ -46,6 +46,20 @@ def test_update_council_fields_sets_decision_ref(tmp_path):
     assert post.metadata["decision_ref"] == "2026-08-25-recover-weak-signals-decision"
 
 
+def test_update_council_fields_accepts_source_and_source_review(tmp_path):
+    filepath = _write_council_item(tmp_path)
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
+        from app.services.vault_council import update_council_fields
+        result = update_council_fields(
+            "myproj", "2026-08-18-test-item",
+            {"source": "narrative-review", "source_review": "2026-08-25-review"},
+        )
+    assert result is True
+    post = fm.load(filepath)
+    assert post.metadata["source"] == "narrative-review"
+    assert post.metadata["source_review"] == "2026-08-25-review"
+
+
 def test_update_council_fields_rejects_disallowed_field(tmp_path):
     _write_council_item(tmp_path)
     with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
