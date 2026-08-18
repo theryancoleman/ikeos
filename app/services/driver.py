@@ -54,6 +54,26 @@ def run_platform_review(model: str | None = None) -> SessionResult:
     )
 
 
+def run_council_discuss(item_slug: str, model: str | None = None) -> SessionResult:
+    return create_session(
+        name=f"council-discuss-{item_slug[:40]}",
+        project=project_slug(),
+        project_dir=_housekeeping_project_dir(),
+        initial_command=f"/council-discuss {item_slug}",
+        model=model,
+    )
+
+
+def run_council_action(item_slug: str, model: str | None = None) -> SessionResult:
+    return create_session(
+        name=f"council-action-{item_slug[:40]}",
+        project=project_slug(),
+        project_dir=_housekeeping_project_dir(),
+        initial_command=f"/council-action {item_slug}",
+        model=model,
+    )
+
+
 def publish_blog_draft(draft_name: str, bluesky_name: str, model: str | None = None) -> SessionResult:
     project_dir = _blog_project_dir()
     command = (

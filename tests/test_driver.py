@@ -3,6 +3,8 @@ from unittest.mock import patch
 from app.services.driver import (
     publish_blog_draft,
     rewrite_blog_draft,
+    run_council_action,
+    run_council_discuss,
     run_housekeeping_task,
     run_platform_review,
     run_scheduled_housekeeping,
@@ -37,6 +39,24 @@ def test_platform_review_command():
         run_platform_review()
     assert cs.call_args.kwargs["initial_command"] == "/platform-review"
     assert cs.call_args.kwargs["name"].startswith("weekly-platform-review-")
+
+
+def test_run_council_discuss_uses_item_slug_in_command():
+    with patch("app.services.driver.create_session", return_value=OK) as cs:
+        result = run_council_discuss("2026-08-18-recover-weak-signals-entries")
+    assert result.ok
+    kw = cs.call_args.kwargs
+    assert kw["initial_command"] == "/council-discuss 2026-08-18-recover-weak-signals-entries"
+    assert kw["name"].startswith("council-discuss-")
+
+
+def test_run_council_action_uses_item_slug_in_command():
+    with patch("app.services.driver.create_session", return_value=OK) as cs:
+        result = run_council_action("2026-08-18-recover-weak-signals-entries")
+    assert result.ok
+    kw = cs.call_args.kwargs
+    assert kw["initial_command"] == "/council-action 2026-08-18-recover-weak-signals-entries"
+    assert kw["name"].startswith("council-action-")
 
 
 def test_publish_blog_draft_builds_deploy_prompt(monkeypatch):
