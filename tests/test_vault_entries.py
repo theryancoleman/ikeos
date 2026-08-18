@@ -484,3 +484,40 @@ def test_write_entry_council_item_initial_status_pending_review(tmp_path):
     files = list((tmp_path / "projects" / "myproj" / "council").glob("*.md"))
     post = fm.load(files[0])
     assert post.metadata["status"] == "pending-review"
+
+
+def test_write_entry_council_item_persists_match_slug_and_source(tmp_path):
+    (tmp_path / "projects" / "myproj").mkdir(parents=True)
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
+        from app.services.vault_entries import write_entry
+        write_entry({
+            "type": "council-item", "project": "myproj",
+            "title": "Recover weak-signals entries", "body": "Body",
+            "match_slug": "weak-signals-integrity",
+            "source": "narrative-review",
+            "source_review": "2026-08-15-review.md",
+        })
+    files = list((tmp_path / "projects" / "myproj" / "council").glob("*.md"))
+    post = fm.load(files[0])
+    assert post.metadata["match_slug"] == "weak-signals-integrity"
+    assert post.metadata["source"] == "narrative-review"
+    assert post.metadata["source_review"] == "2026-08-15-review.md"
+    assert post.metadata["weeks_open"] == "1"
+    assert post.metadata["discussion_session_id"] == ""
+    assert post.metadata["decision_ref"] == ""
+
+
+def test_read_entries_filters_by_entry_type(tmp_path):
+    for folder, etype in [("bugs", "bug"), ("council", "council-item")]:
+        d = tmp_path / "projects" / "myproj" / folder
+        d.mkdir(parents=True)
+        (d / "2026-01-01-entry.md").write_text(
+            f"---\ntype: {etype}\ntitle: T\nproject: myproj\n"
+            "status: new\ncreated: 2026-01-01T00:00:00\ntags: []\n---\n## Description\n"
+        )
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
+        from app.services.vault_entries import read_entries, _invalidate_cache
+        _invalidate_cache()
+        result = read_entries(project="myproj", entry_type="council-item")
+    assert len(result) == 1
+    assert result[0]["type"] == "council-item"

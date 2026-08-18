@@ -154,6 +154,13 @@ def write_entry(data: dict) -> str:
             metadata["timebox"] = data.get("timebox", "")
             metadata["result"] = ""
             metadata["decision"] = ""
+        elif entry_type == "council-item":
+            metadata["match_slug"] = data.get("match_slug", "")
+            metadata["source"] = data.get("source", "")
+            metadata["source_review"] = data.get("source_review", "")
+            metadata["weeks_open"] = "1"
+            metadata["discussion_session_id"] = ""
+            metadata["decision_ref"] = ""
 
         content = f"## Description\n{body}\n"
         if entry_type == "bug" and data.get("steps"):
@@ -196,7 +203,7 @@ def _read_all_entries() -> list[dict]:
     return entries
 
 
-def read_entries(project: str = None, status_filter: list = None, component: str = None) -> list[dict]:
+def read_entries(project: str = None, status_filter: list = None, component: str = None, entry_type: str = None) -> list[dict]:
     now = time.monotonic()
 
     if _vc._entries_cache is None or (now - _vc._entries_cache_ts) >= _vc._TTL:
@@ -210,6 +217,8 @@ def read_entries(project: str = None, status_filter: list = None, component: str
         entries = [e for e in entries if e.get("component") == component]
     if status_filter:
         entries = [e for e in entries if e.get("status") in status_filter]
+    if entry_type is not None:
+        entries = [e for e in entries if e.get("type") == entry_type]
 
     return entries
 
