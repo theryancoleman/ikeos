@@ -826,3 +826,9 @@ def test_write_idea_omits_why_when_missing(tmp_vault):
     post_file = tmp_vault / "projects" / "testproject" / "ideas" / f"{slug}.md"
     post = frontmatter.load(post_file)
     assert "why" not in post.metadata
+
+
+def test_vault_reexports_council_statuses_and_update_fn():
+    from app.services.vault import COUNCIL_STATUSES, update_council_fields
+    assert "pending-review" in COUNCIL_STATUSES
+    assert callable(update_council_fields)

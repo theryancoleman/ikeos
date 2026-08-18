@@ -7,6 +7,7 @@ from app.services.vault_cache import (  # noqa: F401
     VALID_STATUSES,
     DECISION_STATUSES,
     EXPERIMENT_STATUSES,
+    COUNCIL_STATUSES,
     ENTRY_TYPE_CONFIG,
     PATCH_VALID_TYPES,
     CAPTURE_JSON_VALID_TYPES,
@@ -59,4 +60,8 @@ from app.services.vault_housekeeping import (  # noqa: F401
     read_housekeeping_heartbeat,
     update_housekeeping_fields,
     delete_housekeeping_task,
+)
+
+from app.services.vault_council import (  # noqa: F401
+    update_council_fields,
 )
