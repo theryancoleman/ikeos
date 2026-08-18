@@ -946,6 +946,56 @@ def test_patch_housekeeping_requires_json_body(client, tmp_path, monkeypatch):
     assert resp.status_code == 400
 
 
+def test_patch_council_requires_token(client, tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
+        resp = client.patch("/entries/council", json={
+            "project": "myproj", "filename": "test", "fields": {"weeks_open": "2"},
+        })
+    assert resp.status_code == 401
+
+
+def test_patch_council_updates_weeks_open(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("CAPTURE_TOKEN", "test-token-secret")
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
+        (tmp_path / "projects" / "myproj").mkdir(parents=True)
+        from app.services.vault import write_entry
+        slug = write_entry({
+            "type": "council-item", "project": "myproj",
+            "title": "Test item", "body": "Body",
+            "match_slug": "test-item", "source": "narrative-review",
+        })
+        resp = client.patch(
+            "/entries/council",
+            json={"project": "myproj", "filename": slug, "fields": {"weeks_open": "2"}},
+            headers={"X-Capture-Token": "test-token-secret"},
+        )
+    assert resp.status_code == 200
+    assert "Updated" in resp.get_json().get("message", "")
+
+
+def test_patch_council_missing_entry_returns_404(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("CAPTURE_TOKEN", "test-token-secret")
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
+        (tmp_path / "projects" / "myproj" / "council").mkdir(parents=True)
+        resp = client.patch(
+            "/entries/council",
+            json={"project": "myproj", "filename": "nope", "fields": {"weeks_open": "2"}},
+            headers={"X-Capture-Token": "test-token-secret"},
+        )
+    assert resp.status_code == 404
+
+
+def test_patch_council_rejects_path_traversal(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("CAPTURE_TOKEN", "test-token-secret")
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
+        resp = client.patch(
+            "/entries/council",
+            json={"project": "myproj", "filename": "../../etc/passwd", "fields": {"weeks_open": "2"}},
+            headers={"X-Capture-Token": "test-token-secret"},
+        )
+    assert resp.status_code == 400
+
+
 def test_patch_housekeeping_wrong_token_returns_401(client, tmp_path, monkeypatch):
     monkeypatch.setenv("CAPTURE_TOKEN", "test-token-secret")
     with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
