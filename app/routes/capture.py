@@ -3,7 +3,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from werkzeug.exceptions import BadRequest
 from app.services.vault import (
     get_projects_with_meta, write_entry, update_entry_status_generic,
-    update_housekeeping_fields, ENTRY_TYPE_CONFIG, DECISION_STATUSES,
+    update_housekeeping_fields, update_council_fields, ENTRY_TYPE_CONFIG, DECISION_STATUSES,
     PATCH_VALID_TYPES, CAPTURE_JSON_VALID_TYPES,
 )
 from app.services.umbrella import get_components
@@ -230,6 +230,40 @@ def patch_housekeeping():
     return jsonify({"message": "Updated"}), 200
 
 
+@bp.route("/entries/council", methods=["PATCH"])
+def patch_council():
+    """Update council-item runtime fields (weeks_open, discussion_session_id, decision_ref, match_slug)."""
+    token = request.headers.get("X-Capture-Token", "")
+    is_valid, status_code = _validate_token(token)
+    if not is_valid:
+        return jsonify({"error": "Unauthorized" if status_code == 401 else "Service unavailable"}), status_code
+
+    if not request.is_json:
+        return jsonify({"error": "JSON body required"}), 400
+
+    req_data = request.get_json(silent=True)
+    if req_data is None:
+        return jsonify({"error": "Invalid or empty JSON body"}), 400
+    project = req_data.get("project", "").strip().lower()
+    filename = req_data.get("filename", "").strip()
+    fields = req_data.get("fields")
+
+    if not isinstance(fields, dict) or not fields:
+        return jsonify({"error": "fields must be a non-empty object"}), 400
+
+    if not _reject_path_traversal(filename):
+        return jsonify({"error": "Invalid filename"}), 400
+
+    if not project:
+        return jsonify({"error": "project is required"}), 400
+
+    success = update_council_fields(project, filename, fields)
+    if not success:
+        return jsonify({"error": "Entry not found or no valid fields provided"}), 404
+
+    return jsonify({"message": "Updated"}), 200
+
+
 @bp.route("/capture/json", methods=["POST"])
 def capture_json():
     req = request.get_json(silent=True) or {}
@@ -274,6 +308,10 @@ def capture_json():
         data["measurement"] = req.get("measurement", "")
         data["success_criteria"] = req.get("success_criteria", "")
         data["timebox"] = req.get("timebox", "")
+    elif entry_type == "council-item":
+        data["match_slug"] = req.get("match_slug", "")
+        data["source"] = req.get("source", "")
+        data["source_review"] = req.get("source_review", "")
 
     write_entry(data)
     return jsonify({"ok": True}), 200

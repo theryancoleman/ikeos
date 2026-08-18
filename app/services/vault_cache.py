@@ -9,6 +9,7 @@ VAULT_PATH = Path(os.environ.get("VAULT_PATH", "/vault"))
 VALID_STATUSES: tuple[str, ...] = ("new", "open", "in-progress", "done", "deferred")
 DECISION_STATUSES: tuple[str, ...] = ("proposed", "accepted", "rejected", "superseded")
 EXPERIMENT_STATUSES: tuple[str, ...] = ("running", "complete", "abandoned")
+COUNCIL_STATUSES: tuple[str, ...] = ("pending-review", "in-discussion", "approved", "declined", "actioned")
 
 ENTRY_TYPE_CONFIG: dict[str, dict] = {
     "note":       {"folder": "notes",       "tag": "documentation", "initial_status": "new",     "valid_statuses": VALID_STATUSES},
@@ -16,6 +17,7 @@ ENTRY_TYPE_CONFIG: dict[str, dict] = {
     "bug":        {"folder": "bugs",        "tag": "bug",           "initial_status": "new",     "valid_statuses": VALID_STATUSES},
     "grill-me":   {"folder": "grill-me",    "tag": "grill-me",      "initial_status": "new",     "valid_statuses": VALID_STATUSES},
     "experiment": {"folder": "experiments", "tag": "experiment",    "initial_status": "running", "valid_statuses": EXPERIMENT_STATUSES},
+    "council-item": {"folder": "council", "tag": "council", "initial_status": "pending-review", "valid_statuses": COUNCIL_STATUSES},
 }
 
 TYPE_FOLDERS = {k: v["folder"] for k, v in ENTRY_TYPE_CONFIG.items()}

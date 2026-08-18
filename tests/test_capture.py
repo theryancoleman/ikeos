@@ -929,6 +929,30 @@ def test_capture_json_housekeeping_task_persists_depends_on(client, tmp_path, mo
     assert post.metadata["depends_on"] == "research-cycle"
 
 
+def test_capture_json_council_item_persists_provenance_fields(client, tmp_path, monkeypatch):
+    import app.services.vault as v
+    import app.services.vault_cache as vc
+    monkeypatch.setattr(vc, "VAULT_PATH", tmp_path)
+    v._invalidate_cache()
+    (tmp_path / "projects" / "claude-config").mkdir(parents=True)
+
+    resp = client.post("/capture/json", json={
+        "type": "council-item",
+        "project": "claude-config",
+        "title": "Recover weak signals",
+        "match_slug": "recover-weak-signals",
+        "source": "narrative-review",
+        "source_review": "2026-08-11-review",
+    })
+    assert resp.status_code == 200
+    files = list((tmp_path / "projects" / "claude-config" / "council").glob("*.md"))
+    import frontmatter as fm
+    post = fm.load(files[0])
+    assert post.metadata["match_slug"] == "recover-weak-signals"
+    assert post.metadata["source"] == "narrative-review"
+    assert post.metadata["source_review"] == "2026-08-11-review"
+
+
 def test_capture_json_housekeeping_task_defaults_interval_to_weekly(client, tmp_path, monkeypatch):
     import app.services.vault as v
     import app.services.vault_cache as vc
@@ -1134,6 +1158,56 @@ def test_patch_housekeeping_requires_json_body(client, tmp_path, monkeypatch):
             "/entries/housekeeping",
             data={"project": "claude-config", "type": "housekeeping-task",
                   "filename": "test", "enabled": "false"},
+            headers={"X-Capture-Token": "test-token-secret"},
+        )
+    assert resp.status_code == 400
+
+
+def test_patch_council_requires_token(client, tmp_path):
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
+        resp = client.patch("/entries/council", json={
+            "project": "myproj", "filename": "test", "fields": {"weeks_open": "2"},
+        })
+    assert resp.status_code == 401
+
+
+def test_patch_council_updates_weeks_open(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("CAPTURE_TOKEN", "test-token-secret")
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
+        (tmp_path / "projects" / "myproj").mkdir(parents=True)
+        from app.services.vault import write_entry
+        slug = write_entry({
+            "type": "council-item", "project": "myproj",
+            "title": "Test item", "body": "Body",
+            "match_slug": "test-item", "source": "narrative-review",
+        })
+        resp = client.patch(
+            "/entries/council",
+            json={"project": "myproj", "filename": slug, "fields": {"weeks_open": "2"}},
+            headers={"X-Capture-Token": "test-token-secret"},
+        )
+    assert resp.status_code == 200
+    assert "Updated" in resp.get_json().get("message", "")
+
+
+def test_patch_council_missing_entry_returns_404(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("CAPTURE_TOKEN", "test-token-secret")
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
+        (tmp_path / "projects" / "myproj" / "council").mkdir(parents=True)
+        resp = client.patch(
+            "/entries/council",
+            json={"project": "myproj", "filename": "nope", "fields": {"weeks_open": "2"}},
+            headers={"X-Capture-Token": "test-token-secret"},
+        )
+    assert resp.status_code == 404
+
+
+def test_patch_council_rejects_path_traversal(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("CAPTURE_TOKEN", "test-token-secret")
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
+        resp = client.patch(
+            "/entries/council",
+            json={"project": "myproj", "filename": "../../etc/passwd", "fields": {"weeks_open": "2"}},
             headers={"X-Capture-Token": "test-token-secret"},
         )
     assert resp.status_code == 400
