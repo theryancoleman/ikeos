@@ -96,6 +96,45 @@
     </div>
   </section>
 
+  <!-- ── Council ── -->
+  <section>
+    <div class="ike-eyebrow">Council <span class="eyebrow-count">/ {{ council_pending_count }}</span></div>
+    {% if council_items %}
+    <div class="hk-table-wrap">
+      <table class="hk-table">
+        <thead>
+          <tr>
+            <th class="hk-col-name">Recommendation</th>
+            <th class="hk-col-status">Status</th>
+            <th class="hk-col-date">Age</th>
+            <th class="hk-col-actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in council_items %}
+          <tr>
+            <td class="hk-name">{{ item.title }}</td>
+            <td><span class="hk-pill hk-pill--{{ item.status }}">{{ item.status }}</span></td>
+            <td class="hk-date">
+              {% set weeks = item.weeks_open | int(1) %}
+              {{ weeks }} week{{ 's' if weeks != 1 else '' }} open
+            </td>
+            <td class="hk-actions">
+              <button class="pill" onclick="discussCouncilItem({{ item.slug | tojson | forceescape }}, this)">Discuss</button>
+              <button class="pill pill-primary-filled" onclick="approveCouncilItem({{ item.slug | tojson | forceescape }}, this)">Approve / Action</button>
+              <button class="pill pill-danger" onclick="declineCouncilItem({{ item.slug | tojson | forceescape }}, this)">Decline</button>
+              <span class="hk-form-msg" id="council-msg-{{ item.slug }}"></span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="empty">No pending council items.</p>
+    {% endif %}
+  </section>
+
   <!-- ── Configuration: schedule + capabilities, side by side on wide screens ── -->
   <section class="hk-config-section">
     <div class="ike-eyebrow">Configuration</div>
@@ -401,6 +440,35 @@ async function toggleCapability(name, enable) {
     btn.disabled = false;
   } catch (e) { msgEl.textContent = 'Request failed'; btn.disabled = false; }
 }
+
+// ── Council actions ──
+async function _councilAction(slug, action, btn) {
+  const msgEl = document.getElementById('council-msg-' + slug);
+  const row = btn.closest('tr');
+  const allButtons = row.querySelectorAll('button');
+  allButtons.forEach(b => b.disabled = true);
+  msgEl.textContent = '';
+  try {
+    const resp = await fetch('/council/' + slug + '/' + action, {
+      method: 'POST',
+      headers: {'X-Capture-Token': _captureToken},
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      msgEl.textContent = err.error || 'Failed';
+      allButtons.forEach(b => b.disabled = false);
+      return;
+    }
+    location.reload();
+  } catch (e) {
+    msgEl.textContent = 'Network error';
+    allButtons.forEach(b => b.disabled = false);
+  }
+}
+
+function discussCouncilItem(slug, btn) { _councilAction(slug, 'discuss', btn); }
+function approveCouncilItem(slug, btn) { _councilAction(slug, 'approve', btn); }
+function declineCouncilItem(slug, btn) { _councilAction(slug, 'decline', btn); }
 
 // ── Run status bar ──
 const _STATE_TEXT = {

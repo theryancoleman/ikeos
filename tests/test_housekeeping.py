@@ -1053,3 +1053,32 @@ def test_housekeeping_context_excludes_actioned_council(tmp_path, monkeypatch):
     assert "council_pending_count" in ctx
     assert ctx["council_pending_count"] == 0
     assert len(ctx["council_items"]) == 0
+
+
+def test_housekeeping_index_shows_council_action_buttons(client, tmp_path, monkeypatch):
+    import app.services.vault_cache as vc
+    monkeypatch.setattr(vc, "VAULT_PATH", tmp_path)
+    council_dir = tmp_path / "projects" / "claude-config" / "council"
+    council_dir.mkdir(parents=True)
+    (council_dir / "2026-08-18-recover-weak-signals.md").write_text(
+        "---\ntype: council-item\ntitle: Recover weak-signals entries\nproject: claude-config\n"
+        "status: pending-review\ncreated: 2026-08-18T00:00:00\ntags: []\n"
+        "match_slug: recover-weak-signals\nsource: narrative-review\nsource_review: ''\n"
+        "weeks_open: '2'\ndiscussion_session_id: ''\ndecision_ref: ''\n---\n## Description\nBody\n"
+    )
+    resp = client.get("/housekeeping")
+    assert resp.status_code == 200
+    assert b"discussCouncilItem" in resp.data
+    assert b"approveCouncilItem" in resp.data
+    assert b"declineCouncilItem" in resp.data
+    assert b"2026-08-18-recover-weak-signals" in resp.data
+    assert b"2 weeks open" in resp.data
+
+
+def test_housekeeping_index_council_empty_state(client, tmp_path, monkeypatch):
+    import app.services.vault_cache as vc
+    monkeypatch.setattr(vc, "VAULT_PATH", tmp_path)
+    (tmp_path / "projects" / "claude-config").mkdir(parents=True)
+    resp = client.get("/housekeeping")
+    assert resp.status_code == 200
+    assert b"No pending council items" in resp.data
