@@ -459,3 +459,28 @@ def test_write_entry_housekeeping_task_omits_depends_on_when_absent(tmp_path):
     files = list((tmp_path / "projects" / "claude-config" / "housekeeping").glob("*.md"))
     post = fm.load(files[0])
     assert "depends_on" not in post.metadata
+
+
+def test_write_entry_creates_council_item_in_council_folder(tmp_path):
+    (tmp_path / "projects" / "myproj").mkdir(parents=True)
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
+        from app.services.vault_entries import write_entry
+        write_entry({
+            "type": "council-item", "project": "myproj",
+            "title": "Recover missing weak-signals entries", "body": "Recover the ~18 missing signals.",
+        })
+    files = list((tmp_path / "projects" / "myproj" / "council").glob("*.md"))
+    assert len(files) == 1
+
+
+def test_write_entry_council_item_initial_status_pending_review(tmp_path):
+    (tmp_path / "projects" / "myproj").mkdir(parents=True)
+    with patch("app.services.vault_cache.VAULT_PATH", tmp_path):
+        from app.services.vault_entries import write_entry
+        write_entry({
+            "type": "council-item", "project": "myproj",
+            "title": "Test recommendation", "body": "Body",
+        })
+    files = list((tmp_path / "projects" / "myproj" / "council").glob("*.md"))
+    post = fm.load(files[0])
+    assert post.metadata["status"] == "pending-review"
