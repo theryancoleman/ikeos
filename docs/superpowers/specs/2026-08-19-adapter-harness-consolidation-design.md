@@ -40,9 +40,11 @@ Make `ikeos/adapters/claude-code/{skills,session-manager}/` the single source of
 
 ### 1. Root-cause fix: `claude-config/global/settings.json` gains an `env` block
 
-Add `VAULT_PATH`, `IKEOS_URL`, `CAPTURE_TOKEN` to a new top-level `env` key in `claude-config/global/settings.json` (deployed via the existing `sync.sh apply` to `~/.claude/settings.json`), so these are reliably present in every Claude Code session's shell environment — including non-interactive ones.
+Add `VAULT_PATH`, `IKEOS_URL`, `CLAUDE_CONFIG_DIR` (POSIX/WSL2 values — `/mnt/c/Server/obsidian-vault`, `http://localhost:5009`, `/mnt/c/Server/claude-config` — **not** the Windows-style values in `ikeos/.env`, which are for Docker Desktop mounting, a different consumer) to a new top-level `env` key in `claude-config/global/settings.json` (deployed via the existing `sync.sh apply` to `~/.claude/settings.json`), so these are reliably present in every Claude Code session's shell environment — including non-interactive ones.
 
-This does **not** mean removing the `.env`-file-read fallback that the deployed `housekeeping.md`/`close-session.md` currently use — that fallback was discovered empirically, under real failure conditions, and the settings.json fix is unverified in practice until it's been running for a while. The reconciled skills keep both: read the env var first, fall back to reading `.env` directly if unset. This is additive robustness, not a replacement.
+**`CAPTURE_TOKEN` is explicitly excluded from this fix.** `claude-config/global/settings.json` is a git-tracked file pushed to a GitHub remote (`theryancoleman/claude-config`) — putting a secret's literal value there would commit a credential to source control, directly against this project's standing security rule (secrets only ever live in gitignored `.env` files). This is very likely *why* the deployed skills already read `CAPTURE_TOKEN` from `.env` directly (with `tr -d '\r\n'` for the CRLF-safe extraction this environment requires) rather than relying on an env var — that pattern is correct and stays exactly as-is, in every reconciled skill, not just as a fallback.
+
+For `VAULT_PATH`/`IKEOS_URL`/`CLAUDE_CONFIG_DIR`, this does **not** mean removing the `.env`-file-read fallback where the deployed skills also use one for those — the settings.json fix is unverified in practice until it's been running for a while. The reconciled skills keep both where applicable: read the env var first, fall back to reading `.env`/hardcoded discovery directly if unset. This is additive robustness, not a replacement.
 
 ### 2. Reconcile 4 of the 5 duplicated skills, once
 
@@ -100,7 +102,7 @@ Once passes 1 and 2 are complete and verified (pass 3 has no date and may not ha
 
 ## Success Criteria
 
-- `claude-config/global/settings.json` (and deployed `~/.claude/settings.json`) has the `env` block; `.env`-fallback reading is preserved, not removed, in the reconciled skills.
+- `claude-config/global/settings.json` (and deployed `~/.claude/settings.json`) has the `env` block with `VAULT_PATH`/`IKEOS_URL`/`CLAUDE_CONFIG_DIR` (POSIX values) — `CAPTURE_TOKEN` is NOT in it; `.env`-file reading for `CAPTURE_TOKEN` (CRLF-safe) is preserved unchanged in every reconciled skill.
 - `ikeos/adapters/claude-code/skills/{triage,promote,schema-check,close-session}.md` each contain the real improvements previously found only on one side or the other, with no content silently dropped. `housekeeping.md` and `code-review.md` are explicitly out of scope for this criterion.
 - `ikeos/adapters/claude-code/session-manager/` contains `research_sources.py` + its test, and its shared `.py`/`start.sh` files reflect a deliberate merge (documented in the implementer's report), not a coin-flip pick of one side.
 - `claude-config/scripts/sync.sh generate` exists, is idempotent, and produces byte-identical output to the current `ikeos` source on every run.
