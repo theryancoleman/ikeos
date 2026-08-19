@@ -103,6 +103,7 @@ docker exec ikeos pytest     # run tests
 ## Architecture
 
 See [CLAUDE.md](CLAUDE.md) for the full architecture and Claude Code adapter contract.
+See [docs/COMPONENT_MODEL.md](docs/COMPONENT_MODEL.md) for a map of every component in the IkeOS ecosystem — Interface, Vault, Harness, Adapters, and Self-Improvement — and how they relate.
 
 The wire contract for session drivers is documented in [docs/SESSION_DRIVER_API.md](docs/SESSION_DRIVER_API.md).
 

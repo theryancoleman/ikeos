@@ -3,6 +3,7 @@
 > This file is the IkeOS adapter configuration for Claude Code.
 > It tells Claude Code how to operate within IkeOS principles.
 > Read `PHILOSOPHY.md` before making architectural decisions.
+> Read `docs/COMPONENT_MODEL.md` for how IkeOS's components (Interface, Vault, Harness, Adapters, Self-Improvement) fit together across repos.
 > Before proposing changes, read `.claude/DECISIONS.md`.
 > Portfolio monetization: see internal portfolio plan. IkeOS's role is a bounded Revenue Ops capability module — see this project's vault ideas (`status: new`). Does NOT change IkeOS's mission.
 
