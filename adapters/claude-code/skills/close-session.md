@@ -5,9 +5,13 @@ description: Wrap up the current session — document loose ends, update and clo
 
 Session close-out requested. Work through all phases in order (0 through 5), then report. Do not ask questions between phases — only the final report needs the user.
 
+> **Note on `POST /capture` responses:** `POST /capture` returns HTTP 302 (redirect to `/tasks`) on success, not 200 — this is normal, not an error. Check with `curl -s -o /dev/null -w '%{http_code}'` and treat 302 as success, or use `-L` to follow the redirect. `POST /capture/json` returns 200 JSON directly and doesn't have this quirk. This applies to every `POST /capture` call in this file.
+
 ## 0. Reflect on this session
 
 Do a brief introspective scan **before** inventorying artifacts. The goal is to surface only *non-obvious* learnings — corrections you received, workarounds you invented, rule gaps you noticed. Most sessions produce zero entries here. Prefer silence to noise.
+
+**Why selective, not exhaustive:** a 2026 study on persistent agent memory (arXiv:2607.09493) found that retaining full session history *degrades* task completion below having no memory at all (71% vs. 79%), while retaining a small set of durable, reusable categories reached 96%. Never write a narrative recap of the session to memory or vault — capture only the specific, reusable fact (a correction, a workaround, a stable project/reference detail), in the same spirit as this project's existing memory types (`user`, `feedback`, `project`, `reference`).
 
 **Scan for:**
 - **Corrections received:** user said "no, not that", "stop doing X", redirected you mid-task
@@ -195,7 +199,7 @@ ts = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M")
 print(f"week={year}-W{week:02d} ts={ts}")
 ```
 
-Append to `$BLOG_NOTES_DIR/<YYYY-Wxx>.md` (skip if BLOG_NOTES_DIR is not set):
+Append to `$BLOG_NOTES_DIR/<YYYY-Wxx>.md` (skip if BLOG_NOTES_DIR is not set). Fill in the placeholder values from the approved draft before running:
 
 ```python
 import os, datetime
@@ -206,8 +210,26 @@ if not _blog_dir:
 else:
     today = datetime.date.today()
     year, week, _ = today.isocalendar()
+    ts = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M")
     target = os.path.join(_blog_dir, f"{year}-W{week:02d}.md")
-    # create the file if it doesn't exist, then append the session block
+
+    # --- Fill in these values from the approved draft ---
+    project = "PROJECT-FROM-WORKING-DIRECTORY"
+    highlight = "HIGHLIGHT-ANSWER"
+    why = "WHY-ANSWER"
+    challenge = "CHALLENGE-ANSWER-OR-(none)"
+
+    entry = (
+        f"## Session {ts} — {project}\n"
+        f"**Highlight:** {highlight}\n"
+        f"**Why:** {why}\n"
+        f"**Challenge:** {challenge}\n\n"
+    )
+
+    os.makedirs(_blog_dir, exist_ok=True)
+    with open(target, "a") as f:
+        f.write(entry)
+    print(f"Appended blog note to {target}")
 ```
 
 Do NOT create the weekly-notes file if all three answers were skipped/empty — there's nothing worth recording.
