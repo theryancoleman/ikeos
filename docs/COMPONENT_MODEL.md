@@ -1,6 +1,8 @@
 # IkeOS Component Model
 
 > Canonical map of every component in the IkeOS ecosystem — what each one is, where it lives, what it depends on, and what it must never do. See `PHILOSOPHY.md` for the principles this model operationalizes, and `.claude/DECISIONS.md` for why this document exists.
+>
+> Paths in this document were verified against the repo on 2026-08-19 — treat as potentially stale if read much later.
 
 ## 1. Overview
 
@@ -12,14 +14,14 @@ IkeOS is not one repo — it's five components spread across two git repos. This
 | Vault | Obsidian vault filesystem (not code) |
 | Harness | `claude-config/global/` → deployed to `~/.claude` |
 | Adapters | `ikeos/adapters/claude-code/` |
-| Self-Improvement | `ikeos/app/services/{scheduler,driver,metrics,reflection,research_findings,reviews}.py` + `claude-config/{library,evals}/` |
+| Self-Improvement | `ikeos/app/services/{scheduler,driver,metrics,reflection,research_findings,reviews}.py` + `claude-config/library/{metrics,weak-signals,research-*}.json` + `claude-config/evals/` |
 
 ## 2. Interface
 
 - **What it is:** The Flask web app — dashboard, vault browser, capture UI, housekeeping UI. The human-facing surface and "platform brain" per `CLAUDE.md`.
 - **Where it lives:** `ikeos/app/` (routes/services/templates/static).
-- **Depends on:** Vault (via `app/services/vault.py`, the sole file-I/O owner), Adapters (session driver client, capture API contract), Self-Improvement data (reads `claude-config/library/*.json` read-only via the `CLAUDE_CONFIG_PATH` mount).
-- **Must not:** Touch the filesystem outside `vault.py`; embed Claude-Code-specific (harness) logic — that belongs in Adapters.
+- **Depends on:** Vault (via the `vault*` service modules — `vault.py` is the public facade over `vault_cache.py`/`vault_entries.py`/`vault_projects.py`/`vault_graph.py`/`vault_housekeeping.py`/`vault_council.py`; routes never touch the filesystem directly), Adapters (session driver client, capture API contract), Self-Improvement data (reads `claude-config/library/*.json` read-only via the `CLAUDE_CONFIG_PATH` mount).
+- **Must not:** Touch the filesystem outside the `vault*` service modules; embed Claude-Code-specific (harness) logic in the portable contract — the portable contract (`ikeos/adapters/claude-code/`) must stay tool-agnostic and env-var driven. The Interface-side adapter client (`app/services/driver.py`, `app/services/session_client.py`) is the seam that calls into Adapters/Harness and is permitted to be Claude-Code-aware (e.g. it constructs literal slash-command strings).
 
 ## 3. Vault
 
@@ -31,7 +33,7 @@ IkeOS is not one repo — it's five components spread across two git repos. This
 ## 4. Harness
 
 - **What it is:** The deployed Claude Code configuration that shapes agent behavior day to day — rules, slash-command skills, permission baseline, hooks wiring.
-- **Where it lives:** `claude-config/global/` (commands, rules, settings.json), synced by `scripts/sync.sh apply` to the live `~/.claude` runtime directory. This is the actual analog to a standalone conventions repo like a colleague's `agentharness`.
+- **Where it lives:** `claude-config/global/` (commands, rules, settings.json), synced by `scripts/sync.sh apply` to the live `~/.claude` runtime directory. This is the actual analog to an external, static conventions/hooks repo a colleague maintains. `claude-config/library/agents/` (six subagent definitions) is also deployed, via `scripts/sync.sh backfill`, into every project's `.claude/agents/`; `claude-config/library/rules/` and `claude-config/library/skills/` are likewise deployed into individual projects, via the `/new-project` and `/init-config` scaffolding skills rather than `sync.sh`.
 - **Depends on:** Nothing IkeOS-specific in principle — most of `claude-config/global/commands/` (e.g. blog, deploy-cottage, wire-remote) has nothing to do with IkeOS at all. The subset that *is* IkeOS-specific (triage, housekeeping, promote, schema-check, close-session) is derived from Adapters (see §5).
 - **Must not:** Be the only place an IkeOS-specific skill's logic exists — the portable version belongs in Adapters, so IkeOS can be stood up elsewhere without this deployment's hardcoded paths.
 
@@ -46,17 +48,17 @@ IkeOS is not one repo — it's five components spread across two git repos. This
 
 - **What it is:** The housekeeping/reflection/metrics instrumentation that lets IkeOS observe and improve its own operation over time — distinct from Harness (which shapes behavior) and Interface (which displays state).
 - **Where it lives, split across both repos:**
-  - `ikeos` side computes/serves: `app/services/scheduler.py` (APScheduler cron), `app/services/driver.py` (spawns scheduled housekeeping sessions), `app/services/metrics.py`, `app/services/reflection.py`, `app/services/research_findings.py`, `app/services/reviews.py`.
+  - `ikeos` side computes/serves: `app/services/scheduler.py` (APScheduler cron), `app/services/driver.py` (the Claude Code adapter client — maps IkeOS intents onto driver sessions, including spawning scheduled housekeeping sessions, by constructing slash-command strings like `/housekeeping`, `/platform-review`, `/council-discuss`, `/council-action`, `/blog`), `app/services/metrics.py`, `app/services/reflection.py`, `app/services/research_findings.py`, `app/services/reviews.py`.
   - `claude-config` side generates/stores the raw signal: `library/{metrics.json, weak-signals.json, research-*.json}` (mounted read-only into `ikeos` via `CLAUDE_CONFIG_PATH`), `evals/` (runner/judge/baselines — agent quality over time), `scripts/stophook-reflection.sh` (the hook that captures weak signals at session end).
 - **Depends on:** Harness (the StopHook is wired via `claude-config` hook config) and Interface (renders the dashboards).
-- **Must not:** Have `ikeos` write to `claude-config/library/*.json` directly — it's a read-only mount; the hook and eval runner are the only writers.
+- **Must not:** Have `ikeos` write to `claude-config/library/*.json` directly — it's a read-only mount into `ikeos`. (Writers on the `claude-config` side include the StopHook, the eval runner, several Claude Code skills such as `close-session`, and `session-manager/research_sources.py`.)
 
 ## 7. Known duplication / drift points (documented, not resolved)
 
-- **Skills:** `ikeos/adapters/claude-code/skills/*.md` (portable, env-var driven) and `claude-config/global/commands/*.md` (deployed, hardcoded to this deployment's paths) are two independently-maintained copies of the same five skills (triage, housekeeping, promote, schema-check, close-session). Confirmed diverged as of 2026-08-19 — the deployed `triage.md` was found missing a `CLAUDE_CONFIG_DIR` fallback present in the adapter copy.
+- **Skills:** `ikeos/adapters/claude-code/skills/*.md` (portable, env-var driven) and `claude-config/global/commands/*.md` (deployed, hardcoded to this deployment's paths) are two independently-maintained copies of the same five skills (`triage`, `housekeeping`, `promote`, `schema-check`, `close-session`). `code-review.md` exists only in the adapter copy — it has no deployed counterpart in `claude-config/global/commands/`, a one-way asymmetry rather than a straight five-way duplication. Confirmed diverged as of 2026-08-19 — all five duplicated files differ between the two copies; `triage.md` is the example cited, where the deployed copy was found missing a `CLAUDE_CONFIG_DIR` fallback present in the adapter copy.
 - **Session Manager:** `ikeos/adapters/claude-code/session-manager/` (reference) and `claude-config/services/session-manager/` (deployed) follow the same pattern. One prior sync effort exists (`.claude/DECISIONS.md`, 2026-07-22; `docs/superpowers/plans/2026-07-21-session-manager-adapter-sync.md`) — it documents a single sync event, not a standing process.
 - **No tooling watches this boundary.** `claude-config/scripts/check-drift.sh` only diffs `claude-config/global/` against the deployed `~/.claude` — it has no awareness of `ikeos/adapters/` at all.
-- Resolving this — choosing a sync direction, building drift detection, or physically consolidating — is a deferred follow-up decision. It is intentionally out of scope here.
+- Resolution — choosing a sync direction, building drift detection, or physically consolidating — is deferred; no decision has been recorded yet.
 
 ## 8. Cross-links
 
