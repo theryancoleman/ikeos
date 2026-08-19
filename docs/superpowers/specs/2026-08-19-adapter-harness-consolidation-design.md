@@ -12,7 +12,7 @@
 Diffing every duplicated pair confirmed the drift is **bidirectional and substantive** — not just path/hardcoding differences:
 
 - **`triage.md`** (26 changed lines): adapter has a `CLAUDE_CONFIG_DIR` existence-check fallback the deployed copy lacks.
-- **`housekeeping.md`** (275 changed lines, largest): deployed has a real bug fix (YAML plain-scalar line-folding — continuation lines were being silently discarded, truncating wrapped frontmatter values) and an operational discovery (`$CAPTURE_TOKEN` is not reliably available in non-interactive agent shells, so the deployed copy reads `.env` directly instead) that don't exist in the adapter at all.
+- **`housekeeping.md`** (275 changed lines, largest): beyond a real bug fix (YAML plain-scalar line-folding — continuation lines were being silently discarded, truncating wrapped frontmatter values) and an operational discovery (`$CAPTURE_TOKEN` is not reliably available in non-interactive agent shells, so the deployed copy reads `.env` directly instead), full-file reading (2026-08-19, during plan-writing) found the deployed copy has grown an entire second feature area absent from the adapter: a task **dependency-chain system** (`depends_on`, Phase 3a ordering, `skipped_dependency` outcome) and a full **council-pipeline integration** (Phase 7a — collects task proposals, files/ages `council-item` vault entries, triggers a push notification). This is the same actively-developed feature visible in `ikeos`'s own recent git history (`feat: council table...`, `feat: council-item data...`) — real, evolving production functionality, not incidental drift. **Decision (2026-08-19): deferred out of this consolidation** — see Non-goals and §6.
 - **`promote.md`** (11 changed lines): mostly path-only; adapter references `templates/adr.md`, deployed doesn't.
 - **`schema-check.md`** (17 changed lines): deployed lacks the adapter's `VAULT_PATH`-unset guard clause.
 - **`close-session.md`** (75 changed lines): deployed has a documented methodology decision (a footnote citing an external memory-retention study justifying "selective, not exhaustive" capture) and a different, simpler blog-notes-append implementation that the adapter lacks entirely; both copies also differ in how they read `weak-signals.json`.
@@ -32,6 +32,7 @@ Make `ikeos/adapters/claude-code/{skills,session-manager}/` the single source of
 - Do not pursue the "generic skills as a versioned library" idea raised during this brainstorm — filed as a vault idea (`claude-config` project) for a separate future decision.
 - Do not use symlinks for the deployment mechanism (see Design §4 for why).
 - Do not attempt to reconcile `claude-config/services/session-manager`'s deployment-local files (`.env`, `.gitignore`, `.pytest_cache`, `restart.sh`, `setup-startup.ps1`) — they are legitimately per-deployment and stay as-is.
+- Do not reconcile `housekeeping.md`, or add adapter counterparts for `council-discuss.md`/`council-action.md` (deployed-only, no adapter version exists), in this pass — the council pipeline they implement is actively evolving; porting it into the "stable portable reference" now risks the adapter going stale again almost immediately. Deferred to its own dedicated future pass, once the pipeline has stabilized (see §6).
 
 ---
 
@@ -43,16 +44,16 @@ Add `VAULT_PATH`, `IKEOS_URL`, `CAPTURE_TOKEN` to a new top-level `env` key in `
 
 This does **not** mean removing the `.env`-file-read fallback that the deployed `housekeeping.md`/`close-session.md` currently use — that fallback was discovered empirically, under real failure conditions, and the settings.json fix is unverified in practice until it's been running for a while. The reconciled skills keep both: read the env var first, fall back to reading `.env` directly if unset. This is additive robustness, not a replacement.
 
-### 2. Reconcile the 5 duplicated skills, once
+### 2. Reconcile 4 of the 5 duplicated skills, once
 
-For each of `triage.md`, `housekeeping.md`, `promote.md`, `schema-check.md`, `close-session.md`, produce one merged version living at `ikeos/adapters/claude-code/skills/<name>.md` that:
+For each of `triage.md`, `promote.md`, `schema-check.md`, `close-session.md`, produce one merged version living at `ikeos/adapters/claude-code/skills/<name>.md` that:
 
-- Keeps every genuine improvement found on the deployed side (the `housekeeping.md` YAML-fold bug fix; the `close-session.md` memory-retention-study footnote; the `POST /capture` 302-response notes in both `housekeeping.md` and `close-session.md`).
+- Keeps every genuine improvement found on the deployed side (the `close-session.md` memory-retention-study footnote; the `POST /capture` 302-response note).
 - Keeps every genuine improvement found on the adapter side (the `triage.md` `CLAUDE_CONFIG_DIR` fallback; the `promote.md` `templates/adr.md` reference; the `schema-check.md` `VAULT_PATH`-unset guard).
 - Uses env-var-primary, `.env`-fallback for `VAULT_PATH`/`IKEOS_URL`/`CAPTURE_TOKEN` throughout (per §1).
-- For hunks that are **not** obviously one-sided (the differing `weak-signals.json`-reading approach and the differing blog-notes-append implementation in `close-session.md`) — this is a judgment call requiring investigation, not something to decide here. The implementation task must read both versions in full, determine which approach is more correct/robust (or whether to merge behaviors), and document the decision in its report. Do not silently pick one side without checking whether the other's approach exists for a reason.
+- For hunks that are **not** obviously one-sided (the differing `weak-signals.json`-reading approach, and the differing blog-notes-append implementation — the deployed copy replaced the adapter's executable Python file-append with a markdown template placeholder — in `close-session.md`) — this is a judgment call requiring investigation, not something to decide here. The implementation task must read both versions in full, determine which approach is more correct/robust (or whether to merge behaviors, or whether the deployed version's simplification was intentional and correct), and document the decision in its report. Do not silently pick one side without checking whether the other's approach exists for a reason.
 
-`code-review.md` is not part of this reconciliation (no deployed counterpart exists; out of scope per above).
+`code-review.md` is not part of this reconciliation (no deployed counterpart exists; out of scope per above). `housekeeping.md` is deferred — see Non-goals and §6.
 
 ### 3. Reconcile session-manager, once
 
@@ -66,7 +67,7 @@ In `ikeos/adapters/claude-code/session-manager/`:
 
 `claude-config/scripts/sync.sh` gains a new `generate` step (in addition to its existing `apply` step) that **copies** files from `ikeos/adapters/claude-code/` into `claude-config`:
 
-- `ikeos/adapters/claude-code/skills/{triage,housekeeping,promote,schema-check,close-session}.md` → `claude-config/global/commands/<name>.md`, each stamped with a leading HTML comment: `<!-- GENERATED from ikeos/adapters/claude-code/skills/<name>.md — do not edit here. Edit the source and run: bash scripts/sync.sh generate -->`
+- `ikeos/adapters/claude-code/skills/{triage,promote,schema-check,close-session}.md` → `claude-config/global/commands/<name>.md`, each stamped with a leading HTML comment: `<!-- GENERATED from ikeos/adapters/claude-code/skills/<name>.md — do not edit here. Edit the source and run: bash scripts/sync.sh generate -->` (`housekeeping.md` is excluded from `generate` for now — deferred per §6; it stays a hand-maintained deployed file until its own pass)
 - `ikeos/adapters/claude-code/session-manager/{app.py,sessions.py,tmux.py,pane_parser.py,research_sources.py,start.sh,tests/}` → the corresponding paths under `claude-config/services/session-manager/`, excluding the deployment-local files listed in §3. Non-markdown files get an equivalent comment in their native comment syntax at the top.
 
 **Why not symlinks**, even though both repos share a filesystem: both repos live on a `/mnt/c` drvfs (Windows-drive) mount — earlier exploration in this project found every file on this mount reporting `777` permissions regardless of actual intent, which suggests this mount's fidelity for non-trivial filesystem features (symlinks included) is not something to trust without a dedicated spike, and there's no reason to take that risk on a live-running service's deploy path when a plain copy step is simple, portable, and git-diffable (a generated file's diff shows up cleanly in a PR; a symlink's don't).
@@ -79,19 +80,20 @@ In `ikeos/adapters/claude-code/session-manager/`:
 
 ### 6. Rollout sequencing
 
-Two separate implementation passes, both following from this one spec:
+Three separate implementation passes, all following from this one spec:
 
-1. **Skills first.** Lower risk (prompt text, not running code), validates the `generate`/`check-drift.sh` mechanism end-to-end before it's trusted with a live service.
+1. **4 skills first** (`triage`, `promote`, `schema-check`, `close-session`). Lower risk (prompt text, not running code), validates the `generate`/`check-drift.sh` mechanism end-to-end before it's trusted with a live service.
 2. **Session-manager second.** Applies the proven mechanism to `claude-config/services/session-manager`, which is a live-running Flask service — after generation, it must be restarted and its live behavior (session creation, tmux interaction) verified before considering the task done, not just its test suite.
+3. **`housekeeping.md` + council skills, deferred, no date set.** Once the council pipeline (`Phase 7a`, `council-discuss.md`, `council-action.md`) has stabilized, reconcile `housekeeping.md` and decide whether `council-discuss.md`/`council-action.md` also need adapter counterparts. Not scheduled as part of this spec's rollout — tracked separately (see below) so it isn't lost.
 
 Each pass gets its own implementation plan (`docs/superpowers/plans/...`) and its own subagent-driven-development run, per this project's standing execution preference.
 
 ### 7. Close the loop
 
-Once both passes are complete and verified:
+Once passes 1 and 2 are complete and verified (pass 3 has no date and may not happen for a while — don't block on it):
 
-- Update `docs/COMPONENT_MODEL.md` §7 in `ikeos`: change from "documented, not resolved" to a short note that this is resolved, with a pointer to the `DECISIONS.md` entries below.
-- Add a dated entry to `ikeos/.claude/DECISIONS.md` recording the consolidation and the copy-and-regenerate mechanism.
+- Update `docs/COMPONENT_MODEL.md` §7 in `ikeos`: change from "documented, not resolved" to a note that the skills (except `housekeeping.md`) and session-manager are resolved via the copy-and-regenerate mechanism, with `housekeeping.md`/council-pipeline skills explicitly named as the one remaining open item and a pointer to the `DECISIONS.md` entries below.
+- Add a dated entry to `ikeos/.claude/DECISIONS.md` recording the consolidation, the copy-and-regenerate mechanism, and the `housekeeping.md` deferral with its reason.
 - Add a corresponding dated entry to `claude-config`'s own decisions record (if one exists at `claude-config/docs/` — verify the convention there before assuming it matches `ikeos`'s `.claude/DECISIONS.md` format).
 
 ---
@@ -99,10 +101,10 @@ Once both passes are complete and verified:
 ## Success Criteria
 
 - `claude-config/global/settings.json` (and deployed `~/.claude/settings.json`) has the `env` block; `.env`-fallback reading is preserved, not removed, in the reconciled skills.
-- `ikeos/adapters/claude-code/skills/*.md` (6 files) each contain the real improvements previously found only on one side or the other, with no content silently dropped.
+- `ikeos/adapters/claude-code/skills/{triage,promote,schema-check,close-session}.md` each contain the real improvements previously found only on one side or the other, with no content silently dropped. `housekeeping.md` and `code-review.md` are explicitly out of scope for this criterion.
 - `ikeos/adapters/claude-code/session-manager/` contains `research_sources.py` + its test, and its shared `.py`/`start.sh` files reflect a deliberate merge (documented in the implementer's report), not a coin-flip pick of one side.
 - `claude-config/scripts/sync.sh generate` exists, is idempotent, and produces byte-identical output to the current `ikeos` source on every run.
 - `claude-config/scripts/check-drift.sh` detects and auto-heals drift between `ikeos/adapters/` and the generated copies, the same way it already does for `global/` → `~/.claude`.
-- The 5 generated `claude-config/global/commands/*.md` files and the generated session-manager files carry the "do not edit, generated from..." header.
+- The 4 generated `claude-config/global/commands/*.md` files and the generated session-manager files carry the "do not edit, generated from..." header.
 - `claude-config/services/session-manager` is running the regenerated code and has been verified live (not just via its test suite) after the second pass.
-- `docs/COMPONENT_MODEL.md` §7 and both repos' decision logs reflect the resolution.
+- `docs/COMPONENT_MODEL.md` §7 and both repos' decision logs reflect the (partial — `housekeeping.md` deferred) resolution.
