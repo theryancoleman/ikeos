@@ -5,10 +5,16 @@ import threading
 from datetime import date
 from pathlib import Path
 
-# Standalone reference-implementation storage: a home-directory dotfile,
-# matching sessions.py's SESSIONS_FILE convention — no dependency on any
-# specific host's private repo layout.
-RESEARCH_SOURCES_FILE = Path.home() / ".claude-research-sources.json"
+# Standalone reference-implementation storage: a home-directory dotfile by
+# default, matching sessions.py's SESSIONS_FILE convention. Deployments that
+# want this visible to other tooling (e.g. claude-config's housekeeping
+# dashboard, which reads it directly — see docs/COMPONENT_MODEL.md §3) can
+# override via RESEARCH_SOURCES_PATH.
+RESEARCH_SOURCES_FILE = (
+    Path(os.environ["RESEARCH_SOURCES_PATH"])
+    if os.environ.get("RESEARCH_SOURCES_PATH")
+    else Path.home() / ".claude-research-sources.json"
+)
 
 _lock = threading.Lock()
 
