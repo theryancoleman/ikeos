@@ -81,7 +81,9 @@ def run_eval_suite(model: str | None = None) -> SessionResult:
         project_dir=_housekeeping_project_dir(),
         initial_command=(
             "Run `python3 evals/runner.py --notify` and report the pass/fail/regression "
-            "summary when it finishes."
+            "summary when it finishes. Then write the sentinel file so the session manager "
+            "knows the run finished and can clean up the session: "
+            "`mkdir -p /tmp/ikeos-done && touch /tmp/ikeos-done/eval-suite-run`"
         ),
         model=model,
     )

@@ -70,6 +70,16 @@ def test_run_eval_suite_spawns_session():
     assert kw["name"] == "eval-suite-run"
 
 
+def test_run_eval_suite_writes_completion_sentinel():
+    # Without this, the ephemeral session never signals completion to
+    # _wait_for_completion_and_remove(), which then polls for up to the
+    # 4-hour TTL instead of cleaning up promptly once the run finishes.
+    with patch("app.services.driver.create_session", return_value=OK) as cs:
+        run_eval_suite()
+    kw = cs.call_args.kwargs
+    assert "/tmp/ikeos-done/eval-suite-run" in kw["initial_command"]
+
+
 def test_publish_blog_draft_builds_publish_prompt(monkeypatch):
     monkeypatch.setenv("AIOS_BLOG_PROJECT_DIR", "/mnt/c/Server/projects/aios-blog")
     with patch("app.services.driver.create_session", return_value=OK) as cs:
