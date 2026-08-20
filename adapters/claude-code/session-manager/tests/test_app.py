@@ -148,6 +148,36 @@ def test_toggle_remote_control(client, mocker):
     assert resp.get_json()["remote_control_confirmed"] is True
 
 
+def test_toggle_remote_control_missing_key_falls_back_to_false(client, mocker):
+    # Regression test: a session record persisted before the "remote_control"
+    # field existed (or otherwise missing it) must not turn the real, already-
+    # applied tmux toggle into an HTTP 500 — the fallback read must not KeyError.
+    mocker.patch("app.launch_session")
+    mocker.patch("app.has_session", side_effect=_HAS_SESSION_SIDE_EFFECT)
+    mocker.patch("app.capture_pane", return_value="")
+    create_resp = client.post("/sessions", json={
+        "name": "s1", "project": "p", "project_dir": "/d", "remote_control": False
+    })
+    sid = create_resp.get_json()["id"]
+
+    from sessions import list_sessions, _save
+    sessions = list_sessions()
+    for s in sessions:
+        if s["id"] == sid:
+            del s["remote_control"]
+    _save(sessions)
+
+    mocker.patch("app.send_command")
+    mocker.patch("app.time.sleep")
+    # Pane output that doesn't match any known remote-control state string, so
+    # the handler falls back to the (previously unsafe) session lookup.
+    mocker.patch("app.capture_pane", return_value="")
+    resp = client.patch(f"/sessions/{sid}/remote_control")
+    assert resp.status_code == 200
+    assert resp.get_json()["remote_control"] is True
+    assert resp.get_json()["remote_control_confirmed"] is False
+
+
 def test_send_command_clear_resets_counters(client, mocker):
     mocker.patch("app.launch_session")
     mocker.patch("app.has_session", side_effect=_HAS_SESSION_SIDE_EFFECT)
@@ -237,6 +267,32 @@ def test_refresh_no_reinject_if_autonomous_mode_off(client, mocker):
     send_mock.assert_not_called()
 
 
+def test_refresh_marks_session_blocked_on_menu(client, mocker):
+    import sessions
+    s = sessions.create_session("stuck-test", "proj", "/dir")
+
+    mocker.patch("app.has_session", return_value=True)
+    mocker.patch("app.capture_pane", return_value="Setup wizard\n> Option A\n\nEnter to confirm, Esc to cancel\n")
+
+    resp = client.get("/sessions")
+    data = resp.get_json()
+    session = next(x for x in data if x["id"] == s["id"])
+    assert session["blocked_on_menu"] is True
+
+
+def test_refresh_not_blocked_on_menu_for_normal_idle(client, mocker):
+    import sessions
+    s = sessions.create_session("not-stuck-test", "proj", "/dir")
+
+    mocker.patch("app.has_session", return_value=True)
+    mocker.patch("app.capture_pane", return_value="some output\n? for shortcuts\n")
+
+    resp = client.get("/sessions")
+    data = resp.get_json()
+    session = next(x for x in data if x["id"] == s["id"])
+    assert session["blocked_on_menu"] is False
+
+
 def test_toggle_autonomous_mode_on(client, mocker):
     mocker.patch("app.launch_session")
     mocker.patch("app.has_session", side_effect=_HAS_SESSION_SIDE_EFFECT)
@@ -273,6 +329,64 @@ def test_toggle_autonomous_mode_off(client, mocker):
 
 def test_toggle_autonomous_mode_404(client):
     resp = client.patch("/sessions/nonexistent/autonomous_mode")
+    assert resp.status_code == 404
+
+
+def test_send_raw_key_calls_tmux_send_key(client, mocker):
+    import sessions
+    s = sessions.create_session("keys-test", "proj", "/dir")
+    session_id = s["id"]
+
+    mocker.patch("app.has_session", return_value=True)
+    mock_send_key = mocker.patch("app.send_key")
+
+    resp = client.post(f"/sessions/{session_id}/keys", json={"key": "Down"})
+    assert resp.status_code == 200
+    assert resp.get_json() == {"ok": True}
+    mock_send_key.assert_called_once_with("keys-test", "Down")
+
+
+def test_send_raw_key_maps_esc_to_tmux_escape_name(client, mocker):
+    import sessions
+    s = sessions.create_session("keys-esc-test", "proj", "/dir")
+    session_id = s["id"]
+
+    mocker.patch("app.has_session", return_value=True)
+    mock_send_key = mocker.patch("app.send_key")
+
+    resp = client.post(f"/sessions/{session_id}/keys", json={"key": "Esc"})
+    assert resp.status_code == 200
+    mock_send_key.assert_called_once_with("keys-esc-test", "Escape")
+
+
+def test_send_raw_key_rejects_unknown_key(client, mocker):
+    import sessions
+    s = sessions.create_session("keys-bad-test", "proj", "/dir")
+    session_id = s["id"]
+
+    mocker.patch("app.has_session", return_value=True)
+    mock_send_key = mocker.patch("app.send_key")
+
+    resp = client.post(f"/sessions/{session_id}/keys", json={"key": "F13"})
+    assert resp.status_code == 400
+    mock_send_key.assert_not_called()
+
+
+def test_send_raw_key_404_when_session_not_running(client, mocker):
+    import sessions
+    s = sessions.create_session("keys-stopped-test", "proj", "/dir")
+    session_id = s["id"]
+
+    mocker.patch("app.has_session", return_value=False)
+    mock_send_key = mocker.patch("app.send_key")
+
+    resp = client.post(f"/sessions/{session_id}/keys", json={"key": "Enter"})
+    assert resp.status_code == 404
+    mock_send_key.assert_not_called()
+
+
+def test_send_raw_key_404_when_session_id_unknown(client, mocker):
+    resp = client.post("/sessions/nonexistent-id/keys", json={"key": "Enter"})
     assert resp.status_code == 404
 
 

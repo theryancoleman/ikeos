@@ -23,6 +23,7 @@ from research_sources import (
 from pane_parser import (
     parse_remote_control_state, parse_rc_dialog_open, parse_message_count,
     parse_compaction_detected, parse_activity, compute_health, parse_token_usage,
+    parse_stuck_on_menu,
 )
 
 app = Flask(__name__)
@@ -56,6 +57,7 @@ def _refresh(session: dict) -> dict:
             pane = capture_pane(name)
             session["message_count"] = parse_message_count(pane)
             session["activity"] = parse_activity(pane)
+            session["blocked_on_menu"] = parse_stuck_on_menu(pane)
             was_compacted = session.get("compaction_detected", False)
             session["compaction_detected"] = parse_compaction_detected(pane)
             if session.get("autonomous_mode") and not was_compacted and session["compaction_detected"]:
@@ -359,7 +361,7 @@ def toggle_remote_control(session_id):
         time.sleep(0.5)
         pane = capture_pane(session["tmux_session"])
     rc_state = parse_remote_control_state(pane)
-    new_state = not session["remote_control"]
+    new_state = not session.get("remote_control", False)
     confirmed = False
     if rc_state is not None:
         new_state = rc_state == "enabled"
@@ -368,6 +370,28 @@ def toggle_remote_control(session_id):
                              remote_control=new_state,
                              remote_control_confirmed=confirmed)
     return jsonify(updated)
+
+
+_ALLOWED_KEYS = {
+    "Up": "Up", "Down": "Down", "Left": "Left", "Right": "Right",
+    "Enter": "Enter", "Esc": "Escape", "Space": "Space", "Tab": "Tab",
+}
+
+
+@app.route("/sessions/<session_id>/keys", methods=["POST"])
+def send_raw_key(session_id):
+    session = get_session(session_id)
+    if not session:
+        abort(404)
+    data = request.get_json(silent=True) or {}
+    key = data.get("key", "")
+    tmux_key = _ALLOWED_KEYS.get(key)
+    if not tmux_key:
+        return jsonify({"error": f"Unsupported key: {key!r}"}), 400
+    if not has_session(session["tmux_session"]):
+        return jsonify({"error": "Session not running"}), 404
+    send_key(session["tmux_session"], tmux_key)
+    return jsonify({"ok": True})
 
 
 @app.route("/sessions/<session_id>/remote_control_state", methods=["PATCH"])
