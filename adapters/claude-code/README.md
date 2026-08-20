@@ -116,3 +116,18 @@ curl -s -X POST "$IKEOS_URL/capture" \
 ## Driver API
 
 The session manager implements the IkeOS Session Driver API. For the full contract (endpoints, request/response shapes, ephemeral session semantics), see [`docs/SESSION_DRIVER_API.md`](../../docs/SESSION_DRIVER_API.md).
+
+---
+
+## Research Sources API
+
+The session manager also exposes a small API for managing the RSS/URL sources used by `deep-research-weekly` and `/housekeeping`. Sources are persisted to `~/.claude-research-sources.json`.
+
+### GET /research-sources
+Returns `{"sources": [...]}` — each source has `id`, `url`, `label`, `status`, `last_fetched`, `entries_generated`, `added`, `blacklisted`.
+
+### POST /research-sources
+Body: `{"url": "<url>", "label": "<label>"}`. Both fields required. `201` with the created source on success, `409` if a source with this URL already exists, `400` if `url` or `label` is missing.
+
+### PATCH /research-sources/{id}
+Toggles `blacklisted` for the source with this id. `200` with the updated source, `404` if unknown.

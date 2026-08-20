@@ -1,6 +1,6 @@
 # Session-Manager Reference-Copy Sync Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Bring `adapters/claude-code/session-manager/` (this repo's public reference implementation of the Session Driver API) back in sync with the deployed service at `claude-config/services/session-manager/`, without importing that service's homelab-specific hardcoded paths.
 
@@ -29,7 +29,7 @@
 - Modify: `adapters/claude-code/session-manager/tmux.py`
 - Modify: `adapters/claude-code/session-manager/tests/test_tmux.py`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Add to `adapters/claude-code/session-manager/tests/test_tmux.py`:
 
@@ -58,12 +58,12 @@ def test_wait_until_idle_requires_consecutive_idle_readings(mocker):
 
 (`tmux` module is imported at the top of the existing test file — check the current import line and reuse it rather than adding a duplicate import.)
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `docker.exe exec ikeos pytest adapters/claude-code/session-manager/tests/test_tmux.py -k "list_session_names or consecutive" -v`
 Expected: FAIL — `AttributeError: module 'tmux' has no attribute 'list_session_names'`
 
-- [ ] **Step 3: Add `list_session_names()` — insert after the existing `has_session()` function**
+- [x] **Step 3: Add `list_session_names()` — insert after the existing `has_session()` function**
 
 In `adapters/claude-code/session-manager/tmux.py`, after the `has_session` function (currently ends around line 27, right before `def launch_session`), insert:
 
@@ -84,7 +84,7 @@ def list_session_names() -> set[str]:
     return {line.strip() for line in result.stdout.splitlines() if line.strip()}
 ```
 
-- [ ] **Step 4: Add `required_consecutive` to `wait_until_idle()` and thread it through `send_prompt()`**
+- [x] **Step 4: Add `required_consecutive` to `wait_until_idle()` and thread it through `send_prompt()`**
 
 Find the existing `wait_until_idle` function in `tmux.py`:
 
@@ -161,12 +161,12 @@ and the line inside it:
 
 Change the signature to add `required_consecutive: int = 1,` (placed after `timeout`, before `escape_first`), and update the inner call to `wait_until_idle(name, timeout=timeout, required_consecutive=required_consecutive)`.
 
-- [ ] **Step 5: Run tests to verify they pass**
+- [x] **Step 5: Run tests to verify they pass**
 
 Run: `docker.exe exec ikeos pytest adapters/claude-code/session-manager/tests/test_tmux.py -v`
 Expected: all tests pass (existing + 3 new)
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 cd /mnt/c/Server/projects/ikeos
@@ -184,7 +184,7 @@ git commit -m "feat: sync list_session_names() and idle-detection refinement int
 - Modify: `adapters/claude-code/session-manager/tests/test_tmux.py`
 - Modify: `adapters/claude-code/session-manager/tests/test_sessions.py`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Add to `adapters/claude-code/session-manager/tests/test_tmux.py`:
 
@@ -210,12 +210,12 @@ def test_create_session_model_defaults_none():
     assert s["model"] is None
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `docker.exe exec ikeos pytest adapters/claude-code/session-manager/tests/test_tmux.py adapters/claude-code/session-manager/tests/test_sessions.py -k model -v`
 Expected: FAIL — `TypeError: launch_session() got an unexpected keyword argument 'model'`
 
-- [ ] **Step 3: Update `create_session()` in `sessions.py`**
+- [x] **Step 3: Update `create_session()` in `sessions.py`**
 
 Find:
 
@@ -240,7 +240,7 @@ def create_session(name: str, project: str, project_dir: str,
 
 Then find the dict literal's `"ephemeral": ephemeral,` line inside the same function and add `"model": model,` immediately after it.
 
-- [ ] **Step 4: Update `launch_session()` in `tmux.py`**
+- [x] **Step 4: Update `launch_session()` in `tmux.py`**
 
 Find:
 
@@ -270,12 +270,12 @@ def launch_session(
 
 Do **not** touch `CLAUDE_BIN`, `PLUGIN_BASE`, or how `CLAUDE_CMD` is built at module level — those stay env-var-based (`os.environ.get(...)`), matching this adapter's public-distribution design. The deployed service's hardcoded absolute paths are homelab-specific and must not be ported here.
 
-- [ ] **Step 5: Run tests to verify they pass**
+- [x] **Step 5: Run tests to verify they pass**
 
 Run: `docker.exe exec ikeos pytest adapters/claude-code/session-manager/tests/test_tmux.py adapters/claude-code/session-manager/tests/test_sessions.py -v`
 Expected: all tests pass
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 cd /mnt/c/Server/projects/ikeos
@@ -293,7 +293,7 @@ git commit -m "feat: thread model parameter through session-manager adapter's la
 - Create: `adapters/claude-code/session-manager/tests/test_research_sources.py`
 - Modify: `adapters/claude-code/session-manager/app.py`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```bash
 cat > /mnt/c/Server/projects/ikeos/adapters/claude-code/session-manager/tests/test_research_sources.py << 'EOF'
@@ -343,12 +343,12 @@ def test_set_blacklisted_toggles(tmp_path, monkeypatch):
 EOF
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `docker.exe exec ikeos pytest adapters/claude-code/session-manager/tests/test_research_sources.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'research_sources'`
 
-- [ ] **Step 3: Create `research_sources.py`**
+- [x] **Step 3: Create `research_sources.py`**
 
 ```bash
 cat > /mnt/c/Server/projects/ikeos/adapters/claude-code/session-manager/research_sources.py << 'EOF'
@@ -445,12 +445,12 @@ def set_blacklisted(source_id: str, blacklisted: bool) -> dict | None:
 EOF
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `docker.exe exec ikeos pytest adapters/claude-code/session-manager/tests/test_research_sources.py -v`
 Expected: all 5 tests pass
 
-- [ ] **Step 5: Wire the routes into `app.py`**
+- [x] **Step 5: Wire the routes into `app.py`**
 
 In `adapters/claude-code/session-manager/app.py`, find the import block:
 
@@ -526,7 +526,7 @@ if __name__ == "__main__":
 
 Note: `remove_session` must already be imported from `sessions` for `_reconcile_sessions` to work — check the existing `from sessions import (...)` line at the top of `app.py` and add `remove_session` to it if it's not already there.
 
-- [ ] **Step 6: Thread `model` through the `POST /sessions` route**
+- [x] **Step 6: Thread `model` through the `POST /sessions` route**
 
 Find, in `app.py`'s `create()` view function:
 
@@ -566,12 +566,12 @@ Replace with:
 
 (The deployed service defaults to `model or DEFAULT_MODEL` here because it hardcodes a specific default model constant; the adapter has no such constant today and shouldn't invent a homelab-specific default — `model=model` with `None` falling through to `launch_session`'s own no-op default is the correct adapter-scoped behavior.)
 
-- [ ] **Step 7: Run the full adapter test suite**
+- [x] **Step 7: Run the full adapter test suite**
 
 Run: `docker.exe exec ikeos pytest adapters/claude-code/session-manager/tests/ -v`
 Expected: all tests pass, no regressions
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 cd /mnt/c/Server/projects/ikeos
@@ -588,17 +588,17 @@ git commit -m "feat: add /research-sources endpoints and startup session reconci
 **Files:**
 - Modify: `adapters/claude-code/README.md`
 
-- [ ] **Step 1: Read the current endpoint documentation**
+- [x] **Step 1: Read the current endpoint documentation**
 
 Run: `grep -n "research-sources\|POST /sessions\|## \|### " /mnt/c/Server/projects/ikeos/adapters/claude-code/README.md`
 
 Locate the session-manager endpoint list/table (if one exists) and the `POST /sessions` request-body documentation.
 
-- [ ] **Step 2: Add the missing documentation**
+- [x] **Step 2: Add the missing documentation**
 
 Add a row/entry for each of `GET /research-sources`, `POST /research-sources`, `PATCH /research-sources/<id>`, matching whatever format (table or prose list) the existing endpoint docs use. Add `model` (optional string) to the documented `POST /sessions` request body fields.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 cd /mnt/c/Server/projects/ikeos
