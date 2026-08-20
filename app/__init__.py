@@ -35,6 +35,7 @@ def create_app(config: dict | None = None) -> Flask:
     from app.routes.publishing import bp as publishing_bp
     from app.routes.research_sources import bp as research_sources_bp
     from app.routes.council import bp as council_bp
+    from app.routes.evals import bp as evals_bp
 
     app.register_blueprint(capture_bp)
     app.register_blueprint(browse_bp)
@@ -43,6 +44,7 @@ def create_app(config: dict | None = None) -> Flask:
     app.register_blueprint(publishing_bp)
     app.register_blueprint(research_sources_bp)
     app.register_blueprint(council_bp)
+    app.register_blueprint(evals_bp)
 
     @app.template_filter("docker_image")
     def docker_image_filter(image: str) -> str:

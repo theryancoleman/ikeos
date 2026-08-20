@@ -5,6 +5,7 @@ from app.services.driver import (
     rewrite_blog_draft,
     run_council_action,
     run_council_discuss,
+    run_eval_suite,
     run_housekeeping_task,
     run_platform_review,
     run_scheduled_housekeeping,
@@ -57,6 +58,16 @@ def test_run_council_action_uses_item_slug_in_command():
     kw = cs.call_args.kwargs
     assert kw["initial_command"] == "/council-action 2026-08-18-recover-weak-signals-entries"
     assert kw["name"].startswith("council-action-")
+
+
+def test_run_eval_suite_spawns_session():
+    with patch("app.services.driver.create_session", return_value=OK) as cs:
+        result = run_eval_suite()
+    assert result.session_id == "s1"
+    kw = cs.call_args.kwargs
+    assert kw["project_dir"] == "/mnt/c/Server/claude-config"
+    assert "evals/runner.py" in kw["initial_command"]
+    assert kw["name"] == "eval-suite-run"
 
 
 def test_publish_blog_draft_builds_publish_prompt(monkeypatch):

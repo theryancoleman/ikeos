@@ -16,6 +16,7 @@ from app.services.driver import (
     run_housekeeping_task,
     run_platform_review,
 )
+from app.services.eval_results import read_last_run
 from app.services.platform import project_slug
 from app.services.research_findings import get_research_findings
 from app.services.reviews import latest_review_name, read_latest_review
@@ -333,6 +334,7 @@ def _housekeeping_context() -> dict:
         entry_type="council-item",
         status_filter=["pending-review", "in-discussion"],
     )
+    last_eval_run = read_last_run()
     return dict(
         tasks=tasks,
         heartbeat=heartbeat,
@@ -346,6 +348,7 @@ def _housekeeping_context() -> dict:
         blog_draft=blog_draft,
         blog_draft_published=blog_draft_published,
         weekly_review_file=latest_review_name(),
+        eval_last_run_timestamp=last_eval_run["timestamp"] if last_eval_run else None,
         capabilities=get_capabilities(),
         recent_runs=read_events_by_type("housekeeping.run", limit=10),
         research_generated_at=findings["generated_at"] if findings else None,

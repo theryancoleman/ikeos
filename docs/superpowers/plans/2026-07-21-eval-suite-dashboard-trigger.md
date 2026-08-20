@@ -1,6 +1,6 @@
 # Eval Suite Dashboard Trigger Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 >
 > **Scope note (read before executing):** The source vault entry asked for "trigger on demand and/or schedule periodic runs." This plan implements **on-demand trigger + results display only**. Building a second cron job means either duplicating scheduler.py's leader-election/APScheduler machinery or generalizing it to support multiple named jobs — a real design decision, not a mechanical add, and disproportionate to an explicitly "not urgent" idea whose current ad hoc `sync.sh` trigger is functional. Recurring scheduling is listed under Explicitly Out of Scope with a concrete follow-up path. Flag to the user if they wanted the scheduling half in this pass.
 
@@ -34,7 +34,7 @@
 **Files:**
 - Modify: `docker-compose.yml`
 
-- [ ] **Step 1: Add the read-only evals mount**
+- [x] **Step 1: Add the read-only evals mount**
 
 In `docker-compose.yml`, find:
 
@@ -48,7 +48,7 @@ Add immediately after it:
       - ${CLAUDE_CONFIG_PATH:-/tmp/ikeos-no-claude-config}/evals:/claude-config/evals:ro
 ```
 
-- [ ] **Step 2: Rebuild and verify the mount**
+- [x] **Step 2: Rebuild and verify the mount**
 
 ```bash
 cd /mnt/c/Server/projects/ikeos && docker.exe compose up --build -d
@@ -57,7 +57,7 @@ docker.exe exec ikeos ls /claude-config/evals/
 
 Expected: lists `last_run.json`, `baselines.json`, `runner.py`, etc. (If it lists nothing or errors, `CLAUDE_CONFIG_PATH` isn't set in `.env` — confirm it's set to `/mnt/c/Server/claude-config` or the Windows-format equivalent before continuing.)
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 cd /mnt/c/Server/projects/ikeos
@@ -73,7 +73,7 @@ git commit -m "feat: mount claude-config/evals read-only for the eval-suite dash
 - Create: `app/services/eval_results.py`
 - Create: `tests/test_eval_results.py`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```bash
 cat > /mnt/c/Server/projects/ikeos/tests/test_eval_results.py << 'EOF'
@@ -135,12 +135,12 @@ def test_read_last_run_missing_baseline_has_null_delta(tmp_path, monkeypatch):
 EOF
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `docker.exe exec ikeos pytest tests/test_eval_results.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'app.services.eval_results'`
 
-- [ ] **Step 3: Write the module**
+- [x] **Step 3: Write the module**
 
 ```bash
 cat > /mnt/c/Server/projects/ikeos/app/services/eval_results.py << 'EOF'
@@ -195,12 +195,12 @@ def read_last_run() -> dict | None:
 EOF
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `docker.exe exec ikeos pytest tests/test_eval_results.py -v`
 Expected: all 4 tests pass
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd /mnt/c/Server/projects/ikeos
@@ -216,7 +216,7 @@ git commit -m "feat: add eval_results service to read claude-config eval suite o
 - Modify: `app/services/driver.py`
 - Modify: `tests/test_driver.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Find the existing test file `tests/test_driver.py` and add (matching its existing mocking pattern for `create_session` — check the top of the file for how it patches `app.services.driver.create_session` and reuse that same style):
 
@@ -233,12 +233,12 @@ def test_run_eval_suite_spawns_session(mocker):
     assert kwargs["name"] == "eval-suite-run"
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `docker.exe exec ikeos pytest tests/test_driver.py -k run_eval_suite -v`
 Expected: FAIL — `ImportError: cannot import name 'run_eval_suite'`
 
-- [ ] **Step 3: Add the function to `driver.py`**
+- [x] **Step 3: Add the function to `driver.py`**
 
 Add after `run_platform_review()`:
 
@@ -258,12 +258,12 @@ def run_eval_suite(model: str | None = None) -> SessionResult:
 
 (Uses `_housekeeping_project_dir()` since the eval suite lives in the same claude-config checkout housekeeping already targets — no new project-dir env var needed.)
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `docker.exe exec ikeos pytest tests/test_driver.py -v`
 Expected: all tests pass, no regressions in existing driver tests
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd /mnt/c/Server/projects/ikeos
@@ -278,7 +278,7 @@ git commit -m "feat: add run_eval_suite() to driver"
 **Files:**
 - Modify: `app/services/capabilities.py`
 
-- [ ] **Step 1: Add the capability**
+- [x] **Step 1: Add the capability**
 
 In `DEFAULT_CAPABILITIES`, after the `weekly_platform_review` entry, add:
 
@@ -291,12 +291,12 @@ In `DEFAULT_CAPABILITIES`, after the `weekly_platform_review` entry, add:
     },
 ```
 
-- [ ] **Step 2: Verify existing capability tests still pass**
+- [x] **Step 2: Verify existing capability tests still pass**
 
 Run: `docker.exe exec ikeos pytest tests/test_capabilities.py -v`
 Expected: all pass (adding a dict entry shouldn't break anything, but confirm)
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 cd /mnt/c/Server/projects/ikeos
@@ -313,13 +313,13 @@ git commit -m "feat: add eval_suite_trigger capability flag (default off)"
 - Create: `tests/test_evals_routes.py`
 - Modify: the app factory / blueprint registration site (find it via `grep -rn "register_blueprint" app/`)
 
-- [ ] **Step 1: Find the blueprint registration site**
+- [x] **Step 1: Find the blueprint registration site**
 
 Run: `grep -rn "register_blueprint" /mnt/c/Server/projects/ikeos/app/`
 
 Note the exact file and how `housekeeping.bp` is registered — the new blueprint follows the identical pattern.
 
-- [ ] **Step 2: Write the failing tests**
+- [x] **Step 2: Write the failing tests**
 
 ```bash
 cat > /mnt/c/Server/projects/ikeos/tests/test_evals_routes.py << 'EOF'
@@ -365,12 +365,12 @@ EOF
 
 (Adjust the `create_app` import and the capture-token fixture setup to match whatever pattern `tests/conftest.py` already establishes for other route tests — check `tests/test_housekeeping.py`'s fixtures first and reuse them rather than inventing a new one.)
 
-- [ ] **Step 3: Run tests to verify they fail**
+- [x] **Step 3: Run tests to verify they fail**
 
 Run: `docker.exe exec ikeos pytest tests/test_evals_routes.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'app.routes.evals'`
 
-- [ ] **Step 4: Write the routes module**
+- [x] **Step 4: Write the routes module**
 
 ```bash
 cat > /mnt/c/Server/projects/ikeos/app/routes/evals.py << 'EOF'
@@ -428,12 +428,12 @@ EOF
 
 Register the blueprint in the app factory found in Step 1, following the exact same line pattern used for `housekeeping.bp` (e.g. `app.register_blueprint(evals.bp)` alongside `app.register_blueprint(housekeeping.bp)`, with a matching import line added at the top of that file).
 
-- [ ] **Step 5: Run tests to verify they pass**
+- [x] **Step 5: Run tests to verify they pass**
 
 Run: `docker.exe exec ikeos pytest tests/test_evals_routes.py -v`
 Expected: all 4 pass (Task 6 creates `evals.html`, required for `test_evals_page_renders` — if Task 5 is executed before Task 6, this one test fails on a `TemplateNotFound` error; that's expected and resolves once Task 6 lands. Run the full test again after Task 6.)
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 cd /mnt/c/Server/projects/ikeos
@@ -450,7 +450,7 @@ git commit -m "feat: add /evals routes for on-demand eval suite trigger and resu
 **Files:**
 - Create: `app/templates/evals.html`
 
-- [ ] **Step 1: Write the template**
+- [x] **Step 1: Write the template**
 
 ```bash
 cat > /mnt/c/Server/projects/ikeos/app/templates/evals.html << 'EOF'
@@ -559,18 +559,18 @@ async function runEvals(btn) {
 EOF
 ```
 
-- [ ] **Step 2: Run the full route test file again (now that the template exists)**
+- [x] **Step 2: Run the full route test file again (now that the template exists)**
 
 Run: `docker.exe exec ikeos pytest tests/test_evals_routes.py -v`
 Expected: all 4 pass
 
-- [ ] **Step 3: Add the capability toggle row to `housekeeping.html`**
+- [x] **Step 3: Add the capability toggle row to `housekeeping.html`**
 
 Run: `grep -n "weekly_platform_review" /mnt/c/Server/projects/ikeos/app/templates/housekeeping.html`
 
 Find the existing toggle row markup for `weekly_platform_review` in the capabilities section and duplicate it immediately below, substituting `eval_suite_trigger` for the capability name, "Eval Suite Trigger" for the label, and its description text. Also add a nav pill linking to `{{ url_for('evals.index') }}` next to wherever the "Weekly Platform Review" nav link lives in the same file.
 
-- [ ] **Step 4: Manual smoke test**
+- [x] **Step 4: Manual smoke test**
 
 ```bash
 cd /mnt/c/Server/projects/ikeos && docker.exe compose up --build -d
@@ -578,7 +578,7 @@ cd /mnt/c/Server/projects/ikeos && docker.exe compose up --build -d
 
 In a browser, visit the ikeos dashboard, navigate to Housekeeping, enable "Eval Suite Trigger," navigate to the new Eval Suite page, click "Run Eval Suite," and confirm a session starts (check `docker.exe exec ikeos curl -s http://host.docker.internal:5010/sessions` or the Sessions tab in the UI for a new `eval-suite-run` session).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd /mnt/c/Server/projects/ikeos
