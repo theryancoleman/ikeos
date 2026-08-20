@@ -28,6 +28,39 @@ def parse_rc_dialog_open(pane_output: str) -> bool:
     return "Enter to select" in pane_output and "claude.ai/code/session_" in pane_output
 
 
+def parse_stuck_on_menu(pane_output: str) -> bool:
+    """True if the pane looks blocked on an interactive TUI menu (arrow-key
+    pickers, setup wizards, permission-prune confirms) rather than genuinely
+    idle at the input prompt. parse_activity()'s status-bar state machine
+    can't tell these apart -- both render without the active 'esc to
+    interrupt' marker, which is how a stuck session went unnoticed for
+    25+ minutes in incident 2026-08-17.
+
+    Known false-positive mode: this can report True for a session that is
+    actually actively working, if the visible pane content happens to
+    contain the substrings "Enter to confirm" or "Esc to cancel" for a
+    reason unrelated to a real stuck menu -- e.g. a session reading or
+    writing this file's own source, or echoing documentation that quotes
+    those phrases. This is a deliberate sensitivity-over-specificity
+    tradeoff (matching the Task 4 fix round's established preference), not
+    a bug to fix by cross-referencing `_ACTIVE_STATUS`: doing so would trade
+    this false positive for a worse false negative on the most common
+    blocking case -- permission dialogs that appear while the active status
+    bar marker ('esc to interrupt') is still showing.
+
+    Consumers should treat this field as advisory only: combine it with the
+    existing `activity` field for any user-facing status, and never auto-send
+    keys based on this signal alone -- a false positive would inject
+    keystrokes into a live working session.
+    """
+    if "Enter to confirm" in pane_output or "Esc to cancel" in pane_output:
+        return True
+    for line in pane_output.splitlines():
+        if re.match(r"^\?\s+\S", line) and "for shortcuts" not in line:
+            return True
+    return False
+
+
 _IDLE_STATUS = "? for shortcuts"      # status bar when Claude is at the input prompt
 _IDLE_STATUS_BYPASS = "bypass permissions on"  # status bar in --dangerously-skip-permissions mode
 _ACTIVE_STATUS = "esc to interrupt"   # status bar when Claude is generating/thinking/working

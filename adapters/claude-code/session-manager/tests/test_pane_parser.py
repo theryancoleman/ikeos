@@ -50,6 +50,45 @@ def test_parse_rc_dialog_open_false_after_dismiss():
     assert pane_parser.parse_rc_dialog_open(pane) is False
 
 
+def test_parse_stuck_on_menu_detects_enter_to_confirm():
+    pane = "Some setup wizard\n> Option A\n  Option B\n\nEnter to confirm, Esc to cancel\n"
+    assert pane_parser.parse_stuck_on_menu(pane) is True
+
+
+def test_parse_stuck_on_menu_detects_esc_to_cancel():
+    pane = "Pick a mode:\n> plan\n  build\n\n(Esc to cancel)\n"
+    assert pane_parser.parse_stuck_on_menu(pane) is True
+
+
+def test_parse_stuck_on_menu_detects_leading_question_glyph():
+    pane = "? Which permission mode should Claude use?\n> Default\n  Plan\n  Auto\n"
+    assert pane_parser.parse_stuck_on_menu(pane) is True
+
+
+def test_parse_stuck_on_menu_false_for_normal_idle_prompt():
+    pane = "some output\n? for shortcuts\n"
+    assert pane_parser.parse_stuck_on_menu(pane) is False
+
+
+def test_parse_stuck_on_menu_false_for_normal_working_output():
+    pane = "Reading file...\nesc to interrupt\n"
+    assert pane_parser.parse_stuck_on_menu(pane) is False
+
+
+def test_parse_stuck_on_menu_true_when_shortcuts_footer_lingers_elsewhere():
+    # A genuine stuck-menu marker plus a lingering "? for shortcuts" status-bar
+    # fragment elsewhere in the same pane snapshot must still detect as stuck --
+    # the "for shortcuts" exclusion must be scoped to the matched line, not the
+    # whole pane, or a real stuck session can be silently suppressed back to False.
+    pane = (
+        "? Which permission mode should Claude use?\n"
+        "> Default\n  Plan\n  Auto\n"
+        "... some overlay junk ...\n"
+        "? for shortcuts\n"
+    )
+    assert pane_parser.parse_stuck_on_menu(pane) is True
+
+
 def test_parse_message_count_counts_prompt_lines():
     pane = "hello\n> \nresponse\n> \nresponse2\n"
     assert pane_parser.parse_message_count(pane) == 2
