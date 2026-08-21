@@ -19,6 +19,20 @@ CLAUDE_CMD = [
 ]
 
 
+def sanitize_tmux_name(name: str) -> str:
+    """tmux session names can't contain ':' or '.' -- tmux silently replaces
+    them with '_' at creation time (they're target-specifier separators).
+    Sanitize on our side, before ever calling tmux, so the name we store and
+    use for every later has_session/kill_session/send_key/capture_pane call
+    matches what tmux actually named the session -- rather than silently
+    no-op'ing (has_session returns False, so kill_session never runs)
+    against a name tmux never used. This previously leaked a full Claude
+    Code process on every single-task housekeeping run, since those use the
+    vault task's filename (which includes ".md") as the session name.
+    """
+    return name.replace(":", "_").replace(".", "_")
+
+
 def has_session(name: str) -> bool:
     result = subprocess.run(
         ["tmux", "has-session", "-t", name],

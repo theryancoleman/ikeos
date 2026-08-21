@@ -44,6 +44,31 @@ def test_create_session(client, mocker):
     assert data["status"] == "active"
 
 
+def test_create_session_sanitizes_dotted_name_for_tmux(client, mocker):
+    # Regression test: a name containing "." (e.g. a vault task filename like
+    # "2026-06-18-memory-consolidation.md", used verbatim as the session name
+    # for single-task housekeeping runs) must be sanitized before use --
+    # tmux itself replaces "." with "_" in session names, so an unsanitized
+    # name here would cause has_session()/kill_session() to silently target
+    # a session tmux never created, leaking the real one indefinitely.
+    mock_launch = mocker.patch("app.launch_session")
+    mocker.patch("app.has_session", return_value=False)
+    mocker.patch("app.threading.Thread")
+    resp = client.post("/sessions", json={
+        "name": "housekeeping-2026-06-18-memory-consolidation.md",
+        "project": "claude-config",
+        "project_dir": "/dir",
+    })
+    assert resp.status_code == 201
+    data = resp.get_json()
+    assert data["name"] == "housekeeping-2026-06-18-memory-consolidation_md"
+    assert data["tmux_session"] == "housekeeping-2026-06-18-memory-consolidation_md"
+    mock_launch.assert_called_once_with(
+        "housekeeping-2026-06-18-memory-consolidation_md", "/dir",
+        skip_permissions=False, model=None,
+    )
+
+
 def test_create_session_with_remote_control(client, mocker):
     mocker.patch("app.launch_session")
     mocker.patch("app.has_session", return_value=False)

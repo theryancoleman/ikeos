@@ -16,6 +16,7 @@ from sessions import (
 from tmux import (
     has_session, launch_session, kill_session, send_command, send_key,
     send_enter, capture_pane, send_prompt, list_session_names,
+    sanitize_tmux_name,
 )
 from research_sources import (
     list_sources, add_source, find_source, set_blacklisted,
@@ -263,7 +264,12 @@ def get_sessions():
 @app.route("/sessions", methods=["POST"])
 def create():
     data = request.get_json()
-    name = data["name"]
+    # Sanitize once, here, before this name is used for anything -- tmux's
+    # own session name (created by launch_session below) and every stored
+    # reference to it (tmux_session, used by has_session/kill_session/
+    # capture_pane/send_key elsewhere) must agree, or has_session silently
+    # returns False for a real, running session and kill_session never runs.
+    name = sanitize_tmux_name(data["name"])
 
     if has_session(name):
         existing = next((s for s in list_sessions() if s.get("tmux_session") == name), None)

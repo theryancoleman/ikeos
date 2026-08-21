@@ -6,6 +6,19 @@ from unittest.mock import patch, call, MagicMock
 import tmux
 
 
+def test_sanitize_tmux_name_replaces_dots():
+    assert tmux.sanitize_tmux_name("housekeeping-2026-06-18-memory-consolidation.md") == \
+        "housekeeping-2026-06-18-memory-consolidation_md"
+
+
+def test_sanitize_tmux_name_replaces_colons():
+    assert tmux.sanitize_tmux_name("foo:bar") == "foo_bar"
+
+
+def test_sanitize_tmux_name_leaves_clean_names_unchanged():
+    assert tmux.sanitize_tmux_name("eval-suite-run") == "eval-suite-run"
+
+
 def test_has_session_returns_true_when_exists(mocker):
     mocker.patch("subprocess.run", return_value=MagicMock(returncode=0))
     assert tmux.has_session("my-session") is True
